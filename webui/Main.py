@@ -171,16 +171,17 @@ streamlit_style = """
     /* Buttons */
     .stButton > button {
         background-color: #2D2D2D !important;
-        color: #D4AF37 !important;
-        border: 1px solid #D4AF37 !important;
+        color: #E0E0E0 !important;
+        border: 1px solid #555555 !important;
         border-radius: 8px !important;
         font-weight: 600 !important;
         transition: all 0.2s ease;
     }
     .stButton > button:hover {
-        background-color: #D4AF37 !important;
-        color: #121212 !important;
-        box-shadow: 0 0 15px rgba(212, 175, 55, 0.3) !important;
+        background-color: #404040 !important;
+        color: #FFFFFF !important;
+        border-color: #FFFFFF !important;
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.1) !important;
     }
     
     /* Download Button Specific Styling - Dark Background, White Text */
@@ -197,20 +198,21 @@ streamlit_style = """
         box-shadow: 0 0 10px rgba(255, 255, 255, 0.2) !important;
     }
     
-    /* Primary Buttons (Gradient) */
+    /* Primary Buttons (Gradient) - REMOVED YELLOW BACKGROUND */
     .stButton button[kind="primary"] { 
-        background: linear-gradient(135deg, #D4AF37 0%, #C5A028 100%) !important; 
-        border: none !important; 
-        color: #000000 !important; 
+        background: #2D2D2D !important; 
+        border: 1px solid #FFFFFF !important; 
+        color: #FFFFFF !important; 
         font-weight: 900 !important; 
         font-size: 1.2rem !important;
         padding: 1rem 3rem; 
         border-radius: 12px; 
-        box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
     }
     .stButton button[kind="primary"]:hover { 
+        background-color: #404040 !important;
         transform: translateY(-2px); 
-        box-shadow: 0 6px 20px rgba(212, 175, 55, 0.6); 
+        box-shadow: 0 6px 15px rgba(255, 255, 255, 0.1); 
     }
     
     /* Sidebar */
@@ -616,20 +618,15 @@ with tab_main:
         for i, video_path in enumerate(video_files):
             if os.path.exists(video_path):
                 # Video Player and Buttons Side-by-Side
-                # Left: Video (approx 40% width), Right: Buttons (approx 60% width)
-                # But since we want the video to be "halved" in size relative to full width, 
-                # we can use a layout like [0.2, 0.3, 0.5] or similar.
-                # Let's try [0.4, 0.2] relative to a centered container?
-                # User said: "Video playing, space on right, align buttons there".
-                
-                # Create two columns: Video and Actions
-                # The video is portrait (9:16), so it doesn't need much width.
-                col_video, col_actions = st.columns([0.35, 0.65])
+                # User Request: "Halve video size" and "Align buttons to right empty space"
+                # Layout: Empty (Left) | Video (Center) | Buttons (Right)
+                # Using [0.35, 0.3, 0.35] ratio to center the video and place buttons in the right empty space
+                col_left, col_video, col_right = st.columns([0.35, 0.3, 0.35])
                 
                 with col_video:
                     st.video(video_path, format="video/mp4")
                 
-                with col_actions:
+                with col_right:
                     st.write("### 영상 작업")
                     # Stack buttons vertically
                     

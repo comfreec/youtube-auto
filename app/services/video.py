@@ -691,11 +691,11 @@ def generate_video(
         logger.info(f"  Adding title: {params.video_subject}")
         title_text = params.video_subject
         
-        # Hardcode font size to 85 (increased from 60 based on user feedback)
-        title_font_size = 85
+        # Hardcode font size to 130 (increased significantly based on user feedback)
+        title_font_size = 130
         
         # Use wrap_text to handle long titles
-        wrapped_title, _ = wrap_text(title_text, max_width=video_width * 0.8, font=font_path, fontsize=title_font_size)
+        wrapped_title, _ = wrap_text(title_text, max_width=video_width * 0.9, font=font_path, fontsize=title_font_size)
 
         # Use drawtext filter for absolute positioning
         # This avoids ASS/SRT alignment issues where text appears in the middle
