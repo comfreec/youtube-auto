@@ -574,9 +574,9 @@ def generate_video(
         if params.subtitle_position == "bottom":
             # Adjust for Shorts style (higher up to avoid UI)
             if aspect == VideoAspect.portrait:
-                 _clip = _clip.with_position(("center", video_height * 0.70))
+                 _clip = _clip.with_position(("center", video_height * 0.75))
             else:
-                 _clip = _clip.with_position(("center", video_height * 0.90 - _clip.h))
+                 _clip = _clip.with_position(("center", video_height * 0.92 - _clip.h))
         elif params.subtitle_position == "top":
             _clip = _clip.with_position(("center", video_height * 0.05))
         elif params.subtitle_position == "custom":
@@ -669,12 +669,12 @@ def generate_video(
         
         # Shorts vs Landscape styling
         font_size = 20
-        margin_v = 20
+        margin_v = 20 # Slightly lower for landscape
         if aspect == VideoAspect.portrait:
             font_size = 16
-            margin_v = 150 # Adjusted for portrait (lower third)
+            margin_v = 70 # Adjusted for portrait (lower than before)
         else:
-            margin_v = 30
+            margin_v = 20
 
         # FFmpeg style string (ASS format)
         # Force Malgun Gothic and ensure it uses the local file by setting fontsdir
@@ -687,15 +687,18 @@ def generate_video(
 
     # 2. Title Overlay
     if params.video_subject:
+        logger.info(f"  Adding title: {params.video_subject}")
         title_text = params.video_subject
-        # Wrap text if too long
-        if len(title_text) > 15:
-             title_text = title_text[:15] + "\n" + title_text[15:]
+        
+        title_font_size = int(video_width * 0.12) # Dynamic size
+
+        # Use wrap_text to handle long titles
+        wrapped_title, _ = wrap_text(title_text, max_width=video_width * 0.9, font=font_path, fontsize=title_font_size)
 
         # Create a text file for the title
         title_file_path = os.path.join(task_dir, "title.txt")
         with open(title_file_path, "w", encoding="utf-8") as f:
-            f.write(title_text)
+            f.write(wrapped_title)
         
         title_file_escaped = "title.txt"
         
@@ -703,11 +706,10 @@ def generate_video(
         font_file_escaped = local_font_name
         
         # Title Styling
-        title_font_size = int(video_height * 0.06) # 6% of height
-        title_y = int(video_height * 0.10) # 10% from top (Moved up per user request)
+        title_y = int(video_height * 0.15)
         
-        # Yellow color for title, heavy border
-        drawtext = f"drawtext=fontfile='{font_file_escaped}':textfile='{title_file_escaped}':fontcolor=yellow:fontsize={title_font_size}:x=(w-text_w)/2:y={title_y}:borderw=4:bordercolor=black:shadowx=2:shadowy=2"
+        # Yellow Title with thicker stroke
+        drawtext = f"drawtext=fontfile='{font_file_escaped}':textfile='{title_file_escaped}':fontcolor=#FFD700:fontsize={title_font_size}:x=(w-text_w)/2:y={title_y}:borderw=8:bordercolor=black:shadowx=2:shadowy=2"
         video_filter_chain.append(drawtext)
 
     # Combine video filters
