@@ -15,15 +15,24 @@ from app.utils import utils
 
 def generate_script(task_id, params):
     logger.info("\n\n## generating video script")
-    video_script = params.video_script.strip()
-    if not video_script:
+    # If real-time auto generation is enabled, always use AI to generate script from the subject
+    use_auto = config.ui.get("auto_script_enabled", True)
+    if use_auto:
         video_script = llm.generate_script(
             video_subject=params.video_subject,
             language=params.video_language,
             paragraph_number=params.paragraph_number,
         )
     else:
-        logger.debug(f"video script: \n{video_script}")
+        video_script = params.video_script.strip()
+        if not video_script:
+            video_script = llm.generate_script(
+                video_subject=params.video_subject,
+                language=params.video_language,
+                paragraph_number=params.paragraph_number,
+            )
+        else:
+            logger.debug(f"video script: \n{video_script}")
 
     if not video_script:
         sm.state.update_task(task_id, state=const.TASK_STATE_FAILED)
@@ -130,7 +139,7 @@ def generate_subtitle(task_id, params, video_script, sub_maker, audio_file):
         - subtitle_path: path to the generated subtitle file
     '''
     logger.info("\n\n## generating subtitle")
-    if not params.subtitle_enabled or sub_maker is None:
+    if not params.subtitle_enabled:
         return ""
 
     subtitle_path = path.join(utils.task_dir(task_id), "subtitle.srt")
@@ -138,13 +147,16 @@ def generate_subtitle(task_id, params, video_script, sub_maker, audio_file):
     logger.info(f"\n\n## generating subtitle, provider: {subtitle_provider}")
 
     subtitle_fallback = False
-    if subtitle_provider == "edge":
-        voice.create_subtitle(
-            text=video_script, sub_maker=sub_maker, subtitle_file=subtitle_path
-        )
-        if not os.path.exists(subtitle_path):
-            subtitle_fallback = True
-            logger.warning("subtitle file not found, fallback to whisper")
+    if sub_maker is None:
+        subtitle_fallback = True
+    else:
+        if subtitle_provider == "edge":
+            voice.create_subtitle(
+                text=video_script, sub_maker=sub_maker, subtitle_file=subtitle_path
+            )
+            if not os.path.exists(subtitle_path) or os.path.getsize(subtitle_path) == 0:
+                subtitle_fallback = True
+                logger.warning("subtitle file not found or empty, fallback to whisper")
 
     if subtitle_provider == "whisper" or subtitle_fallback:
         subtitle.create(audio_file=audio_file, subtitle_file=subtitle_path)
@@ -154,6 +166,8 @@ def generate_subtitle(task_id, params, video_script, sub_maker, audio_file):
     subtitle_lines = subtitle.file_to_subtitles(subtitle_path)
     if not subtitle_lines:
         logger.warning(f"subtitle file is invalid: {subtitle_path}")
+        if os.path.exists(subtitle_path) and os.path.getsize(subtitle_path) > 0:
+             return subtitle_path
         return ""
 
     return subtitle_path
@@ -162,6 +176,9 @@ def generate_subtitle(task_id, params, video_script, sub_maker, audio_file):
 def get_video_materials(task_id, params, video_terms, audio_duration):
     if params.video_source == "local":
         logger.info("\n\n## preprocess local materials")
+        if not params.video_materials:
+            logger.warning("no local materials provided, will use solid background fallback")
+            return []
         materials = video.preprocess_video(
             materials=params.video_materials, clip_duration=params.video_clip_duration
         )
@@ -205,6 +222,9 @@ def generate_final_videos(
     _progress = 50
     for i in range(params.video_count):
         index = i + 1
+        
+        sm.state.update_task(task_id, progress=_progress, message=f"영상 클립 병합 중 ({index}/{params.video_count})...")
+        
         combined_video_path = path.join(
             utils.task_dir(task_id), f"combined-{index}.mp4"
         )
@@ -221,7 +241,7 @@ def generate_final_videos(
         )
 
         _progress += 50 / params.video_count / 2
-        sm.state.update_task(task_id, progress=_progress)
+        sm.state.update_task(task_id, progress=_progress, message=f"최종 영상 렌더링 중 ({index}/{params.video_count}) - 몇 분 정도 걸릴 수 있습니다...")
 
         final_video_path = path.join(utils.task_dir(task_id), f"final-{index}.mp4")
 
@@ -235,7 +255,7 @@ def generate_final_videos(
         )
 
         _progress += 50 / params.video_count / 2
-        sm.state.update_task(task_id, progress=_progress)
+        sm.state.update_task(task_id, progress=_progress, message=f"영상 {index} 준비 완료.")
 
         final_video_paths.append(final_video_path)
         combined_video_paths.append(combined_video_path)
@@ -245,52 +265,54 @@ def generate_final_videos(
 
 def start(task_id, params: VideoParams, stop_at: str = "video"):
     logger.info(f"start task: {task_id}, stop_at: {stop_at}")
-    sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=5)
+    sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=5, message="작업 시작 중...")
 
     if type(params.video_concat_mode) is str:
         params.video_concat_mode = VideoConcatMode(params.video_concat_mode)
 
     # 1. Generate script
+    sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=5, message="영상 대본 생성 중...")
     video_script = generate_script(task_id, params)
     if not video_script or "Error: " in video_script:
-        sm.state.update_task(task_id, state=const.TASK_STATE_FAILED)
+        sm.state.update_task(task_id, state=const.TASK_STATE_FAILED, message="대본 생성 실패")
         return
 
-    sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=10)
+    sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=10, message="대본 생성 완료")
 
     if stop_at == "script":
         sm.state.update_task(
-            task_id, state=const.TASK_STATE_COMPLETE, progress=100, script=video_script
+            task_id, state=const.TASK_STATE_COMPLETE, progress=100, script=video_script, message="대본 생성 완료"
         )
         return {"script": video_script}
 
     # 2. Generate terms
     video_terms = ""
     if params.video_source != "local":
+        sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=15, message="영상 키워드 생성 중...")
         video_terms = generate_terms(task_id, params, video_script)
         if not video_terms:
-            sm.state.update_task(task_id, state=const.TASK_STATE_FAILED)
+            sm.state.update_task(task_id, state=const.TASK_STATE_FAILED, message="키워드 생성 실패")
             return
 
     save_script_data(task_id, video_script, video_terms, params)
 
     if stop_at == "terms":
         sm.state.update_task(
-            task_id, state=const.TASK_STATE_COMPLETE, progress=100, terms=video_terms
+            task_id, state=const.TASK_STATE_COMPLETE, progress=100, terms=video_terms, message="키워드 생성 완료"
         )
         return {"script": video_script, "terms": video_terms}
 
-    sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=20)
+    sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=20, message="오디오 생성 중...")
 
     # 3. Generate audio
     audio_file, audio_duration, sub_maker = generate_audio(
         task_id, params, video_script
     )
     if not audio_file:
-        sm.state.update_task(task_id, state=const.TASK_STATE_FAILED)
+        sm.state.update_task(task_id, state=const.TASK_STATE_FAILED, message="오디오 생성 실패")
         return
 
-    sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=30)
+    sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=30, message="자막 생성 중...")
 
     if stop_at == "audio":
         sm.state.update_task(
@@ -298,6 +320,7 @@ def start(task_id, params: VideoParams, stop_at: str = "video"):
             state=const.TASK_STATE_COMPLETE,
             progress=100,
             audio_file=audio_file,
+            message="오디오 생성 완료"
         )
         return {"audio_file": audio_file, "audio_duration": audio_duration}
 
@@ -312,17 +335,18 @@ def start(task_id, params: VideoParams, stop_at: str = "video"):
             state=const.TASK_STATE_COMPLETE,
             progress=100,
             subtitle_path=subtitle_path,
+            message="자막 생성 완료"
         )
         return {"subtitle_path": subtitle_path}
 
-    sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=40)
+    sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=40, message="영상 자료 준비 중...")
 
     # 5. Get video materials
     downloaded_videos = get_video_materials(
         task_id, params, video_terms, audio_duration
     )
     if not downloaded_videos:
-        sm.state.update_task(task_id, state=const.TASK_STATE_FAILED)
+        sm.state.update_task(task_id, state=const.TASK_STATE_FAILED, message="자료 준비 실패")
         return
 
     if stop_at == "materials":
@@ -331,10 +355,11 @@ def start(task_id, params: VideoParams, stop_at: str = "video"):
             state=const.TASK_STATE_COMPLETE,
             progress=100,
             materials=downloaded_videos,
+            message="자료 준비 완료"
         )
         return {"materials": downloaded_videos}
 
-    sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=50)
+    sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=50, message="영상 합성 중 (시간이 다소 소요될 수 있습니다)...")
 
     # 6. Generate final videos
     final_video_paths, combined_video_paths = generate_final_videos(
@@ -342,7 +367,7 @@ def start(task_id, params: VideoParams, stop_at: str = "video"):
     )
 
     if not final_video_paths:
-        sm.state.update_task(task_id, state=const.TASK_STATE_FAILED)
+        sm.state.update_task(task_id, state=const.TASK_STATE_FAILED, message="영상 생성 실패")
         return
 
     logger.success(
@@ -360,7 +385,7 @@ def start(task_id, params: VideoParams, stop_at: str = "video"):
         "materials": downloaded_videos,
     }
     sm.state.update_task(
-        task_id, state=const.TASK_STATE_COMPLETE, progress=100, **kwargs
+        task_id, state=const.TASK_STATE_COMPLETE, progress=100, message="영상 생성 완료", **kwargs
     )
     return kwargs
 

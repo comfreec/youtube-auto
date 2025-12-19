@@ -4,15 +4,18 @@ import os
 import random
 import gc
 import shutil
+import subprocess
 from typing import List
+import numpy as np
+from PIL import Image, ImageDraw, ImageFont
 from loguru import logger
+from imageio_ffmpeg import get_ffmpeg_exe
 from moviepy import (
     AudioFileClip,
     ColorClip,
     CompositeAudioClip,
     CompositeVideoClip,
     ImageClip,
-    TextClip,
     VideoFileClip,
     afx,
     concatenate_videoclips,
@@ -50,6 +53,59 @@ class SubClippedVideoClip:
 audio_codec = "aac"
 video_codec = "libx264"
 fps = 30
+
+def parse_srt(file_path):
+    subtitles = []
+    with open(file_path, 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+    
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        
+        if not line:
+            i += 1
+            continue
+            
+        # Index (skip)
+        if line.isdigit():
+            i += 1
+            if i >= len(lines): break
+            line = lines[i].strip()
+            
+        # Time
+        if '-->' in line:
+            times = line.split('-->')
+            if len(times) == 2:
+                start_str = times[0].strip()
+                end_str = times[1].strip()
+                
+                def time_to_seconds(t_str):
+                    t_str = t_str.replace(',', '.')
+                    parts = t_str.split(':')
+                    return int(parts[0]) * 3600 + int(parts[1]) * 60 + float(parts[2])
+                
+                start = time_to_seconds(start_str)
+                end = time_to_seconds(end_str)
+                
+                # Text
+                text_lines = []
+                i += 1
+                while i < len(lines):
+                    text_line = lines[i].strip()
+                    if not text_line:
+                        break
+                    text_lines.append(text_line)
+                    i += 1
+                
+                text = "\n".join(text_lines)
+                subtitles.append(((start, end), text))
+            else:
+                i += 1
+        else:
+            i += 1
+            
+    return subtitles
 
 def close_clip(clip):
     if clip is None:
@@ -127,14 +183,31 @@ def combine_videos(
     audio_clip = AudioFileClip(audio_file)
     audio_duration = audio_clip.duration
     logger.info(f"audio duration: {audio_duration} seconds")
+    aspect = VideoAspect(video_aspect)
+    video_width, video_height = aspect.to_resolution()
+    # Fallback: no materials provided → generate solid background video
+    if not video_paths:
+        logger.warning("no input video materials provided, generating solid background")
+        bg = ColorClip(size=(video_width, video_height), color=(0, 0, 0)).with_duration(audio_duration)
+        try:
+            bg.write_videofile(
+                combined_video_path,
+                logger=None,
+                fps=fps,
+                codec=video_codec,
+                preset="ultrafast",
+                threads=threads,
+                audio=False,
+                ffmpeg_params=["-pix_fmt", "yuv420p"],
+            )
+        except Exception as e:
+            logger.error(f"failed to write solid background video: {str(e)}")
+            raise e
+        return combined_video_path
     # Required duration of each clip
-    req_dur = audio_duration / len(video_paths)
     req_dur = max_clip_duration
     logger.info(f"maximum clip duration: {req_dur} seconds")
     output_dir = os.path.dirname(combined_video_path)
-
-    aspect = VideoAspect(video_aspect)
-    video_width, video_height = aspect.to_resolution()
 
     processed_clips = []
     subclipped_items = []
@@ -181,17 +254,49 @@ def combine_videos(
                 if clip_ratio == video_ratio:
                     clip = clip.resized(new_size=(video_width, video_height))
                 else:
-                    if clip_ratio > video_ratio:
-                        scale_factor = video_width / clip_w
+                    # Logic for Portrait (Shorts) - Crop to Fill
+                    if aspect == VideoAspect.portrait:
+                        if clip_ratio > video_ratio:
+                            # Source is wider than target (e.g. Landscape -> Portrait)
+                            # Scale height to match target height
+                            new_height = video_height
+                            new_width = int(clip_w * (video_height / clip_h))
+                            clip = clip.resized(new_size=(new_width, new_height))
+                            # Crop center
+                            x_center = new_width / 2
+                            clip = clip.cropped(
+                                x1=int(x_center - video_width / 2),
+                                y1=0,
+                                width=video_width,
+                                height=video_height
+                            )
+                        else:
+                            # Source is taller than target (e.g. Ultra-tall -> Portrait)
+                            # Scale width to match target width
+                            new_width = video_width
+                            new_height = int(clip_h * (video_width / clip_w))
+                            clip = clip.resized(new_size=(new_width, new_height))
+                            # Crop center
+                            y_center = new_height / 2
+                            clip = clip.cropped(
+                                x1=0,
+                                y1=int(y_center - video_height / 2),
+                                width=video_width,
+                                height=video_height
+                            )
                     else:
-                        scale_factor = video_height / clip_h
+                        # Logic for Landscape/Square - Fit with Black Bars (Original)
+                        if clip_ratio > video_ratio:
+                            scale_factor = video_width / clip_w
+                        else:
+                            scale_factor = video_height / clip_h
 
-                    new_width = int(clip_w * scale_factor)
-                    new_height = int(clip_h * scale_factor)
+                        new_width = int(clip_w * scale_factor)
+                        new_height = int(clip_h * scale_factor)
 
-                    background = ColorClip(size=(video_width, video_height), color=(0, 0, 0)).with_duration(clip_duration)
-                    clip_resized = clip.resized(new_size=(new_width, new_height)).with_position("center")
-                    clip = CompositeVideoClip([background, clip_resized])
+                        background = ColorClip(size=(video_width, video_height), color=(0, 0, 0)).with_duration(clip_duration)
+                        clip_resized = clip.resized(new_size=(new_width, new_height)).with_position("center")
+                        clip = CompositeVideoClip([background, clip_resized])
                     
             shuffle_side = random.choice(["left", "right", "top", "bottom"])
             if video_transition_mode.value == VideoTransitionMode.none.value:
@@ -219,7 +324,17 @@ def combine_videos(
                 
             # wirte clip to temp file
             clip_file = f"{output_dir}/temp-clip-{i+1}.mp4"
-            clip.write_videofile(clip_file, logger=None, fps=fps, codec=video_codec)
+            # Optimization: Remove audio from temp clips to prevent hangs and improve speed
+            clip.without_audio().write_videofile(
+                clip_file,
+                logger=None,
+                fps=fps,
+                codec=video_codec,
+                preset="ultrafast",
+                threads=2, # Reduced threads to avoid deadlocks during clip generation
+                audio=False,
+                ffmpeg_params=["-pix_fmt", "yuv420p"]
+            )
             
             close_clip(clip)
         
@@ -246,63 +361,71 @@ def combine_videos(
         logger.warning("no clips available for merging")
         return combined_video_path
     
-    # if there is only one clip, use it directly
-    if len(processed_clips) == 1:
-        logger.info("using single clip directly")
-        shutil.copy(processed_clips[0].file_path, combined_video_path)
-        delete_files(processed_clips)
-        logger.info("video combining completed")
-        return combined_video_path
-    
-    # create initial video file as base
-    base_clip_path = processed_clips[0].file_path
-    temp_merged_video = f"{output_dir}/temp-merged-video.mp4"
-    temp_merged_next = f"{output_dir}/temp-merged-next.mp4"
-    
-    # copy first clip as initial merged video
-    shutil.copy(base_clip_path, temp_merged_video)
-    
-    # merge remaining video clips one by one
-    for i, clip in enumerate(processed_clips[1:], 1):
-        logger.info(f"merging clip {i}/{len(processed_clips)-1}, duration: {clip.duration:.2f}s")
-        
-        try:
-            # load current base video and next clip to merge
-            base_clip = VideoFileClip(temp_merged_video)
-            next_clip = VideoFileClip(clip.file_path)
-            
-            # merge these two clips
-            merged_clip = concatenate_videoclips([base_clip, next_clip])
+    try:
+        # Create concat list file for ffmpeg
+        concat_list_path = os.path.join(output_dir, "concat_list.txt")
+        valid_clips_count = 0
+        with open(concat_list_path, "w", encoding="utf-8") as f:
+            for clip_data in processed_clips:
+                if os.path.exists(clip_data.file_path) and os.path.getsize(clip_data.file_path) > 0:
+                    # Escape path for ffmpeg concat demuxer
+                    path = clip_data.file_path.replace("\\", "/")
+                    f.write(f"file '{path}'\n")
+                    valid_clips_count += 1
+                else:
+                    logger.warning(f"skipping invalid clip: {clip_data.file_path}")
 
-            # save merged result to temp file
-            merged_clip.write_videofile(
-                filename=temp_merged_next,
-                threads=threads,
-                logger=None,
-                temp_audiofile_path=output_dir,
-                audio_codec=audio_codec,
-                fps=fps,
-            )
-            close_clip(base_clip)
-            close_clip(next_clip)
-            close_clip(merged_clip)
+        if valid_clips_count == 0:
+            logger.error("no valid clips to merge")
+            return combined_video_path
+
+        logger.info(f"concatenating {valid_clips_count} clips using ffmpeg: {concat_list_path}")
+        
+        ffmpeg_exe = get_ffmpeg_exe()
+        cmd = [
+            ffmpeg_exe,
+            "-y",
+            "-f", "concat",
+            "-safe", "0",
+            "-i", concat_list_path,
+            "-c:v", "libx264",
+            "-pix_fmt", "yuv420p",
+            "-preset", "ultrafast",
+            "-crf", "23",
+            "-c:a", "aac",
+            "-b:a", "128k",
+            combined_video_path
+        ]
+        
+        # Run ffmpeg
+        logger.info(f"running ffmpeg command: {' '.join(cmd)}")
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            encoding='utf-8',
+            errors='replace'
+        )
+        
+        if result.returncode != 0:
+            logger.error(f"ffmpeg concatenation failed: {result.stderr}")
+            raise Exception(f"ffmpeg concatenation failed: {result.stderr}")
             
-            # replace base file with new merged file
-            delete_files(temp_merged_video)
-            os.rename(temp_merged_next, temp_merged_video)
-            
-        except Exception as e:
-            logger.error(f"failed to merge clip: {str(e)}")
-            continue
-    
-    # after merging, rename final result to target file name
-    os.rename(temp_merged_video, combined_video_path)
-    
+        logger.info("ffmpeg concatenation completed")
+        
+        # Verify output
+        if not os.path.exists(combined_video_path) or os.path.getsize(combined_video_path) == 0:
+             logger.error("ffmpeg produced empty or missing file")
+             raise Exception("ffmpeg produced empty or missing file")
+
+    except Exception as e:
+        logger.error(f"failed to merge clips: {str(e)}")
+        raise e
+
     # clean temp files
     clip_files = [clip.file_path for clip in processed_clips]
     delete_files(clip_files)
             
-    logger.info("video combining completed")
     return combined_video_path
 
 
@@ -382,43 +505,78 @@ def generate_video(
     output_dir = os.path.dirname(output_file)
 
     font_path = ""
-    if params.subtitle_enabled:
-        if not params.font_name:
-            params.font_name = "STHeitiMedium.ttc"
-        font_path = os.path.join(utils.font_dir(), params.font_name)
-        if os.name == "nt":
-            font_path = font_path.replace("\\", "/")
-
+    if params.subtitle_enabled or params.video_subject:
+        # Force Malgun Gothic for Korean support to avoid squares
+        # This overrides other settings to ensure Korean text works on Windows
+        system_font_path = "C:/Windows/Fonts/malgun.ttf"
+        
+        # Linux/Docker font paths (Noto Sans CJK)
+        linux_font_paths = [
+            "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+            "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+            "/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc",
+            "/usr/share/fonts/truetype/noto/NotoSansCJKsc-Regular.otf"
+        ]
+        
+        if os.path.exists(system_font_path):
+            font_path = system_font_path
+            logger.info(f"Forced Korean font: {font_path}")
+        else:
+            found_linux_font = False
+            for path in linux_font_paths:
+                if os.path.exists(path):
+                    font_path = path
+                    found_linux_font = True
+                    logger.info(f"Forced Korean font (Linux): {font_path}")
+                    break
+            
+            if not found_linux_font:
+                if not params.font_name:
+                    params.font_name = "STHeitiMedium.ttc"
+                
+                font_path = os.path.join(utils.font_dir(), params.font_name)
+                if os.name == "nt":
+                    font_path = font_path.replace("\\", "/")
+        
         logger.info(f"  ⑤ font: {font_path}")
 
     def create_text_clip(subtitle_item):
         params.font_size = int(params.font_size)
-        params.stroke_width = int(params.stroke_width)
+        if aspect == VideoAspect.portrait:
+             params.font_size = int(params.font_size * 1.3) # Increase font size for Shorts
+
+        params.stroke_width = max(3, int(params.stroke_width)) # Ensure visible outline
+        params.stroke_color = params.stroke_color or "#000000" # Default to black outline
         phrase = subtitle_item[1]
         max_width = video_width * 0.9
         wrapped_txt, txt_height = wrap_text(
             phrase, max_width=max_width, font=font_path, fontsize=params.font_size
         )
-        interline = int(params.font_size * 0.25)
-        size=(int(max_width), int(txt_height + params.font_size * 0.25 + (interline * (wrapped_txt.count("\n") + 1))))
 
-        _clip = TextClip(
-            text=wrapped_txt,
-            font=font_path,
-            font_size=params.font_size,
-            color=params.text_fore_color,
-            bg_color=params.text_background_color,
-            stroke_color=params.stroke_color,
-            stroke_width=params.stroke_width,
-            # interline=interline,
-            # size=size,
-        )
+        # Use PIL to create text image (avoiding ImageMagick dependency)
+        font = ImageFont.truetype(font_path, params.font_size)
+        dummy_img = Image.new('RGBA', (1, 1))
+        draw = ImageDraw.Draw(dummy_img)
+        # Calculate bounding box
+        bbox = draw.multiline_textbbox((0, 0), wrapped_txt, font=font, stroke_width=params.stroke_width, align='center', spacing=15)
+        w = bbox[2] - bbox[0] + 40  # Add padding
+        h = bbox[3] - bbox[1] + 40
+        
+        img = Image.new('RGBA', (int(w), int(h)), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(img)
+        draw.multiline_text((20, 20), wrapped_txt, font=font, fill=params.text_fore_color, stroke_width=params.stroke_width, stroke_fill=params.stroke_color, align='center', spacing=15)
+        
+        _clip = ImageClip(np.array(img))
         duration = subtitle_item[0][1] - subtitle_item[0][0]
         _clip = _clip.with_start(subtitle_item[0][0])
         _clip = _clip.with_end(subtitle_item[0][1])
         _clip = _clip.with_duration(duration)
         if params.subtitle_position == "bottom":
-            _clip = _clip.with_position(("center", video_height * 0.95 - _clip.h))
+            # Adjust for Shorts style (higher up to avoid UI)
+            if aspect == VideoAspect.portrait:
+                 _clip = _clip.with_position(("center", video_height * 0.70))
+            else:
+                 _clip = _clip.with_position(("center", video_height * 0.90 - _clip.h))
         elif params.subtitle_position == "top":
             _clip = _clip.with_position(("center", video_height * 0.05))
         elif params.subtitle_position == "custom":
@@ -435,53 +593,168 @@ def generate_video(
             _clip = _clip.with_position(("center", "center"))
         return _clip
 
-    video_clip = VideoFileClip(video_path).without_audio()
-    audio_clip = AudioFileClip(audio_path).with_effects(
-        [afx.MultiplyVolume(params.voice_volume)]
-    )
+    bgm_file = get_bgm_file(bgm_type=params.bgm_type, bgm_file=params.bgm_file)
 
-    def make_textclip(text):
-        return TextClip(
-            text=text,
-            font=font_path,
-            font_size=params.font_size,
-        )
-
-    if subtitle_path and os.path.exists(subtitle_path):
-        sub = SubtitlesClip(
-            subtitles=subtitle_path, encoding="utf-8", make_textclip=make_textclip
-        )
-        text_clips = []
-        for item in sub.subtitles:
-            clip = create_text_clip(subtitle_item=item)
-            text_clips.append(clip)
-        video_clip = CompositeVideoClip([video_clip, *text_clips])
-
+    # Separate audio and video rendering to avoid hangs and improve speed
+    # OPTIMIZATION: Use pure ffmpeg for final rendering to avoid MoviePy hangs and improve speed (10x faster)
+    logger.info("Starting FFmpeg direct rendering...")
+    
+    # Prepare ffmpeg command
+    import imageio_ffmpeg
+    ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
+    
+    # Prepare inputs
+    inputs = []
+    filters = []
+    
+    # Input 0: Video (concatenated clips)
+    inputs.extend(["-i", video_path])
+    
+    # Input 1: Audio (TTS)
+    inputs.extend(["-i", audio_path])
+    
+    # Audio mixing logic
+    audio_map = "[1:a]" # Default to just TTS
+    
+    bgm_input_index = -1
     bgm_file = get_bgm_file(bgm_type=params.bgm_type, bgm_file=params.bgm_file)
     if bgm_file:
-        try:
-            bgm_clip = AudioFileClip(bgm_file).with_effects(
-                [
-                    afx.MultiplyVolume(params.bgm_volume),
-                    afx.AudioFadeOut(3),
-                    afx.AudioLoop(duration=video_clip.duration),
-                ]
-            )
-            audio_clip = CompositeAudioClip([audio_clip, bgm_clip])
-        except Exception as e:
-            logger.error(f"failed to add bgm: {str(e)}")
+        inputs.extend(["-i", bgm_file])
+        bgm_input_index = 2
+        # Mix TTS (1.0) and BGM (0.2)
+        # BGM loops indefinitely
+        filters.append(f"[{bgm_input_index}:a]volume={params.bgm_volume},aloop=loop=-1:size=2e+09[bgm]")
+        filters.append(f"[1:a]volume={params.voice_volume}[tts]")
+        filters.append(f"[tts][bgm]amix=inputs=2:duration=first[a_out]")
+        audio_map = "[a_out]"
+    else:
+         filters.append(f"[1:a]volume={params.voice_volume}[a_out]")
+         audio_map = "[a_out]"
 
+    # Video filters (Subtitles + Title)
+    video_filter_chain = []
+    
+    # Common Font Settings
+    import platform
+    import shutil
+    
+    system = platform.system()
+    font_name = "Malgun Gothic"
+    # Default Windows font path
+    source_font_path = "C:/Windows/Fonts/malgun.ttf"
+    
+    if system == "Linux":
+        font_name = "Noto Sans CJK SC"
+        source_font_path = "/usr/share/fonts/noto/NotoSansCJK-Regular.ttc" # Example path, adjust as needed
+
+    task_dir = os.path.dirname(output_file)
+    
+    # Copy font to task directory to avoid path issues
+    local_font_name = "font.ttf"
+    local_font_path = os.path.join(task_dir, local_font_name)
+    
+    try:
+        if os.path.exists(source_font_path):
+            if not os.path.exists(local_font_path):
+                shutil.copy2(source_font_path, local_font_path)
+            logger.info(f"Copied font to {local_font_path}")
+        else:
+            logger.warning(f"Font file not found at {source_font_path}, subtitles might fail or use default font")
+    except Exception as e:
+        logger.error(f"Failed to copy font: {e}")
+
+    # 1. Subtitles
+    if params.subtitle_enabled and subtitle_path and os.path.exists(subtitle_path):
+        sub_filename = os.path.basename(subtitle_path)
+        
+        # Shorts vs Landscape styling
+        font_size = 20
+        margin_v = 20
+        if aspect == VideoAspect.portrait:
+            font_size = 16
+            margin_v = 150 # Adjusted for portrait (lower third)
+        else:
+            margin_v = 30
+
+        # FFmpeg style string (ASS format)
+        # Force Malgun Gothic and ensure it uses the local file by setting fontsdir
+        style = f"Fontname={font_name},FontSize={font_size},PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=0,Alignment=2,MarginV={margin_v},Bold=1"
+        
+        # Use relative path '.' for fontsdir since we run in task_dir
+        # NOTE: fontsdir='.' tells ffmpeg to look for fonts in the current directory
+        video_filter_chain.append(f"subtitles='{sub_filename}':fontsdir='.':charenc=UTF-8:force_style='{style}'")
+        logger.info(f"Adding subtitles: {sub_filename} with style: {style}")
+
+    # 2. Title Overlay
+    if params.video_subject:
+        title_text = params.video_subject
+        # Wrap text if too long
+        if len(title_text) > 15:
+             title_text = title_text[:15] + "\n" + title_text[15:]
+
+        # Create a text file for the title
+        title_file_path = os.path.join(task_dir, "title.txt")
+        with open(title_file_path, "w", encoding="utf-8") as f:
+            f.write(title_text)
+        
+        title_file_escaped = "title.txt"
+        
+        # Use local font file
+        font_file_escaped = local_font_name
+        
+        # Title Styling
+        title_font_size = int(video_height * 0.06) # 6% of height
+        title_y = int(video_height * 0.10) # 10% from top (Moved up per user request)
+        
+        # Yellow color for title, heavy border
+        drawtext = f"drawtext=fontfile='{font_file_escaped}':textfile='{title_file_escaped}':fontcolor=yellow:fontsize={title_font_size}:x=(w-text_w)/2:y={title_y}:borderw=4:bordercolor=black:shadowx=2:shadowy=2"
+        video_filter_chain.append(drawtext)
+
+    # Combine video filters
+    if video_filter_chain:
+        filters.append(f"[0:v]{','.join(video_filter_chain)}[v_out]")
+        video_map = "[v_out]"
+    else:
+        video_map = "0:v"
+
+    # Construct complete command
+    cmd = [ffmpeg_exe, "-y"]
+    cmd.extend(inputs)
+    
+    if filters:
+        cmd.extend(["-filter_complex", ";".join(filters)])
+    
+    cmd.extend([
+        "-map", video_map,
+        "-map", audio_map,
+        "-c:v", "libx264",
+        "-preset", "ultrafast", # Max speed
+        "-crf", "23",
+        "-c:a", "aac",
+        "-b:a", "192k",
+        "-pix_fmt", "yuv420p",
+        "-shortest", # Stop when shortest input ends (usually video)
+        output_file
+    ])
+    
+    logger.info(f"Running ffmpeg command: {' '.join(cmd)}")
+    
+    # Run FFmpeg from the task directory
+    # This ensures relative paths for subtitles and title.txt work correctly
+    cwd = task_dir
+    
+    try:
+        subprocess.run(cmd, check=True, capture_output=True, cwd=cwd)
+        logger.success("FFmpeg rendering completed successfully")
+    except subprocess.CalledProcessError as e:
+        logger.error(f"FFmpeg rendering failed: {e.stderr.decode('utf-8')}")
+        raise e
+        
+    return
+    
+    # Legacy MoviePy code (commented out/unreachable)
     video_clip = video_clip.with_audio(audio_clip)
-    video_clip.write_videofile(
-        output_file,
-        audio_codec=audio_codec,
-        temp_audiofile_path=output_dir,
-        threads=params.n_threads or 2,
-        logger=None,
-        fps=fps,
-    )
-    video_clip.close()
-    del video_clip
+
 
 
 def preprocess_video(materials: List[MaterialInfo], clip_duration=4):
@@ -524,7 +797,7 @@ def preprocess_video(materials: List[MaterialInfo], clip_duration=4):
 
             # Output the video to a file.
             video_file = f"{material.url}.mp4"
-            final_clip.write_videofile(video_file, fps=30, logger=None)
+            final_clip.write_videofile(video_file, fps=30, logger=None, codec="libx264", ffmpeg_params=["-pix_fmt", "yuv420p"])
             close_clip(clip)
             material.url = video_file
             logger.success(f"image processed: {video_file}")

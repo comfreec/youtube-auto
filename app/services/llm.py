@@ -11,8 +11,11 @@ from openai.types.chat import ChatCompletion
 
 from app.config import config
 
-_max_retries = 5
+_max_retries = 3
 
+
+import concurrent.futures
+import random
 
 def _generate_response(prompt: str) -> str:
     try:
@@ -20,13 +23,28 @@ def _generate_response(prompt: str) -> str:
         llm_provider = config.app.get("llm_provider", "openai")
         logger.info(f"llm provider: {llm_provider}")
         if llm_provider == "g4f":
-            model_name = config.app.get("g4f_model_name", "")
-            if not model_name:
-                model_name = "gpt-3.5-turbo-16k-0613"
-            content = g4f.ChatCompletion.create(
-                model=model_name,
-                messages=[{"role": "user", "content": prompt}],
-            )
+            try:
+                model_name = config.app.get("g4f_model_name", "")
+                if not model_name:
+                    model_name = "gpt-4o-mini"
+                
+                content = g4f.ChatCompletion.create(
+                    model=model_name,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+            except Exception as e:
+                logger.warning(f"g4f failed: {e}, falling back to pollinations")
+                # Fallback to Pollinations
+            try:
+                import urllib.parse
+                encoded_prompt = urllib.parse.quote(prompt)
+                url = f"https://text.pollinations.ai/{encoded_prompt}?seed={random.randint(100, 999999)}"
+                response = requests.get(url, timeout=60)
+                response.raise_for_status()
+                content = response.text
+            except Exception as e2:
+                     raise Exception(f"g4f and pollinations fallback failed: {str(e2)}")
+
         else:
             api_version = ""  # for azure
             if llm_provider == "moonshot":
@@ -91,59 +109,32 @@ def _generate_response(prompt: str) -> str:
                     )
             elif llm_provider == "pollinations":
                 try:
-                    base_url = config.app.get("pollinations_base_url", "")
-                    if not base_url:
-                        base_url = "https://text.pollinations.ai/openai"
                     model_name = config.app.get("pollinations_model_name", "openai-fast")
-                   
-                    # Prepare the payload
-                    payload = {
-                        "model": model_name,
-                        "messages": [
-                            {"role": "user", "content": prompt}
-                        ],
-                        "seed": 101  # Optional but helps with reproducibility
-                    }
-                    
-                    # Optional parameters if configured
-                    if config.app.get("pollinations_private"):
-                        payload["private"] = True
-                    if config.app.get("pollinations_referrer"):
-                        payload["referrer"] = config.app.get("pollinations_referrer")
-                    
-                    headers = {
-                        "Content-Type": "application/json"
-                    }
-                    
-                    # Make the API request
-                    response = requests.post(base_url, headers=headers, json=payload)
+                    sanitized_prompt = re.sub(r"[\r\n]+", " ", prompt).replace("#", " ")
+                    import urllib.parse
+                    encoded_prompt = urllib.parse.quote(sanitized_prompt)
+                    url = f"https://text.pollinations.ai/{encoded_prompt}?model={model_name}&seed={random.randint(100, 999999)}"
+                    response = requests.get(url, timeout=60)
                     response.raise_for_status()
-                    result = response.json()
-                    
-                    if result and "choices" in result and len(result["choices"]) > 0:
-                        content = result["choices"][0]["message"]["content"]
-                        return content.replace("\n", "")
-                    else:
-                        raise Exception(f"[{llm_provider}] returned an invalid response format")
-                        
-                except requests.exceptions.RequestException as e:
-                    raise Exception(f"[{llm_provider}] request failed: {str(e)}")
+                    content = response.text
+                    return content
                 except Exception as e:
                     raise Exception(f"[{llm_provider}] error: {str(e)}")
 
-            if llm_provider not in ["pollinations", "ollama"]:  # Skip validation for providers that don't require API key
-                if not api_key:
-                    raise ValueError(
-                        f"{llm_provider}: api_key is not set, please set it in the config.toml file."
-                    )
-                if not model_name:
-                    raise ValueError(
-                        f"{llm_provider}: model_name is not set, please set it in the config.toml file."
-                    )
-                if not base_url:
-                    raise ValueError(
-                        f"{llm_provider}: base_url is not set, please set it in the config.toml file."
-                    )
+            if llm_provider not in ["pollinations", "ollama"]:
+                if not api_key or not model_name or not base_url:
+                    try:
+                        model_name_ = config.app.get("pollinations_model_name", "openai-fast")
+                        sanitized_prompt = re.sub(r"[\r\n]+", " ", prompt).replace("#", " ")
+                        import urllib.parse
+                        encoded_prompt = urllib.parse.quote(sanitized_prompt)
+                        url = f"https://text.pollinations.ai/{encoded_prompt}?model={model_name_}"
+                        response = requests.get(url, timeout=60)
+                        response.raise_for_status()
+                        content = response.text
+                        return content
+                    except Exception as e:
+                        raise ValueError(f"{llm_provider}: missing credentials and pollinations failed: {str(e)}")
 
             if llm_provider == "qwen":
                 import dashscope
@@ -162,7 +153,7 @@ def _generate_response(prompt: str) -> str:
                             )
 
                         content = response["output"]["text"]
-                        return content.replace("\n", "")
+                        return content
                     else:
                         raise Exception(
                             f'[{llm_provider}] returned an invalid response: "{response}"'
@@ -297,7 +288,7 @@ def _generate_response(prompt: str) -> str:
                     if not content.strip():
                         raise ValueError("Empty content in stream response")
                     
-                    return content.replace("\n", "")
+                    return content
                 else:
                     raise Exception(f"[{llm_provider}] returned an empty response")
 
@@ -323,7 +314,7 @@ def _generate_response(prompt: str) -> str:
                     f"[{llm_provider}] returned an empty response, please check your network connection and try again."
                 )
 
-        return content.replace("\n", "")
+        return content
     except Exception as e:
         return f"Error: {str(e)}"
 
@@ -334,18 +325,19 @@ def generate_script(
     prompt = f"""
 # Role: Video Script Generator
 
-## Goals:
+# Goals:
 Generate a script for a video, depending on the subject of the video.
 
-## Constrains:
-1. the script is to be returned as a string with the specified number of paragraphs.
-2. do not under any circumstance reference this prompt in your response.
-3. get straight to the point, don't start with unnecessary things like, "welcome to this video".
-4. you must not include any type of markdown or formatting in the script, never use a title.
-5. only return the raw content of the script.
-6. do not include "voiceover", "narrator" or similar indicators of what should be spoken at the beginning of each paragraph or line.
-7. you must not mention the prompt, or anything about the script itself. also, never talk about the amount of paragraphs or lines. just write the script.
-8. respond in the same language as the video subject.
+# Constraints:
+1. the script should be helpful and informative.
+2. the script should be directly related to the subject.
+3. the script should not include any title.
+4. the script should be spoken by a narrator.
+5. the script should be clear and easy to understand.
+6. the script should be engaging and interesting.
+7. the script should not include any markdown.
+8. the script should not include any other characters.
+9. the script should not include any other information.
 
 # Initialization:
 - video subject: {video_subject}
@@ -353,6 +345,11 @@ Generate a script for a video, depending on the subject of the video.
 """.strip()
     if language:
         prompt += f"\n- language: {language}"
+
+    # Generate a random seed for the prompt to prevent caching
+    import uuid
+    random_seed_str = f"Request ID: {str(uuid.uuid4())[:8]}"
+    prompt += f"\n[{random_seed_str}]"
 
     final_script = ""
     logger.info(f"subject: {video_subject}")
@@ -371,10 +368,10 @@ Generate a script for a video, depending on the subject of the video.
         paragraphs = response.split("\n\n")
 
         # Select the specified number of paragraphs
-        # selected_paragraphs = paragraphs[:paragraph_number]
+        selected_paragraphs = paragraphs[:paragraph_number]
 
         # Join the selected paragraphs into a single string
-        return "\n\n".join(paragraphs)
+        return "\n\n".join(selected_paragraphs)
 
     for i in range(_max_retries):
         try:
@@ -395,11 +392,157 @@ Generate a script for a video, depending on the subject of the video.
 
         if i < _max_retries:
             logger.warning(f"failed to generate video script, trying again... {i + 1}")
-    if "Error: " in final_script:
-        logger.error(f"failed to generate video script: {final_script}")
-    else:
-        logger.success(f"completed: \n{final_script}")
+    if not final_script:
+        logger.error("failed to generate video script")
+        # return fallback script
+        if language and ("korea" in language.lower() or "한국" in language):
+             final_script = f"{video_subject}에 대해 이야기해 봅시다. 이것은 많은 사람들이 더 알고 싶어하는 흥미로운 주제입니다. {video_subject}에는 탐구할 만한 많은 측면이 있습니다. 이 영상에서는 {video_subject}의 기초에 대해 다룰 것입니다. {video_subject}에 대한 모든 것을 배우기 위해 계속 시청해 주세요."
+        else:
+             final_script = f"Let's talk about {video_subject}. This is an interesting topic that many people want to know more about. {video_subject} has many aspects worth exploring. In this video, we will cover the basics of {video_subject}. Stay tuned to learn all about {video_subject}."
+
+    logger.success(f"completed: \n{final_script}")
     return final_script.strip()
+
+
+
+def _fallback_visual_terms(video_subject: str, video_script: str, amount: int = 5) -> List[str]:
+    s = (video_subject or "") + " " + (video_script or "")
+    s = s.lower()
+    categories = [
+        ("finance", ["가격", "비트코인", "주식", "투자", "돈", "금리", "경제", "환율", "부자", "수익"]),
+        ("health", ["운동", "건강", "헬스", "피트니스", "다이어트", "의학", "병원", "영양"]),
+        ("travel", ["여행", "풍경", "관광", "도시", "바다", "산", "호텔"]),
+        ("tech", ["기술", "ai", "인공지능", "컴퓨터", "데이터", "로봇", "코딩"]),
+        ("education", ["교육", "공부", "학교", "학생", "강의", "시험"]),
+        ("nature", ["자연", "숲", "동물", "하늘", "해변", "바다", "산책"]),
+        ("business", ["사업", "회사", "비즈니스", "회의", "사무실", "스타트업"]),
+    ]
+    cat = "generic"
+    for name, tokens in categories:
+        if any(t in s for t in tokens):
+            cat = name
+            break
+    base = {
+        "finance": [
+            "stock market ticker",
+            "candlestick chart animation",
+            "city skyline at night",
+            "hands counting cash",
+            "businessman typing laptop",
+            "digital coin spinning",
+            "trading desk monitors",
+        ],
+        "health": [
+            "gym workout routine",
+            "runner on track",
+            "healthy meal preparation",
+            "yoga meditation pose",
+            "fitness trainer coaching",
+            "heart rate monitor",
+            "stretching exercise mat",
+        ],
+        "travel": [
+            "sunset beach waves",
+            "city street timelapse",
+            "mountain hiking trail",
+            "aerial skyline view",
+            "tourist taking photos",
+            "cozy hotel lobby",
+            "busy airport terminal",
+        ],
+        "tech": [
+            "coding on laptop",
+            "data center servers",
+            "robotic arm moving",
+            "neon circuit board",
+            "smartphone close up",
+            "developer typing keyboard",
+            "ai hologram interface",
+        ],
+        "education": [
+            "student writing notes",
+            "teacher in classroom",
+            "books on desk",
+            "online learning setup",
+            "library reading scene",
+            "whiteboard lecture",
+            "exam preparation study",
+        ],
+        "nature": [
+            "forest sunlight rays",
+            "river flowing stones",
+            "birds flying sky",
+            "green meadow wind",
+            "macro leaf dew",
+            "ocean wave splash",
+            "mountain clouds rolling",
+        ],
+        "business": [
+            "team meeting table",
+            "office handshake deal",
+            "presentation on screen",
+            "coworking space laptops",
+            "startup brainstorming notes",
+            "modern glass office",
+            "businesswoman phone call",
+        ],
+        "generic": [
+            "city street crowd",
+            "typing hands closeup",
+            "modern office interior",
+            "night skyline lights",
+            "abstract motion background",
+            "people walking corridor",
+            "tablet screen scrolling",
+        ],
+    }
+    terms = base.get(cat, base["generic"]).copy()
+    random.shuffle(terms)
+    return terms[:max(1, amount)]
+
+
+def _postprocess_terms(video_subject: str, terms: List[str], amount: int) -> List[str]:
+    cleaned = []
+    seen = set()
+    # Prepare normalized subject for comparison
+    subj = re.sub(r"[^A-Za-z\s]", " ", (video_subject or "")).strip().lower()
+    subj = re.sub(r"\s+", " ", subj)
+    for t in terms:
+        if not isinstance(t, str):
+            continue
+        x = t.strip()
+        if not x:
+            continue
+        x = x.replace("_", " ").replace("-", " ").strip()
+        x = re.sub(r"[^A-Za-z\\s]", " ", x)
+        x = re.sub(r"\\s+", " ", x).strip()
+        if not x:
+            continue
+        words = x.split(" ")
+        if len(words) > 5:
+            x = " ".join(words[:5])
+        if len(x) < 3:
+            continue
+        key = x.lower()
+        # Exclude terms equal to normalized subject
+        if subj and key == subj:
+            continue
+        if key in seen:
+            continue
+        seen.add(key)
+        cleaned.append(x)
+        if len(cleaned) >= amount:
+            break
+    if len(cleaned) < amount:
+        fallback = _fallback_visual_terms(video_subject, "", amount - len(cleaned))
+        for f in fallback:
+            k = f.lower().strip()
+            if k and k not in seen:
+                cleaned.append(f)
+                seen.add(k)
+                if len(cleaned) >= amount:
+                    break
+    return cleaned[:amount]
 
 
 def generate_terms(video_subject: str, video_script: str, amount: int = 5) -> List[str]:
@@ -407,17 +550,14 @@ def generate_terms(video_subject: str, video_script: str, amount: int = 5) -> Li
 # Role: Video Search Terms Generator
 
 ## Goals:
-Generate {amount} search terms for stock videos, depending on the subject of a video.
+Generate {amount} search terms for stock videos, based on the subject and script of a video.
 
-## Constrains:
-1. the search terms are to be returned as a json-array of strings.
-2. each search term should consist of 1-3 words, always add the main subject of the video.
-3. you must only return the json-array of strings. you must not return anything else. you must not return the script.
-4. the search terms must be related to the subject of the video.
-5. reply with english search terms only.
-
-## Output Example:
-["search term 1", "search term 2", "search term 3","search term 4","search term 5"]
+## Constraints:
+1. Return a JSON-array of strings. Example: ["term1", "term2", "term3"]
+2. Each search term must be a concrete VISUAL description (3-5 words) in English.
+3. Do NOT use abstract concepts. Describe what can be SEEN.
+4. Ensure the visual descriptions match the video subject: "{video_subject}".
+5. Return ONLY the JSON-array. No other text.
 
 ## Context:
 ### Video Subject
@@ -425,8 +565,6 @@ Generate {amount} search terms for stock videos, depending on the subject of a v
 
 ### Video Script
 {video_script}
-
-Please note that you must use English for generating video search terms; Chinese is not accepted.
 """.strip()
 
     logger.info(f"subject: {video_subject}")
@@ -437,33 +575,37 @@ Please note that you must use English for generating video search terms; Chinese
         try:
             response = _generate_response(prompt)
             if "Error: " in response:
-                logger.error(f"failed to generate video script: {response}")
-                return response
-            search_terms = json.loads(response)
+                logger.warning(f"failed to generate video terms: {response}")
+                continue
+            
+            try:
+                search_terms = json.loads(response)
+            except:
+                # Try to find JSON-like array in the text
+                match = re.search(r"\[.*\]", response)
+                if match:
+                    search_terms = json.loads(match.group())
+                else:
+                    logger.warning(f"Could not parse JSON from response: {response}")
+                    continue
+
             if not isinstance(search_terms, list) or not all(
                 isinstance(term, str) for term in search_terms
             ):
                 logger.error("response is not a list of strings.")
                 continue
+            
+            return _postprocess_terms(video_subject, search_terms, amount)
 
         except Exception as e:
             logger.warning(f"failed to generate video terms: {str(e)}")
-            if response:
-                match = re.search(r"\[.*]", response)
-                if match:
-                    try:
-                        search_terms = json.loads(match.group())
-                    except Exception as e:
-                        logger.warning(f"failed to generate video terms: {str(e)}")
-                        pass
-
-        if search_terms and len(search_terms) > 0:
-            break
-        if i < _max_retries:
-            logger.warning(f"failed to generate video terms, trying again... {i + 1}")
-
-    logger.success(f"completed: \n{search_terms}")
-    return search_terms
+            continue
+    
+    use_fallback = config.ui.get("terms_fallback_enabled", True)
+    if use_fallback:
+        logger.warning("Generating fallback terms due to LLM failure")
+        return _fallback_visual_terms(video_subject, video_script, amount)
+    return []
 
 
 if __name__ == "__main__":

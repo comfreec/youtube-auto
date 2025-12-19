@@ -1,6 +1,8 @@
 import os
 import platform
 import sys
+import time
+import concurrent.futures
 from uuid import uuid4
 
 import streamlit as st
@@ -15,6 +17,7 @@ if root_dir not in sys.path:
     print("")
 
 from app.config import config
+from app.models import const
 from app.models.schema import (
     MaterialInfo,
     VideoAspect,
@@ -24,28 +27,150 @@ from app.models.schema import (
 )
 from app.services import llm, voice
 from app.services import task as tm
+from app.services import state as sm
 from app.utils import utils
 
 st.set_page_config(
-    page_title="MoneyPrinterTurbo",
-    page_icon="🤖",
+    page_title="유튜브 영상 자동생성기",
+    page_icon="📹",
     layout="wide",
-    initial_sidebar_state="auto",
+    initial_sidebar_state="collapsed",
     menu_items={
         "Report a bug": "https://github.com/harry0703/MoneyPrinterTurbo/issues",
-        "About": "# MoneyPrinterTurbo\nSimply provide a topic or keyword for a video, and it will "
-        "automatically generate the video copy, video materials, video subtitles, "
-        "and video background music before synthesizing a high-definition short "
-        "video.\n\nhttps://github.com/harry0703/MoneyPrinterTurbo",
+        "About": "# 유튜브 영상 자동생성기\n\nAI 기반 자동 영상 생성 도구입니다.",
     },
 )
 
 
 streamlit_style = """
 <style>
-h1 {
-    padding-top: 0 !important;
-}
+    @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+    
+    /* Base App Settings - Light Mode */
+    :root { color-scheme: light; }
+    .stApp { 
+        background-color: #ffffff; 
+        color: #31333F; 
+        font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; 
+    }
+    
+    /* Headings */
+    h1 { 
+        font-family: 'Pretendard'; 
+        font-weight: 900; 
+        background: linear-gradient(90deg, #FF3CAC 0%, #784BA0 50%, #2B86C5 100%); 
+        -webkit-background-clip: text; 
+        -webkit-text-fill-color: transparent; 
+        letter-spacing: -1px; 
+        padding-bottom: 20px; 
+        text-align: left; 
+    }
+    h2, h3, h4, h5, h6 { color: #31333F !important; font-weight: 700; }
+    
+    /* Text Color Overrides to ensure visibility on white */
+    body, .stApp, .stMarkdown, p, label, span, div { color: #31333F !important; }
+    .stTextInput label, .stTextArea label, .stSelectbox label, .stSlider label, .stCheckbox label, .stRadio label { color: #31333F !important; }
+    
+    /* Tabs */
+    .stTabs [data-baseweb="tab-list"] { gap: 24px; background-color: transparent; }
+    .stTabs [data-baseweb="tab"] { 
+        height: 50px; 
+        white-space: pre-wrap; 
+        background-color: transparent; 
+        border-radius: 4px 4px 0 0; 
+        gap: 1px; 
+        padding-top: 10px; 
+        padding-bottom: 10px; 
+        color: #888888; 
+        font-weight: 600; 
+    }
+    .stTabs [aria-selected="true"] { 
+        background-color: transparent; 
+        color: #31333F !important; 
+        border-bottom: 2px solid #FF3CAC; 
+    }
+    
+    /* Containers */
+    div[data-testid="stVerticalBlockBorderWrapper"] { 
+        background-color: #f8f9fa; 
+        border-radius: 12px; 
+        padding: 20px; 
+        border: 1px solid #dee2e6; 
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); 
+    }
+    
+    /* Inputs, TextAreas, SelectBoxes */
+    .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] { 
+        background-color: #ffffff !important; 
+        color: #31333F !important; 
+        border: 1px solid #ced4da !important; 
+        border-radius: 8px !important; 
+    }
+    .stTextInput input::placeholder, .stTextArea textarea::placeholder { color: #adb5bd !important; }
+    .stTextInput input:focus, .stTextArea textarea:focus, .stSelectbox div[data-baseweb="select"]:focus-within { 
+        border-color: #FF3CAC !important; 
+        box-shadow: 0 0 0 1px #FF3CAC !important; 
+    }
+    
+    /* Dropdowns & Options - Clean White Theme */
+    div[data-baseweb="popover"], div[data-baseweb="menu"], ul[data-baseweb="menu"] {
+        background-color: #ffffff !important;
+        border: 1px solid #e0e0e0 !important;
+    }
+    li[data-baseweb="option"], div[data-baseweb="option"] {
+        background-color: #ffffff !important;
+        color: #31333F !important;
+    }
+    li[data-baseweb="option"] *, div[data-baseweb="option"] * {
+        color: #31333F !important;
+    }
+    li[data-baseweb="option"]:hover, li[data-baseweb="option"][aria-selected="true"],
+    div[data-baseweb="option"]:hover, div[data-baseweb="option"][aria-selected="true"] {
+        background-color: #FF3CAC !important;
+        color: #ffffff !important;
+    }
+    li[data-baseweb="option"]:hover *, li[data-baseweb="option"][aria-selected="true"] *,
+    div[data-baseweb="option"]:hover *, div[data-baseweb="option"][aria-selected="true"] * {
+        color: #ffffff !important;
+    }
+
+    /* Buttons */
+    .stButton > button {
+        background-color: #ffffff !important;
+        color: #31333F !important;
+        border: 1px solid #ced4da !important;
+    }
+    .stButton > button:hover {
+        border-color: #FF3CAC !important;
+        color: #FF3CAC !important;
+    }
+    .stButton button[kind="primary"] { 
+        background: linear-gradient(90deg, #FF3CAC 0%, #784BA0 100%) !important; 
+        border: none !important; 
+        color: white !important; 
+        font-weight: bold; 
+        padding: 0.75rem 2rem; 
+        border-radius: 30px; 
+        transition: transform 0.2s, box-shadow 0.2s; 
+    }
+    .stButton button[kind="primary"]:hover { 
+        transform: scale(1.05); 
+        box-shadow: 0 0 20px rgba(255, 60, 172, 0.5); 
+    }
+    
+    /* Sidebar */
+    section[data-testid="stSidebar"] { 
+        background-color: #f0f2f6; 
+        border-right: 1px solid #dee2e6; 
+    }
+    .streamlit-expanderHeader { 
+        background-color: #f8f9fa !important; 
+        color: #31333F !important; 
+        border-radius: 8px; 
+    }
+    
+    /* Input caret color */
+    input, textarea { caret-color: #FF3CAC !important; }
 </style>
 """
 st.markdown(streamlit_style, unsafe_allow_html=True)
@@ -67,36 +192,18 @@ if "video_terms" not in st.session_state:
 if "ui_language" not in st.session_state:
     st.session_state["ui_language"] = config.ui.get("language", system_locale)
 
-# 加载语言文件
+# 로케일 로드 (유지)
 locales = utils.load_locales(i18n_dir)
 
-# 创建一个顶部栏，包含标题和语言选择
-title_col, lang_col = st.columns([3, 1])
+# 언어 설정 강제 고정 (한국어)
+st.session_state["ui_language"] = "ko-KR"
+config.ui["language"] = "ko-KR"
 
-with title_col:
-    st.title(f"MoneyPrinterTurbo v{config.project_version}")
-
-with lang_col:
-    display_languages = []
-    selected_index = 0
-    for i, code in enumerate(locales.keys()):
-        display_languages.append(f"{code} - {locales[code].get('Language')}")
-        if code == st.session_state.get("ui_language", ""):
-            selected_index = i
-
-    selected_language = st.selectbox(
-        "Language / 语言",
-        options=display_languages,
-        index=selected_index,
-        key="top_language_selector",
-        label_visibility="collapsed",
-    )
-    if selected_language:
-        code = selected_language.split(" - ")[0].strip()
-        st.session_state["ui_language"] = code
-        config.ui["language"] = code
+# 타이틀만 표시 (언어 선택 컬럼 제거)
+st.title("유튜브 영상 자동생성기")
 
 support_locales = [
+    "ko-KR",
     "zh-CN",
     "zh-HK",
     "zh-TW",
@@ -200,569 +307,335 @@ def tr(key):
     return loc.get("Translation", {}).get(key, key)
 
 
-# 创建基础设置折叠框
-if not config.app.get("hide_config", False):
-    with st.expander(tr("Basic Settings"), expanded=False):
-        config_panels = st.columns(3)
-        left_config_panel = config_panels[0]
-        middle_config_panel = config_panels[1]
-        right_config_panel = config_panels[2]
+# Legacy settings removed - migrated to Tabs
 
-        # 左侧面板 - 日志设置
-        with left_config_panel:
-            # 是否隐藏配置面板
-            hide_config = st.checkbox(
-                tr("Hide Basic Settings"), value=config.app.get("hide_config", False)
-            )
-            config.app["hide_config"] = hide_config
-
-            # 是否禁用日志显示
-            hide_log = st.checkbox(
-                tr("Hide Log"), value=config.ui.get("hide_log", False)
-            )
-            config.ui["hide_log"] = hide_log
-
-        # 中间面板 - LLM 设置
-
-        with middle_config_panel:
-            st.write(tr("LLM Settings"))
-            llm_providers = [
-                "OpenAI",
-                "Moonshot",
-                "Azure",
-                "Qwen",
-                "DeepSeek",
-                "ModelScope",
-                "Gemini",
-                "Ollama",
-                "G4f",
-                "OneAPI",
-                "Cloudflare",
-                "ERNIE",
-                "Pollinations",
-            ]
-            saved_llm_provider = config.app.get("llm_provider", "OpenAI").lower()
-            saved_llm_provider_index = 0
-            for i, provider in enumerate(llm_providers):
-                if provider.lower() == saved_llm_provider:
-                    saved_llm_provider_index = i
-                    break
-
-            llm_provider = st.selectbox(
-                tr("LLM Provider"),
-                options=llm_providers,
-                index=saved_llm_provider_index,
-            )
-            llm_helper = st.container()
-            llm_provider = llm_provider.lower()
-            config.app["llm_provider"] = llm_provider
-
-            llm_api_key = config.app.get(f"{llm_provider}_api_key", "")
-            llm_secret_key = config.app.get(
-                f"{llm_provider}_secret_key", ""
-            )  # only for baidu ernie
-            llm_base_url = config.app.get(f"{llm_provider}_base_url", "")
-            llm_model_name = config.app.get(f"{llm_provider}_model_name", "")
-            llm_account_id = config.app.get(f"{llm_provider}_account_id", "")
-
-            tips = ""
-            if llm_provider == "ollama":
-                if not llm_model_name:
-                    llm_model_name = "qwen:7b"
-                if not llm_base_url:
-                    llm_base_url = "http://localhost:11434/v1"
-
-                with llm_helper:
-                    tips = """
-                            ##### Ollama配置说明
-                            - **API Key**: 随便填写，比如 123
-                            - **Base Url**: 一般为 http://localhost:11434/v1
-                                - 如果 `MoneyPrinterTurbo` 和 `Ollama` **不在同一台机器上**，需要填写 `Ollama` 机器的IP地址
-                                - 如果 `MoneyPrinterTurbo` 是 `Docker` 部署，建议填写 `http://host.docker.internal:11434/v1`
-                            - **Model Name**: 使用 `ollama list` 查看，比如 `qwen:7b`
-                            """
-
-            if llm_provider == "openai":
-                if not llm_model_name:
-                    llm_model_name = "gpt-3.5-turbo"
-                with llm_helper:
-                    tips = """
-                            ##### OpenAI 配置说明
-                            > 需要VPN开启全局流量模式
-                            - **API Key**: [点击到官网申请](https://platform.openai.com/api-keys)
-                            - **Base Url**: 可以留空
-                            - **Model Name**: 填写**有权限**的模型，[点击查看模型列表](https://platform.openai.com/settings/organization/limits)
-                            """
-
-            if llm_provider == "moonshot":
-                if not llm_model_name:
-                    llm_model_name = "moonshot-v1-8k"
-                with llm_helper:
-                    tips = """
-                            ##### Moonshot 配置说明
-                            - **API Key**: [点击到官网申请](https://platform.moonshot.cn/console/api-keys)
-                            - **Base Url**: 固定为 https://api.moonshot.cn/v1
-                            - **Model Name**: 比如 moonshot-v1-8k，[点击查看模型列表](https://platform.moonshot.cn/docs/intro#%E6%A8%A1%E5%9E%8B%E5%88%97%E8%A1%A8)
-                            """
-            if llm_provider == "oneapi":
-                if not llm_model_name:
-                    llm_model_name = (
-                        "claude-3-5-sonnet-20240620"  # 默认模型，可以根据需要调整
-                    )
-                with llm_helper:
-                    tips = """
-                        ##### OneAPI 配置说明
-                        - **API Key**: 填写您的 OneAPI 密钥
-                        - **Base Url**: 填写 OneAPI 的基础 URL
-                        - **Model Name**: 填写您要使用的模型名称，例如 claude-3-5-sonnet-20240620
-                        """
-
-            if llm_provider == "qwen":
-                if not llm_model_name:
-                    llm_model_name = "qwen-max"
-                with llm_helper:
-                    tips = """
-                            ##### 通义千问Qwen 配置说明
-                            - **API Key**: [点击到官网申请](https://dashscope.console.aliyun.com/apiKey)
-                            - **Base Url**: 留空
-                            - **Model Name**: 比如 qwen-max，[点击查看模型列表](https://help.aliyun.com/zh/dashscope/developer-reference/model-introduction#3ef6d0bcf91wy)
-                            """
-
-            if llm_provider == "g4f":
-                if not llm_model_name:
-                    llm_model_name = "gpt-3.5-turbo"
-                with llm_helper:
-                    tips = """
-                            ##### gpt4free 配置说明
-                            > [GitHub开源项目](https://github.com/xtekky/gpt4free)，可以免费使用GPT模型，但是**稳定性较差**
-                            - **API Key**: 随便填写，比如 123
-                            - **Base Url**: 留空
-                            - **Model Name**: 比如 gpt-3.5-turbo，[点击查看模型列表](https://github.com/xtekky/gpt4free/blob/main/g4f/models.py#L308)
-                            """
-            if llm_provider == "azure":
-                with llm_helper:
-                    tips = """
-                            ##### Azure 配置说明
-                            > [点击查看如何部署模型](https://learn.microsoft.com/zh-cn/azure/ai-services/openai/how-to/create-resource)
-                            - **API Key**: [点击到Azure后台创建](https://portal.azure.com/#view/Microsoft_Azure_ProjectOxford/CognitiveServicesHub/~/OpenAI)
-                            - **Base Url**: 留空
-                            - **Model Name**: 填写你实际的部署名
-                            """
-
-            if llm_provider == "gemini":
-                if not llm_model_name:
-                    llm_model_name = "gemini-1.0-pro"
-
-                with llm_helper:
-                    tips = """
-                            ##### Gemini 配置说明
-                            > 需要VPN开启全局流量模式
-                            - **API Key**: [点击到官网申请](https://ai.google.dev/)
-                            - **Base Url**: 留空
-                            - **Model Name**: 比如 gemini-1.0-pro
-                            """
-
-            if llm_provider == "deepseek":
-                if not llm_model_name:
-                    llm_model_name = "deepseek-chat"
-                if not llm_base_url:
-                    llm_base_url = "https://api.deepseek.com"
-                with llm_helper:
-                    tips = """
-                            ##### DeepSeek 配置说明
-                            - **API Key**: [点击到官网申请](https://platform.deepseek.com/api_keys)
-                            - **Base Url**: 固定为 https://api.deepseek.com
-                            - **Model Name**: 固定为 deepseek-chat
-                            """
-
-            if llm_provider == "modelscope":
-                if not llm_model_name:
-                    llm_model_name = "Qwen/Qwen3-32B"
-                if not llm_base_url:
-                    llm_base_url = "https://api-inference.modelscope.cn/v1/"
-                with llm_helper:
-                    tips = """
-                            ##### ModelScope 配置说明
-                            - **API Key**: [点击到官网申请](https://modelscope.cn/docs/model-service/API-Inference/intro)
-                            - **Base Url**: 固定为 https://api-inference.modelscope.cn/v1/
-                            - **Model Name**: 比如 Qwen/Qwen3-32B，[点击查看模型列表](https://modelscope.cn/models?filter=inference_type&page=1)
-                            """
-
-            if llm_provider == "ernie":
-                with llm_helper:
-                    tips = """
-                            ##### 百度文心一言 配置说明
-                            - **API Key**: [点击到官网申请](https://console.bce.baidu.com/qianfan/ais/console/applicationConsole/application)
-                            - **Secret Key**: [点击到官网申请](https://console.bce.baidu.com/qianfan/ais/console/applicationConsole/application)
-                            - **Base Url**: 填写 **请求地址** [点击查看文档](https://cloud.baidu.com/doc/WENXINWORKSHOP/s/jlil56u11#%E8%AF%B7%E6%B1%82%E8%AF%B4%E6%98%8E)
-                            """
-
-            if llm_provider == "pollinations":
-                if not llm_model_name:
-                    llm_model_name = "default"
-                with llm_helper:
-                    tips = """
-                            ##### Pollinations AI Configuration
-                            - **API Key**: Optional - Leave empty for public access
-                            - **Base Url**: Default is https://text.pollinations.ai/openai
-                            - **Model Name**: Use 'openai-fast' or specify a model name
-                            """
-
-            if tips and config.ui["language"] == "zh":
-                st.warning(
-                    "中国用户建议使用 **DeepSeek** 或 **Moonshot** 作为大模型提供商\n- 国内可直接访问，不需要VPN \n- 注册就送额度，基本够用"
-                )
-                st.info(tips)
-
-            st_llm_api_key = st.text_input(
-                tr("API Key"), value=llm_api_key, type="password"
-            )
-            st_llm_base_url = st.text_input(tr("Base Url"), value=llm_base_url)
-            st_llm_model_name = ""
-            if llm_provider != "ernie":
-                st_llm_model_name = st.text_input(
-                    tr("Model Name"),
-                    value=llm_model_name,
-                    key=f"{llm_provider}_model_name_input",
-                )
-                if st_llm_model_name:
-                    config.app[f"{llm_provider}_model_name"] = st_llm_model_name
-            else:
-                st_llm_model_name = None
-
-            if st_llm_api_key:
-                config.app[f"{llm_provider}_api_key"] = st_llm_api_key
-            if st_llm_base_url:
-                config.app[f"{llm_provider}_base_url"] = st_llm_base_url
-            if st_llm_model_name:
-                config.app[f"{llm_provider}_model_name"] = st_llm_model_name
-            if llm_provider == "ernie":
-                st_llm_secret_key = st.text_input(
-                    tr("Secret Key"), value=llm_secret_key, type="password"
-                )
-                config.app[f"{llm_provider}_secret_key"] = st_llm_secret_key
-
-            if llm_provider == "cloudflare":
-                st_llm_account_id = st.text_input(
-                    tr("Account ID"), value=llm_account_id
-                )
-                if st_llm_account_id:
-                    config.app[f"{llm_provider}_account_id"] = st_llm_account_id
-
-        # 右侧面板 - API 密钥设置
-        with right_config_panel:
-
-            def get_keys_from_config(cfg_key):
-                api_keys = config.app.get(cfg_key, [])
-                if isinstance(api_keys, str):
-                    api_keys = [api_keys]
-                api_key = ", ".join(api_keys)
-                return api_key
-
-            def save_keys_to_config(cfg_key, value):
-                value = value.replace(" ", "")
-                if value:
-                    config.app[cfg_key] = value.split(",")
-
-            st.write(tr("Video Source Settings"))
-
-            pexels_api_key = get_keys_from_config("pexels_api_keys")
-            pexels_api_key = st.text_input(
-                tr("Pexels API Key"), value=pexels_api_key, type="password"
-            )
-            save_keys_to_config("pexels_api_keys", pexels_api_key)
-
-            pixabay_api_key = get_keys_from_config("pixabay_api_keys")
-            pixabay_api_key = st.text_input(
-                tr("Pixabay API Key"), value=pixabay_api_key, type="password"
-            )
-            save_keys_to_config("pixabay_api_keys", pixabay_api_key)
 
 llm_provider = config.app.get("llm_provider", "").lower()
-panel = st.columns(3)
-left_panel = panel[0]
-middle_panel = panel[1]
-right_panel = panel[2]
 
+# --- REFACTORED LAYOUT: TABS ---
 params = VideoParams(video_subject="")
 uploaded_files = []
 
-with left_panel:
+# Create Tabs
+tab1, tab2, tab3, tab4 = st.tabs(["대본 및 기획", "영상 및 오디오 설정", "자막 및 스타일", "시스템 및 API 설정"])
+
+# --- TAB 1: SCRIPT ---
+with tab1:
     with st.container(border=True):
-        st.write(tr("Video Script Settings"))
+        st.write("**영상 대본 설정**")
         params.video_subject = st.text_input(
-            tr("Video Subject"),
+            "영상 주제 (키워드를 입력하면 :red[AI가 자동으로] 대본을 생성합니다)",
             value=st.session_state["video_subject"],
             key="video_subject_input",
         ).strip()
 
-        video_languages = [
-            (tr("Auto Detect"), ""),
-        ]
-        for code in support_locales:
-            video_languages.append((code, code))
-
-        selected_index = st.selectbox(
-            tr("Script Language"),
-            index=0,
-            options=range(
-                len(video_languages)
-            ),  # Use the index as the internal option value
-            format_func=lambda x: video_languages[x][
-                0
-            ],  # The label is displayed to the user
+        # Script Language UI Removed - Forced to Korean
+        params.video_language = "ko-KR"
+        auto_script_enabled = st.checkbox(
+            "제목 기반 실시간 대본 자동 생성", value=config.ui.get("auto_script_enabled", True)
         )
-        params.video_language = video_languages[selected_index][1]
+        config.ui["auto_script_enabled"] = auto_script_enabled
+        if auto_script_enabled:
+            subject_changed = (
+                params.video_subject
+                and params.video_subject != st.session_state.get("last_auto_subject", "")
+            )
+            now_ts = time.time()
+            last_ts = st.session_state.get("last_auto_ts", 0.0)
+            can_trigger = now_ts - last_ts > 1.0 and len(params.video_subject) >= 4
+            if subject_changed and can_trigger:
+                progress_bar = st.progress(0)
+                status_text = st.empty()
+                
+                status_text.text("AI가 제목을 기반으로 대본을 생성 중입니다... (10%)")
+                progress_bar.progress(10)
+                
+                script = llm.generate_script(
+                    video_subject=params.video_subject,
+                    language=params.video_language,
+                    paragraph_number=4,
+                )
+                
+                status_text.text("대본 생성 완료. 키워드를 생성 중입니다... (50%)")
+                progress_bar.progress(50)
+                
+                terms = llm.generate_terms(params.video_subject, script)
+                
+                status_text.text("생성 완료! (100%)")
+                progress_bar.progress(100)
+                time.sleep(0.5)
+                status_text.empty()
+                progress_bar.empty()
+
+                if isinstance(script, str) and "Error: " not in script:
+                    st.session_state["video_script"] = script
+                    if isinstance(terms, list):
+                        st.session_state["video_terms"] = ", ".join(terms)
+                    st.session_state["last_auto_subject"] = params.video_subject
+                    st.session_state["last_auto_ts"] = now_ts
 
         if st.button(
-            tr("Generate Video Script and Keywords"), key="auto_generate_script"
+            "클릭하여 **주제**를 기반으로 [영상 대본] 및 [영상 키워드] 생성", key="auto_generate_script"
         ):
-            with st.spinner(tr("Generating Video Script and Keywords")):
-                script = llm.generate_script(
-                    video_subject=params.video_subject, language=params.video_language
-                )
-                terms = llm.generate_terms(params.video_subject, script)
-                if "Error: " in script:
-                    st.error(tr(script))
-                elif "Error: " in terms:
-                    st.error(tr(terms))
-                else:
-                    st.session_state["video_script"] = script
-                    st.session_state["video_terms"] = ", ".join(terms)
-        params.video_script = st.text_area(
-            tr("Video Script"), value=st.session_state["video_script"], height=280
-        )
-        if st.button(tr("Generate Video Keywords"), key="auto_generate_terms"):
-            if not params.video_script:
-                st.error(tr("Please Enter the Video Subject"))
-                st.stop()
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+            
+            status_text.text("AI가 영상 대본을 생성 중입니다... (10%)")
+            progress_bar.progress(10)
+            
+            script = llm.generate_script(
+                video_subject=params.video_subject,
+                language=params.video_language,
+                paragraph_number=4,
+            )
+            
+            status_text.text("영상 대본 생성 완료. 키워드를 생성 중입니다... (50%)")
+            progress_bar.progress(50)
+            
+            terms = llm.generate_terms(params.video_subject, script)
+            
+            status_text.text("생성 완료! (100%)")
+            progress_bar.progress(100)
+            time.sleep(0.5)
+            status_text.empty()
+            progress_bar.empty()
 
-            with st.spinner(tr("Generating Video Keywords")):
-                terms = llm.generate_terms(params.video_subject, params.video_script)
-                if "Error: " in terms:
-                    st.error(tr(terms))
-                else:
-                    st.session_state["video_terms"] = ", ".join(terms)
+            if "Error: " in script:
+                st.error(tr(script))
+            elif "Error: " in terms:
+                st.error(tr(terms))
+            else:
+                st.session_state["video_script"] = script
+                st.session_state["video_terms"] = ", ".join(terms)
+        params.video_script = st.text_area(
+            "영상 대본 (:blue[① 선택 사항, AI 생성  ② 올바른 구두점은 자막 생성에 도움이 됩니다])", value=st.session_state["video_script"], height=280
+        )
+        # Removed "Generate Video Keywords" button as per user request to simplify UI
+        # if st.button(tr("Generate Video Keywords"), key="auto_generate_terms"):
+        #     if not params.video_script:
+        #         st.error(tr("Please Enter the Video Subject"))
+        #         st.stop()
+        #
+        #     with st.spinner(tr("Generating Video Keywords")):
+        #         terms = llm.generate_terms(params.video_subject, params.video_script)
+        #         if "Error: " in terms:
+        #             st.error(tr(terms))
+        #         else:
+        #             st.session_state["video_terms"] = ", ".join(terms)
 
         params.video_terms = st.text_area(
-            tr("Video Keywords"), value=st.session_state["video_terms"]
+            "영상 키워드 (:blue[① 선택 사항, AI 생성 ② **영문 쉼표**로 구분, 영어만 가능])", value=st.session_state["video_terms"]
         )
 
-with middle_panel:
-    with st.container(border=True):
-        st.write(tr("Video Settings"))
-        video_concat_modes = [
-            (tr("Sequential"), "sequential"),
-            (tr("Random"), "random"),
-        ]
-        video_sources = [
-            (tr("Pexels"), "pexels"),
-            (tr("Pixabay"), "pixabay"),
-            (tr("Local file"), "local"),
-            (tr("TikTok"), "douyin"),
-            (tr("Bilibili"), "bilibili"),
-            (tr("Xiaohongshu"), "xiaohongshu"),
-        ]
+# --- TAB 2: VIDEO & AUDIO ---
+with tab2:
+    col_video, col_audio = st.columns(2)
+    
+    # Left Column: Video Settings
+    with col_video:
+        with st.container(border=True):
+            st.write("**영상 설정**")
+            video_concat_modes = [
+                ("순차 연결", "sequential"),
+                ("무작위 연결 (권장)", "random"),
+            ]
+            video_sources = [
+                ("Pexels", "pexels"),
+                ("Pixabay", "pixabay"),
+                ("로컬 파일", "local"),
+                ("TikTok", "douyin"),
+                ("Bilibili", "bilibili"),
+                ("Xiaohongshu", "xiaohongshu"),
+            ]
 
-        saved_video_source_name = config.app.get("video_source", "pexels")
-        saved_video_source_index = [v[1] for v in video_sources].index(
-            saved_video_source_name
-        )
-
-        selected_index = st.selectbox(
-            tr("Video Source"),
-            options=range(len(video_sources)),
-            format_func=lambda x: video_sources[x][0],
-            index=saved_video_source_index,
-        )
-        params.video_source = video_sources[selected_index][1]
-        config.app["video_source"] = params.video_source
-
-        if params.video_source == "local":
-            uploaded_files = st.file_uploader(
-                "Upload Local Files",
-                type=["mp4", "mov", "avi", "flv", "mkv", "jpg", "jpeg", "png"],
-                accept_multiple_files=True,
+            default_source = "local"
+            try:
+                if config.app.get("pexels_api_keys"):
+                    default_source = "pexels"
+                elif config.app.get("pixabay_api_keys"):
+                    default_source = "pixabay"
+            except Exception:
+                default_source = "local"
+            saved_video_source_name = config.app.get("video_source", default_source)
+            saved_video_source_index = [v[1] for v in video_sources].index(
+                saved_video_source_name
             )
 
-        selected_index = st.selectbox(
-            tr("Video Concat Mode"),
-            index=1,
-            options=range(
-                len(video_concat_modes)
-            ),  # Use the index as the internal option value
-            format_func=lambda x: video_concat_modes[x][
-                0
-            ],  # The label is displayed to the user
-        )
-        params.video_concat_mode = VideoConcatMode(
-            video_concat_modes[selected_index][1]
-        )
+            selected_index = st.selectbox(
+                "영상 소스",
+                options=range(len(video_sources)),
+                format_func=lambda x: video_sources[x][0],
+                index=saved_video_source_index,
+            )
+            params.video_source = video_sources[selected_index][1]
+            config.app["video_source"] = params.video_source
 
-        # 视频转场模式
-        video_transition_modes = [
-            (tr("None"), VideoTransitionMode.none.value),
-            (tr("Shuffle"), VideoTransitionMode.shuffle.value),
-            (tr("FadeIn"), VideoTransitionMode.fade_in.value),
-            (tr("FadeOut"), VideoTransitionMode.fade_out.value),
-            (tr("SlideIn"), VideoTransitionMode.slide_in.value),
-            (tr("SlideOut"), VideoTransitionMode.slide_out.value),
-        ]
-        selected_index = st.selectbox(
-            tr("Video Transition Mode"),
-            options=range(len(video_transition_modes)),
-            format_func=lambda x: video_transition_modes[x][0],
-            index=0,
-        )
-        params.video_transition_mode = VideoTransitionMode(
-            video_transition_modes[selected_index][1]
-        )
+            if params.video_source == "local":
+                st.info("로컬 파일 모드: 파일을 업로드하지 않아도 기본 배경으로 생성됩니다. 업로드하면 해당 파일을 사용합니다.")
+                uploaded_files = st.file_uploader(
+                    "로컬 파일 업로드",
+                    type=["mp4", "mov", "avi", "flv", "mkv", "jpg", "jpeg", "png"],
+                    accept_multiple_files=True,
+                )
 
-        video_aspect_ratios = [
-            (tr("Portrait"), VideoAspect.portrait.value),
-            (tr("Landscape"), VideoAspect.landscape.value),
-        ]
-        selected_index = st.selectbox(
-            tr("Video Ratio"),
-            options=range(
-                len(video_aspect_ratios)
-            ),  # Use the index as the internal option value
-            format_func=lambda x: video_aspect_ratios[x][
-                0
-            ],  # The label is displayed to the user
-        )
-        params.video_aspect = VideoAspect(video_aspect_ratios[selected_index][1])
+            selected_index = st.selectbox(
+                "영상 연결 모드",
+                index=1,
+                options=range(
+                    len(video_concat_modes)
+                ),  # Use the index as the internal option value
+                format_func=lambda x: video_concat_modes[x][
+                    0
+                ],  # The label is displayed to the user
+            )
+            params.video_concat_mode = VideoConcatMode(
+                video_concat_modes[selected_index][1]
+            )
 
-        params.video_clip_duration = st.selectbox(
-            tr("Clip Duration"), options=[2, 3, 4, 5, 6, 7, 8, 9, 10], index=1
-        )
-        params.video_count = st.selectbox(
-            tr("Number of Videos Generated Simultaneously"),
-            options=[1, 2, 3, 4, 5],
-            index=0,
-        )
-    with st.container(border=True):
-        st.write(tr("Audio Settings"))
+            # Video Transition Mode
+            video_transition_modes = [
+                ("없음", VideoTransitionMode.none.value),
+                ("무작위", VideoTransitionMode.shuffle.value),
+                ("페이드 인", VideoTransitionMode.fade_in.value),
+                ("페이드 아웃", VideoTransitionMode.fade_out.value),
+                ("슬라이드 인", VideoTransitionMode.slide_in.value),
+                ("슬라이드 아웃", VideoTransitionMode.slide_out.value),
+            ]
+            selected_index = st.selectbox(
+                "영상 전환 모드",
+                options=range(len(video_transition_modes)),
+                format_func=lambda x: video_transition_modes[x][0],
+                index=0,
+            )
+            params.video_transition_mode = VideoTransitionMode(
+                video_transition_modes[selected_index][1]
+            )
 
-        # 添加TTS服务器选择下拉框
-        tts_servers = [
-            ("azure-tts-v1", "Azure TTS V1"),
-            ("azure-tts-v2", "Azure TTS V2"),
-            ("siliconflow", "SiliconFlow TTS"),
-            ("gemini-tts", "Google Gemini TTS"),
-        ]
+            video_aspect_ratios = [
+                ("세로 9:16", VideoAspect.portrait.value),
+                ("가로 16:9", VideoAspect.landscape.value),
+            ]
+            selected_index = st.selectbox(
+                "영상 비율",
+                options=range(
+                    len(video_aspect_ratios)
+                ),  # Use the index as the internal option value
+                format_func=lambda x: video_aspect_ratios[x][
+                    0
+                ],  # The label is displayed to the user
+            )
+            params.video_aspect = VideoAspect(video_aspect_ratios[selected_index][1])
 
-        # 获取保存的TTS服务器，默认为v1
-        saved_tts_server = config.ui.get("tts_server", "azure-tts-v1")
-        saved_tts_server_index = 0
-        for i, (server_value, _) in enumerate(tts_servers):
-            if server_value == saved_tts_server:
-                saved_tts_server_index = i
-                break
+            params.video_clip_duration = st.selectbox(
+                "영상 클립 최대 지속 시간 (초)", options=[2, 3, 4, 5, 6, 7, 8, 9, 10], index=1
+            )
+            params.video_count = st.selectbox(
+                "동시 생성 영상 수",
+                options=[1, 2, 3, 4, 5],
+                index=0,
+            )
 
-        selected_tts_server_index = st.selectbox(
-            tr("TTS Servers"),
-            options=range(len(tts_servers)),
-            format_func=lambda x: tts_servers[x][1],
-            index=saved_tts_server_index,
-        )
+    # Right Column: Audio Settings
+    with col_audio:
+        with st.container(border=True):
+            st.write("**오디오 설정**")
 
-        selected_tts_server = tts_servers[selected_tts_server_index][0]
-        config.ui["tts_server"] = selected_tts_server
+            # TTS Server Selection
+            tts_servers = [
+                ("azure-tts-v1", "Azure TTS V1"),
+                ("azure-tts-v2", "Azure TTS V2"),
+                ("siliconflow", "SiliconFlow TTS"),
+                ("gemini-tts", "Google Gemini TTS"),
+            ]
 
-        # 根据选择的TTS服务器获取声音列表
-        filtered_voices = []
-
-        if selected_tts_server == "siliconflow":
-            # 获取硅基流动的声音列表
-            filtered_voices = voice.get_siliconflow_voices()
-        elif selected_tts_server == "gemini-tts":
-            # 获取Gemini TTS的声音列表
-            filtered_voices = voice.get_gemini_voices()
-        else:
-            # 获取Azure的声音列表
-            all_voices = voice.get_all_azure_voices(filter_locals=None)
-
-            # 根据选择的TTS服务器筛选声音
-            for v in all_voices:
-                if selected_tts_server == "azure-tts-v2":
-                    # V2版本的声音名称中包含"v2"
-                    if "V2" in v:
-                        filtered_voices.append(v)
-                else:
-                    # V1版本的声音名称中不包含"v2"
-                    if "V2" not in v:
-                        filtered_voices.append(v)
-
-        friendly_names = {
-            v: v.replace("Female", tr("Female"))
-            .replace("Male", tr("Male"))
-            .replace("Neural", "")
-            for v in filtered_voices
-        }
-
-        saved_voice_name = config.ui.get("voice_name", "")
-        saved_voice_name_index = 0
-
-        # 检查保存的声音是否在当前筛选的声音列表中
-        if saved_voice_name in friendly_names:
-            saved_voice_name_index = list(friendly_names.keys()).index(saved_voice_name)
-        else:
-            # 如果不在，则根据当前UI语言选择一个默认声音
-            for i, v in enumerate(filtered_voices):
-                if v.lower().startswith(st.session_state["ui_language"].lower()):
-                    saved_voice_name_index = i
+            # Get saved TTS server
+            saved_tts_server = config.ui.get("tts_server", "azure-tts-v1")
+            saved_tts_server_index = 0
+            for i, (server_value, _) in enumerate(tts_servers):
+                if server_value == saved_tts_server:
+                    saved_tts_server_index = i
                     break
 
-        # 如果没有找到匹配的声音，使用第一个声音
-        if saved_voice_name_index >= len(friendly_names) and friendly_names:
+            selected_tts_server_index = st.selectbox(
+                "TTS 서버",
+                options=range(len(tts_servers)),
+                format_func=lambda x: tts_servers[x][1],
+                index=saved_tts_server_index,
+            )
+
+            selected_tts_server = tts_servers[selected_tts_server_index][0]
+            config.ui["tts_server"] = selected_tts_server
+
+            # Get voice list based on selected TTS server
+            filtered_voices = []
+
+            if selected_tts_server == "siliconflow":
+                filtered_voices = voice.get_siliconflow_voices()
+            elif selected_tts_server == "gemini-tts":
+                filtered_voices = voice.get_gemini_voices()
+            else:
+                all_voices = voice.get_all_azure_voices(filter_locals=None)
+                for v in all_voices:
+                    if selected_tts_server == "azure-tts-v2":
+                        if "V2" in v:
+                            filtered_voices.append(v)
+                    else:
+                        if "V2" not in v:
+                            filtered_voices.append(v)
+
+            friendly_names = {
+                v: v.replace("Female", tr("Female"))
+                .replace("Male", tr("Male"))
+                .replace("Neural", "")
+                for v in filtered_voices
+            }
+
+            saved_voice_name = config.ui.get("voice_name", "")
             saved_voice_name_index = 0
 
-        # 确保有声音可选
-        if friendly_names:
-            selected_friendly_name = st.selectbox(
-                tr("Speech Synthesis"),
-                options=list(friendly_names.values()),
-                index=min(saved_voice_name_index, len(friendly_names) - 1)
-                if friendly_names
-                else 0,
-            )
+            if saved_voice_name in friendly_names:
+                saved_voice_name_index = list(friendly_names.keys()).index(saved_voice_name)
+            else:
+                for i, v in enumerate(filtered_voices):
+                    if v.lower().startswith(st.session_state["ui_language"].lower()):
+                        saved_voice_name_index = i
+                        break
 
-            voice_name = list(friendly_names.keys())[
-                list(friendly_names.values()).index(selected_friendly_name)
-            ]
-            params.voice_name = voice_name
-            config.ui["voice_name"] = voice_name
-        else:
-            # 如果没有声音可选，显示提示信息
-            st.warning(
-                tr(
-                    "No voices available for the selected TTS server. Please select another server."
-                )
-            )
-            params.voice_name = ""
-            config.ui["voice_name"] = ""
+            if saved_voice_name_index >= len(friendly_names) and friendly_names:
+                saved_voice_name_index = 0
 
-        # 只有在有声音可选时才显示试听按钮
-        if friendly_names and st.button(tr("Play Voice")):
-            play_content = params.video_subject
-            if not play_content:
-                play_content = params.video_script
-            if not play_content:
-                play_content = tr("Voice Example")
-            with st.spinner(tr("Synthesizing Voice")):
-                temp_dir = utils.storage_dir("temp", create=True)
-                audio_file = os.path.join(temp_dir, f"tmp-voice-{str(uuid4())}.mp3")
-                sub_maker = voice.tts(
-                    text=play_content,
-                    voice_name=voice_name,
-                    voice_rate=params.voice_rate,
-                    voice_file=audio_file,
-                    voice_volume=params.voice_volume,
+            if friendly_names:
+                selected_friendly_name = st.selectbox(
+                    tr("Speech Synthesis"),
+                    options=list(friendly_names.values()),
+                    index=min(saved_voice_name_index, len(friendly_names) - 1)
+                    if friendly_names
+                    else 0,
                 )
-                # if the voice file generation failed, try again with a default content.
-                if not sub_maker:
-                    play_content = "This is a example voice. if you hear this, the voice synthesis failed with the original content."
+
+                voice_name = list(friendly_names.keys())[
+                    list(friendly_names.values()).index(selected_friendly_name)
+                ]
+                params.voice_name = voice_name
+                config.ui["voice_name"] = voice_name
+            else:
+                st.warning(
+                    tr(
+                        "No voices available for the selected TTS server. Please select another server."
+                    )
+                )
+                params.voice_name = ""
+                config.ui["voice_name"] = ""
+
+            if friendly_names and st.button(tr("Play Voice")):
+                play_content = params.video_subject
+                if not play_content:
+                    play_content = params.video_script
+                if not play_content:
+                    play_content = tr("Voice Example")
+                with st.spinner(tr("Synthesizing Voice")):
+                    temp_dir = utils.storage_dir("temp", create=True)
+                    audio_file = os.path.join(temp_dir, f"tmp-voice-{str(uuid4())}.mp3")
                     sub_maker = voice.tts(
                         text=play_content,
                         voice_name=voice_name,
@@ -770,103 +643,107 @@ with middle_panel:
                         voice_file=audio_file,
                         voice_volume=params.voice_volume,
                     )
+                    if not sub_maker:
+                        play_content = "This is a example voice. if you hear this, the voice synthesis failed with the original content."
+                        sub_maker = voice.tts(
+                            text=play_content,
+                            voice_name=voice_name,
+                            voice_rate=params.voice_rate,
+                            voice_file=audio_file,
+                            voice_volume=params.voice_volume,
+                        )
 
-                if sub_maker and os.path.exists(audio_file):
-                    st.audio(audio_file, format="audio/mp3")
-                    if os.path.exists(audio_file):
-                        os.remove(audio_file)
+                    if sub_maker and os.path.exists(audio_file):
+                        st.audio(audio_file, format="audio/mp3")
+                        if os.path.exists(audio_file):
+                            os.remove(audio_file)
 
-        # 当选择V2版本或者声音是V2声音时，显示服务区域和API key输入框
-        if selected_tts_server == "azure-tts-v2" or (
-            voice_name and voice.is_azure_v2_voice(voice_name)
-        ):
-            saved_azure_speech_region = config.azure.get("speech_region", "")
-            saved_azure_speech_key = config.azure.get("speech_key", "")
-            azure_speech_region = st.text_input(
-                tr("Speech Region"),
-                value=saved_azure_speech_region,
-                key="azure_speech_region_input",
+            if selected_tts_server == "azure-tts-v2" or (
+                voice_name and voice.is_azure_v2_voice(voice_name)
+            ):
+                saved_azure_speech_region = config.azure.get("speech_region", "")
+                saved_azure_speech_key = config.azure.get("speech_key", "")
+                azure_speech_region = st.text_input(
+                    tr("Speech Region"),
+                    value=saved_azure_speech_region,
+                    key="azure_speech_region_input",
+                )
+                azure_speech_key = st.text_input(
+                    tr("Speech Key"),
+                    value=saved_azure_speech_key,
+                    type="password",
+                    key="azure_speech_key_input",
+                )
+                config.azure["speech_region"] = azure_speech_region
+                config.azure["speech_key"] = azure_speech_key
+
+            if selected_tts_server == "siliconflow" or (
+                voice_name and voice.is_siliconflow_voice(voice_name)
+            ):
+                saved_siliconflow_api_key = config.siliconflow.get("api_key", "")
+
+                siliconflow_api_key = st.text_input(
+                    tr("SiliconFlow API Key"),
+                    value=saved_siliconflow_api_key,
+                    type="password",
+                    key="siliconflow_api_key_input",
+                )
+
+                st.info(
+                    tr("SiliconFlow TTS Settings")
+                    + ":\n"
+                    + "- "
+                    + tr("Speed: Range [0.25, 4.0], default is 1.0")
+                    + "\n"
+                    + "- "
+                    + tr("Volume: Uses Speech Volume setting, default 1.0 maps to gain 0")
+                )
+
+                config.siliconflow["api_key"] = siliconflow_api_key
+
+            params.voice_volume = st.selectbox(
+                tr("Speech Volume"),
+                options=[0.6, 0.8, 1.0, 1.2, 1.5, 2.0, 3.0, 4.0, 5.0],
+                index=2,
             )
-            azure_speech_key = st.text_input(
-                tr("Speech Key"),
-                value=saved_azure_speech_key,
-                type="password",
-                key="azure_speech_key_input",
-            )
-            config.azure["speech_region"] = azure_speech_region
-            config.azure["speech_key"] = azure_speech_key
 
-        # 当选择硅基流动时，显示API key输入框和说明信息
-        if selected_tts_server == "siliconflow" or (
-            voice_name and voice.is_siliconflow_voice(voice_name)
-        ):
-            saved_siliconflow_api_key = config.siliconflow.get("api_key", "")
-
-            siliconflow_api_key = st.text_input(
-                tr("SiliconFlow API Key"),
-                value=saved_siliconflow_api_key,
-                type="password",
-                key="siliconflow_api_key_input",
+            params.voice_rate = st.selectbox(
+                tr("Speech Rate"),
+                options=[0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.5, 1.8, 2.0],
+                index=2,
             )
 
-            # 显示硅基流动的说明信息
-            st.info(
-                tr("SiliconFlow TTS Settings")
-                + ":\n"
-                + "- "
-                + tr("Speed: Range [0.25, 4.0], default is 1.0")
-                + "\n"
-                + "- "
-                + tr("Volume: Uses Speech Volume setting, default 1.0 maps to gain 0")
+            bgm_options = [
+                (tr("No Background Music"), ""),
+                (tr("Random Background Music"), "random"),
+                (tr("Custom Background Music"), "custom"),
+            ]
+            selected_index = st.selectbox(
+                tr("Background Music"),
+                index=1,
+                options=range(
+                    len(bgm_options)
+                ),  # Use the index as the internal option value
+                format_func=lambda x: bgm_options[x][
+                    0
+                ],  # The label is displayed to the user
+            )
+            params.bgm_type = bgm_options[selected_index][1]
+
+            if params.bgm_type == "custom":
+                custom_bgm_file = st.text_input(
+                    tr("Custom Background Music File"), key="custom_bgm_file_input"
+                )
+                if custom_bgm_file and os.path.exists(custom_bgm_file):
+                    params.bgm_file = custom_bgm_file
+            params.bgm_volume = st.selectbox(
+                tr("Background Music Volume"),
+                options=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+                index=2,
             )
 
-            config.siliconflow["api_key"] = siliconflow_api_key
-
-        params.voice_volume = st.selectbox(
-            tr("Speech Volume"),
-            options=[0.6, 0.8, 1.0, 1.2, 1.5, 2.0, 3.0, 4.0, 5.0],
-            index=2,
-        )
-
-        params.voice_rate = st.selectbox(
-            tr("Speech Rate"),
-            options=[0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.5, 1.8, 2.0],
-            index=2,
-        )
-
-        bgm_options = [
-            (tr("No Background Music"), ""),
-            (tr("Random Background Music"), "random"),
-            (tr("Custom Background Music"), "custom"),
-        ]
-        selected_index = st.selectbox(
-            tr("Background Music"),
-            index=1,
-            options=range(
-                len(bgm_options)
-            ),  # Use the index as the internal option value
-            format_func=lambda x: bgm_options[x][
-                0
-            ],  # The label is displayed to the user
-        )
-        # Get the selected background music type
-        params.bgm_type = bgm_options[selected_index][1]
-
-        # Show or hide components based on the selection
-        if params.bgm_type == "custom":
-            custom_bgm_file = st.text_input(
-                tr("Custom Background Music File"), key="custom_bgm_file_input"
-            )
-            if custom_bgm_file and os.path.exists(custom_bgm_file):
-                params.bgm_file = custom_bgm_file
-                # st.write(f":red[已选择自定义背景音乐]：**{custom_bgm_file}**")
-        params.bgm_volume = st.selectbox(
-            tr("Background Music Volume"),
-            options=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
-            index=2,
-        )
-
-with right_panel:
+# --- TAB 3: SUBTITLES & STYLE ---
+with tab3:
     with st.container(border=True):
         st.write(tr("Subtitle Settings"))
         params.subtitle_enabled = st.checkbox(tr("Enable Subtitles"), value=True)
@@ -925,92 +802,175 @@ with right_panel:
             params.stroke_color = st.color_picker(tr("Stroke Color"), "#000000")
         with stroke_cols[1]:
             params.stroke_width = st.slider(tr("Stroke Width"), 0.0, 10.0, 1.5)
-    with st.expander(tr("Click to show API Key management"), expanded=False):
-        st.subheader(tr("Manage Pexels and Pixabay API Keys"))
 
-        col1, col2 = st.tabs(["Pexels API Keys", "Pixabay API Keys"])
+# --- TAB 4: SYSTEM & API ---
+with tab4:
+    col_llm, col_keys = st.columns(2)
+    
+    with col_llm:
+        with st.container(border=True):
+            st.write("LLM 설정")
+            llm_providers = [
+                "OpenAI", "Moonshot", "Azure", "Qwen", "DeepSeek", "ModelScope",
+                "Gemini", "Ollama", "G4f", "OneAPI", "Cloudflare", "ERNIE", "Pollinations"
+            ]
+            saved_llm_provider = config.app.get("llm_provider", "pollinations").lower()
+            saved_llm_provider_index = 0
+            for i, provider in enumerate(llm_providers):
+                if provider.lower() == saved_llm_provider:
+                    saved_llm_provider_index = i
+                    break
 
-        with col1:
-            st.subheader("Pexels API Keys")
-            if config.app["pexels_api_keys"]:
-                st.write(tr("Current Keys:"))
-                for key in config.app["pexels_api_keys"]:
-                    st.code(key)
-            else:
-                st.info(tr("No Pexels API Keys currently"))
+            llm_provider = st.selectbox("LLM 제공자", options=llm_providers, index=saved_llm_provider_index)
+            llm_provider = llm_provider.lower()
+            config.app["llm_provider"] = llm_provider
 
-            new_key = st.text_input(tr("Add Pexels API Key"), key="pexels_new_key")
-            if st.button(tr("Add Pexels API Key")):
-                if new_key and new_key not in config.app["pexels_api_keys"]:
-                    config.app["pexels_api_keys"].append(new_key)
-                    config.save_config()
-                    st.success(tr("Pexels API Key added successfully"))
-                elif new_key in config.app["pexels_api_keys"]:
-                    st.warning(tr("This API Key already exists"))
+            llm_api_key = config.app.get(f"{llm_provider}_api_key", "")
+            llm_secret_key = config.app.get(f"{llm_provider}_secret_key", "")
+            llm_base_url = config.app.get(f"{llm_provider}_base_url", "")
+            llm_model_name = config.app.get(f"{llm_provider}_model_name", "")
+            llm_account_id = config.app.get(f"{llm_provider}_account_id", "")
+
+            st_llm_api_key = st.text_input("API 키", value=llm_api_key, type="password")
+            st_llm_base_url = st.text_input("기본 URL", value=llm_base_url)
+            
+            if llm_provider == "ernie":
+                st_llm_secret_key = st.text_input("비밀 키", value=llm_secret_key, type="password")
+                config.app[f"{llm_provider}_secret_key"] = st_llm_secret_key
+
+            if llm_provider == "cloudflare":
+                st_llm_account_id = st.text_input("계정 ID", value=llm_account_id)
+                config.app[f"{llm_provider}_account_id"] = st_llm_account_id
+
+            st_llm_model_name = st.text_input("모델 이름", value=llm_model_name, key=f"{llm_provider}_model_name_input")
+            
+            if st_llm_api_key: config.app[f"{llm_provider}_api_key"] = st_llm_api_key
+            if st_llm_base_url: config.app[f"{llm_provider}_base_url"] = st_llm_base_url
+            if st_llm_model_name: config.app[f"{llm_provider}_model_name"] = st_llm_model_name
+
+            # Log Settings
+            st.divider()
+            hide_log = st.checkbox("로그 숨기기", value=config.ui.get("hide_log", False))
+            config.ui["hide_log"] = hide_log
+
+            st.divider()
+            st.write("대체 사용 설정")
+            script_fallback_enabled = st.checkbox(
+                "LLM 실패 시 대체 대본 사용", value=config.ui.get("script_fallback_enabled", False)
+            )
+            terms_fallback_enabled = st.checkbox(
+                "LLM 실패 시 키워드 대체 사용", value=config.ui.get("terms_fallback_enabled", True)
+            )
+            config.ui["script_fallback_enabled"] = script_fallback_enabled
+            config.ui["terms_fallback_enabled"] = terms_fallback_enabled
+
+    with col_keys:
+        with st.container(border=True):
+            st.write("Pexels 및 Pixabay API 키 관리")
+            
+            key_tabs_1, key_tabs_2 = st.tabs(["Pexels", "Pixabay"])
+
+            with key_tabs_1:
+                st.subheader("Pexels API Keys")
+                if config.app["pexels_api_keys"]:
+                    st.write("현재 키:")
+                    for key in config.app["pexels_api_keys"]:
+                        st.code(key)
                 else:
-                    st.error(tr("Please enter a valid API Key"))
+                    st.info("현재 Pexels API 키가 없습니다")
 
-            if config.app["pexels_api_keys"]:
-                delete_key = st.selectbox(
-                    tr("Select Pexels API Key to delete"), config.app["pexels_api_keys"], key="pexels_delete_key"
-                )
-                if st.button(tr("Delete Selected Pexels API Key")):
-                    config.app["pexels_api_keys"].remove(delete_key)
-                    config.save_config()
-                    st.success(tr("Pexels API Key deleted successfully"))
+                new_key = st.text_input("Pexels API 키 추가", key="pexels_new_key")
+                if st.button("Pexels API 키 추가"):
+                    if new_key and new_key not in config.app["pexels_api_keys"]:
+                        config.app["pexels_api_keys"].append(new_key)
+                        config.save_config()
+                        st.success("Pexels API 키가 성공적으로 추가되었습니다")
+                    elif new_key in config.app["pexels_api_keys"]:
+                        st.warning("이 API 키는 이미 존재합니다")
+                    else:
+                        st.error("유효한 API 키를 입력하세요")
 
-        with col2:
-            st.subheader("Pixabay API Keys")
+                if config.app["pexels_api_keys"]:
+                    delete_key = st.selectbox(
+                        "삭제할 Pexels API 키 선택", config.app["pexels_api_keys"], key="pexels_delete_key"
+                    )
+                    if st.button("선택한 Pexels API 키 삭제"):
+                        config.app["pexels_api_keys"].remove(delete_key)
+                        config.save_config()
+                        st.success("Pexels API 키가 성공적으로 삭제되었습니다")
 
-            if config.app["pixabay_api_keys"]:
-                st.write(tr("Current Keys:"))
-                for key in config.app["pixabay_api_keys"]:
-                    st.code(key)
-            else:
-                st.info(tr("No Pixabay API Keys currently"))
-
-            new_key = st.text_input(tr("Add Pixabay API Key"), key="pixabay_new_key")
-            if st.button(tr("Add Pixabay API Key")):
-                if new_key and new_key not in config.app["pixabay_api_keys"]:
-                    config.app["pixabay_api_keys"].append(new_key)
-                    config.save_config()
-                    st.success(tr("Pixabay API Key added successfully"))
-                elif new_key in config.app["pixabay_api_keys"]:
-                    st.warning(tr("This API Key already exists"))
+            with key_tabs_2:
+                st.subheader("Pixabay API Keys")
+                if config.app["pixabay_api_keys"]:
+                    st.write("현재 키:")
+                    for key in config.app["pixabay_api_keys"]:
+                        st.code(key)
                 else:
-                    st.error(tr("Please enter a valid API Key"))
+                    st.info("현재 Pixabay API 키가 없습니다")
 
-            if config.app["pixabay_api_keys"]:
-                delete_key = st.selectbox(
-                    tr("Select Pixabay API Key to delete"), config.app["pixabay_api_keys"], key="pixabay_delete_key"
-                )
-                if st.button(tr("Delete Selected Pixabay API Key")):
-                    config.app["pixabay_api_keys"].remove(delete_key)
-                    config.save_config()
-                    st.success(tr("Pixabay API Key deleted successfully"))
+                new_key = st.text_input("Pixabay API 키 추가", key="pixabay_new_key")
+                if st.button("Pixabay API 키 추가"):
+                    if new_key and new_key not in config.app["pixabay_api_keys"]:
+                        config.app["pixabay_api_keys"].append(new_key)
+                        config.save_config()
+                        st.success("Pixabay API 키가 성공적으로 추가되었습니다")
+                    elif new_key in config.app["pixabay_api_keys"]:
+                        st.warning("이 API 키는 이미 존재합니다")
+                    else:
+                        st.error("유효한 API 키를 입력하세요")
 
-start_button = st.button(tr("Generate Video"), use_container_width=True, type="primary")
+                if config.app["pixabay_api_keys"]:
+                    delete_key = st.selectbox(
+                        "삭제할 Pixabay API 키 선택", config.app["pixabay_api_keys"], key="pixabay_delete_key"
+                    )
+                    if st.button("선택한 Pixabay API 키 삭제"):
+                        config.app["pixabay_api_keys"].remove(delete_key)
+                        config.save_config()
+                        st.success("Pixabay API 키가 성공적으로 삭제되었습니다")
+
+
+import glob
+
+# ... (existing imports)
+
+# Load existing video if session state is empty (Persistence Recovery)
+if "generated_video_files" not in st.session_state or not st.session_state["generated_video_files"]:
+    try:
+        # Look for the most recent final-*.mp4 in storage/tasks
+        task_dir_pattern = os.path.join(root_dir, "storage", "tasks", "*", "final-*.mp4")
+        found_videos = glob.glob(task_dir_pattern)
+        if found_videos:
+            # Sort by modification time, newest first
+            found_videos.sort(key=os.path.getmtime, reverse=True)
+            # Take the latest one
+            latest_video = found_videos[0]
+            if os.path.exists(latest_video):
+                st.session_state["generated_video_files"] = [latest_video]
+    except Exception as e:
+        logger.error(f"Failed to load recent videos: {e}")
+
+start_button = st.button("영상 생성", use_container_width=True, type="primary")
+
 if start_button:
-    config.save_config()
     task_id = str(uuid4())
     if not params.video_subject and not params.video_script:
-        st.error(tr("Video Script and Subject Cannot Both Be Empty"))
-        scroll_to_bottom()
+        st.error("영상 대본과 주제는 둘 다 비워둘 수 없습니다")
         st.stop()
 
-    if params.video_source not in ["pexels", "pixabay", "local"]:
-        st.error(tr("Please Select a Valid Video Source"))
-        scroll_to_bottom()
-        st.stop()
-
-    if params.video_source == "pexels" and not config.app.get("pexels_api_keys", ""):
-        st.error(tr("Please Enter the Pexels API Key"))
-        scroll_to_bottom()
-        st.stop()
-
-    if params.video_source == "pixabay" and not config.app.get("pixabay_api_keys", ""):
-        st.error(tr("Please Enter the Pixabay API Key"))
-        scroll_to_bottom()
+    if params.video_source == "local":
+        if not uploaded_files:
+            st.error("로컬 파일을 업로드하거나 다른 영상 소스(Pexels/Pixabay)를 선택하세요")
+            st.stop()
+    elif params.video_source == "pexels":
+        if not config.app["pexels_api_keys"]:
+            st.error("Pexels API 키를 입력하세요")
+            st.stop()
+    elif params.video_source == "pixabay":
+        if not config.app["pixabay_api_keys"]:
+            st.error("Pixabay API 키를 입력하세요")
+            st.stop()
+    else:
+        st.error("유효한 영상 소스를 선택하세요")
         st.stop()
 
     if uploaded_files:
@@ -1026,42 +986,157 @@ if start_button:
                     params.video_materials = []
                 params.video_materials.append(m)
 
-    log_container = st.empty()
-    log_records = []
-
-    def log_received(msg):
-        if config.ui["hide_log"]:
-            return
-        with log_container:
-            log_records.append(msg)
-            st.code("\n".join(log_records))
-
-    logger.add(log_received)
-
-    st.toast(tr("Generating Video"))
-    logger.info(tr("Start Generating Video"))
-    logger.info(utils.to_json(params))
-    scroll_to_bottom()
-
-    result = tm.start(task_id=task_id, params=params)
-    if not result or "videos" not in result:
-        st.error(tr("Video Generation Failed"))
-        logger.error(tr("Video Generation Failed"))
-        scroll_to_bottom()
+    # Progress bar and status container
+    from app.services import state as sm
+    progress_container = st.container()
+    with progress_container:
+        st.info("작업 초기화 중...")
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+    
+    result = None
+    
+    try:
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(tm.start, task_id=task_id, params=params)
+            
+            while not future.done():
+                task_info = sm.state.get_task(task_id)
+                if task_info:
+                    progress = task_info.get("progress", 0)
+                    state = task_info.get("state", const.TASK_STATE_PROCESSING)
+                    task_msg = task_info.get("message", "")
+                    
+                    # Update progress bar
+                    progress_bar.progress(min(int(progress) / 100, 1.0))
+                    
+                    # Update status text
+                    if state == const.TASK_STATE_PROCESSING:
+                        if task_msg:
+                            status_text.info(f"{task_msg} ({int(progress)}%)")
+                        else:
+                            status_text.info(f"처리 중... {int(progress)}%")
+                    elif state == const.TASK_STATE_FAILED:
+                        if task_msg:
+                            status_text.error(f"영상 생성 실패: {task_msg}")
+                        else:
+                            status_text.error("영상 생성 실패")
+                        break # Exit loop if failed
+                    elif state == const.TASK_STATE_COMPLETE:
+                        if task_msg:
+                            status_text.success(f"{task_msg}")
+                        else:
+                            status_text.success("영상 생성 완료")
+                else:
+                    # Retry getting task info or just show starting
+                    status_text.info(f"작업 시작 중... ({task_id})")
+                
+                time.sleep(0.5)
+            
+            result = future.result()
+            
+    except Exception as e:
+        logger.error(f"Error during video generation: {e}")
+        status_text.error(f"오류: {e}")
         st.stop()
 
+    if not result or "videos" not in result:
+        progress_bar.progress(0)
+        status_text.error(tr("Video Generation Failed"))
+        logger.error(tr("Video Generation Failed"))
+        # scroll_to_bottom()
+        st.stop()
+
+    # Final success state
+    progress_bar.progress(1.0)
+    status_text.success(tr("Video Generation Completed"))
+    
+    if "generated_video_files" not in st.session_state:
+        st.session_state["generated_video_files"] = []
+
     video_files = result.get("videos", [])
-    st.success(tr("Video Generation Completed"))
+    st.session_state["generated_video_files"] = video_files
+    
+    # Display logic handled below outside the button scope if needed, 
+    # but for now we keep it here and also ensure it persists
     try:
         if video_files:
-            player_cols = st.columns(len(video_files) * 2 + 1)
-            for i, url in enumerate(video_files):
-                player_cols[i * 2 + 1].video(url)
-    except Exception:
-        pass
+            # Use full width for better visibility
+            for i, video_path in enumerate(video_files):
+                if os.path.exists(video_path):
+                    st.write(f"**영상 파일:** `{video_path}`")
+                    
+                    # Main video player
+                    col_v_1, col_v_2, col_v_3 = st.columns([3, 2, 3])
+                    with col_v_2:
+                        st.video(video_path, format="video/mp4")
+                    
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        # Add a download button for safety
+                        with open(video_path, "rb") as video_file:
+                            video_bytes = video_file.read()
+                        file_name = os.path.basename(video_path)
+                        st.download_button(
+                            label=f"다운로드 {file_name}",
+                            data=video_bytes,
+                            file_name=file_name,
+                            mime="video/mp4",
+                            use_container_width=True
+                        )
+                    with col2:
+                        # Add Open in System Player button
+                        if st.button("시스템 플레이어에서 재생", key=f"play_sys_{i}", use_container_width=True):
+                            try:
+                                if os.name == 'nt':
+                                    os.startfile(video_path)
+                                else:
+                                    import subprocess
+                                    subprocess.call(('xdg-open', video_path))
+                            except Exception as e:
+                                st.error(f"Could not open player: {e}")
+
+                else:
+                    st.error(f"Video file not found: {video_path}")
+    except Exception as e:
+        logger.error(f"Error displaying video: {e}")
+        st.error(f"Error displaying video: {e}")
 
     open_task_folder(task_id)
     logger.info(tr("Video Generation Completed"))
     scroll_to_bottom()
+
+# Always check if there are generated videos in session state to display (persistence)
+if "generated_video_files" in st.session_state and st.session_state["generated_video_files"]:
+    st.divider()
+    st.subheader(tr("Last Generated Videos"))
+    video_files = st.session_state["generated_video_files"]
+    
+    for i, video_path in enumerate(video_files):
+        if os.path.exists(video_path):
+            try:
+                st.write(f"**Video File:** `{video_path}`")
+                
+                # Persistent video player
+                col_v_p_1, col_v_p_2, col_v_p_3 = st.columns([3, 2, 3])
+                with col_v_p_2:
+                    st.video(video_path, format="video/mp4")
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    # Add Open in System Player button (Persistent view)
+                    if st.button(tr("Play in System Player"), key=f"play_sys_pers_{i}", use_container_width=True):
+                        try:
+                            if os.name == 'nt':
+                                os.startfile(video_path)
+                            else:
+                                import subprocess
+                                subprocess.call(('xdg-open', video_path))
+                        except Exception as e:
+                            st.error(f"Could not open player: {e}")
+                
+            except Exception:
+                pass # Already handled or transient error
+
 
 config.save_config()

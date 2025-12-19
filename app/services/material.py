@@ -1,5 +1,6 @@
 import os
 import random
+import concurrent.futures
 from typing import List
 from urllib.parse import urlencode
 
@@ -55,7 +56,7 @@ def search_videos_pexels(
             headers=headers,
             proxies=config.proxy,
             verify=False,
-            timeout=(30, 60),
+            timeout=(10, 20),
         )
         response = r.json()
         video_items = []
@@ -110,7 +111,7 @@ def search_videos_pixabay(
 
     try:
         r = requests.get(
-            query_url, proxies=config.proxy, verify=False, timeout=(30, 60)
+            query_url, proxies=config.proxy, verify=False, timeout=(10, 20)
         )
         response = r.json()
         video_items = []
@@ -173,7 +174,7 @@ def save_video(video_url: str, save_dir: str = "") -> str:
                 headers=headers,
                 proxies=config.proxy,
                 verify=False,
-                timeout=(60, 240),
+                timeout=(20, 60),
             ).content
         )
 
@@ -239,24 +240,78 @@ def download_videos(
         random.shuffle(valid_video_items)
 
     total_duration = 0.0
-    for item in valid_video_items:
+    video_paths = []
+
+    # Helper function for parallel download
+    def download_task(item):
         try:
             logger.info(f"downloading video: {item.url}")
-            saved_video_path = save_video(
-                video_url=item.url, save_dir=material_directory
-            )
-            if saved_video_path:
-                logger.info(f"video saved: {saved_video_path}")
-                video_paths.append(saved_video_path)
-                seconds = min(max_clip_duration, item.duration)
-                total_duration += seconds
-                if total_duration > audio_duration:
-                    logger.info(
-                        f"total duration of downloaded videos: {total_duration} seconds, skip downloading more"
-                    )
-                    break
+            path = save_video(video_url=item.url, save_dir=material_directory)
+            if path:
+                return item, path
         except Exception as e:
             logger.error(f"failed to download video: {utils.to_json(item)} => {str(e)}")
+        return item, None
+
+    # Parallel download for the first batch
+    # Estimate needed count: audio_duration / 3s (conservative min duration) + buffer
+    # Or just try to download a generous amount in parallel to ensure speed
+    estimated_needed = int(audio_duration / 3) + 3
+    candidates = valid_video_items[:estimated_needed]
+    max_workers = 5
+
+    logger.info(f"downloading {len(candidates)} videos in parallel (max_workers={max_workers})...")
+    
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        if video_contact_mode.value == VideoConcatMode.sequential.value:
+            # Preserve order for sequential mode
+            futures = [executor.submit(download_task, item) for item in candidates]
+            for future in futures:
+                item, path = future.result()
+                if path:
+                    logger.info(f"video saved: {path}")
+                    video_paths.append(path)
+                    seconds = min(max_clip_duration, item.duration)
+                    total_duration += seconds
+                    if total_duration > audio_duration:
+                        break
+        else:
+            # Random mode: order within candidates doesn't strictly matter as they are already shuffled
+            # process as completed for speed
+            future_to_item = {executor.submit(download_task, item): item for item in candidates}
+            for future in concurrent.futures.as_completed(future_to_item):
+                item, path = future.result()
+                if path:
+                    logger.info(f"video saved: {path}")
+                    video_paths.append(path)
+                    seconds = min(max_clip_duration, item.duration)
+                    total_duration += seconds
+                    if total_duration > audio_duration:
+                        break
+
+    # If still not enough duration, fallback to sequential for the rest
+    if total_duration <= audio_duration and len(candidates) < len(valid_video_items):
+        logger.info(f"still need more duration ({total_duration}/{audio_duration}), downloading more sequentially...")
+        remaining_items = valid_video_items[len(candidates):]
+        for item in remaining_items:
+            try:
+                logger.info(f"downloading video: {item.url}")
+                saved_video_path = save_video(
+                    video_url=item.url, save_dir=material_directory
+                )
+                if saved_video_path:
+                    logger.info(f"video saved: {saved_video_path}")
+                    video_paths.append(saved_video_path)
+                    seconds = min(max_clip_duration, item.duration)
+                    total_duration += seconds
+                    if total_duration > audio_duration:
+                        logger.info(
+                            f"total duration of downloaded videos: {total_duration} seconds, skip downloading more"
+                        )
+                        break
+            except Exception as e:
+                logger.error(f"failed to download video: {utils.to_json(item)} => {str(e)}")
+
     logger.success(f"downloaded {len(video_paths)} videos")
     return video_paths
 

@@ -14,6 +14,12 @@ from app.models import const
 urllib3.disable_warnings()
 
 
+import random
+import string
+
+def random_string(length: int = 8):
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+
 def get_response(status: int, data: Any = None, message: str = ""):
     obj = {
         "status": status,

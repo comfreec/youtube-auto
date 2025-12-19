@@ -103,7 +103,7 @@ class VideoParams(BaseModel):
     stroke_color: Optional[str] = "#000000"
     stroke_width: float = 1.5
     n_threads: Optional[int] = 2
-    paragraph_number: Optional[int] = 1
+    paragraph_number: Optional[int] = 4
 
 
 class SubtitleRequest(BaseModel):
