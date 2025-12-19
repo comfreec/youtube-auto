@@ -9,7 +9,8 @@
 /app/utils/__pycache__/
 /*/__pycache__/*
 .vscode
-/**/.streamlit
+# Allow .streamlit/config.toml but ignore secrets
+/**/.streamlit/secrets.toml
 __pycache__
 logs/
 

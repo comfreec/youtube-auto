@@ -329,15 +329,13 @@ def generate_script(
 Generate a script for a video, depending on the subject of the video.
 
 # Constraints:
-1. the script should be helpful and informative.
-2. the script should be directly related to the subject.
-3. the script should not include any title.
-4. the script should be spoken by a narrator.
-5. the script should be clear and easy to understand.
-6. the script should be engaging and interesting.
-7. the script should not include any markdown.
-8. the script should not include any other characters.
-9. the script should not include any other information.
+1. The script must contain exactly {paragraph_number} paragraphs.
+2. The TOTAL duration of the script should be approximately 50 to 60 seconds (about 350-450 characters for Korean, or 130-150 words for English).
+3. The script should be helpful, informative, and directly related to the subject.
+4. Respond in the same language as the subject.
+5. Do not include a title, markdown, or any meta-text (like "Here is the script").
+6. The script should be spoken by a narrator (natural and engaging).
+7. Separate each paragraph with a double newline.
 
 # Initialization:
 - video subject: {video_subject}

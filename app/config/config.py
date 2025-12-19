@@ -43,6 +43,28 @@ def save_config():
 
 _cfg = load_config()
 app = _cfg.get("app", {})
+
+# Override config with environment variables (for Cloud deployment)
+env_mapping = {
+    "OPENAI_API_KEY": "openai_api_key",
+    "OPENAI_BASE_URL": "openai_base_url",
+    "OPENAI_MODEL_NAME": "openai_model_name",
+    "PEXELS_API_KEYS": "pexels_api_keys",
+    "PIXABAY_API_KEYS": "pixabay_api_keys",
+    "GEMINI_API_KEY": "gemini_api_key",
+    "LLM_PROVIDER": "llm_provider",
+    "YOUTUBE_CLIENT_SECRETS": "youtube_client_secrets", # Custom for YouTube
+}
+
+for env_key, config_key in env_mapping.items():
+    env_val = os.getenv(env_key)
+    if env_val:
+        if config_key.endswith("_keys"):
+            # Handle list types (comma separated)
+            app[config_key] = [k.strip() for k in env_val.split(",") if k.strip()]
+        else:
+            app[config_key] = env_val
+
 whisper = _cfg.get("whisper", {})
 proxy = _cfg.get("proxy", {})
 azure = _cfg.get("azure", {})
@@ -59,7 +81,7 @@ hostname = socket.gethostname()
 log_level = _cfg.get("log_level", "DEBUG")
 listen_host = _cfg.get("listen_host", "0.0.0.0")
 listen_port = _cfg.get("listen_port", 8080)
-project_name = _cfg.get("project_name", "유튜브 영상 자동생성기")
+project_name = _cfg.get("project_name", "유튜브 쇼츠영상 자동생성기")
 project_description = _cfg.get(
     "project_description",
     "<a href='https://github.com/harry0703/MoneyPrinterTurbo'>https://github.com/harry0703/MoneyPrinterTurbo</a>",
