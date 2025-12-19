@@ -524,15 +524,21 @@ def _postprocess_terms(video_subject: str, terms: List[str], amount: int) -> Lis
         if len(x) < 3:
             continue
         key = x.lower()
-        # Exclude terms equal to normalized subject
-        if subj and key == subj:
-            continue
         if key in seen:
             continue
         seen.add(key)
         cleaned.append(x)
         if len(cleaned) >= amount:
             break
+    
+    # Ensure the subject itself is included if possible (as a top priority)
+    # Allow Korean/Unicode characters in the subject
+    if video_subject:
+         subj_clean = video_subject.strip()
+         if subj_clean and subj_clean.lower() not in seen:
+             cleaned.insert(0, subj_clean)
+             seen.add(subj_clean.lower())
+
     if len(cleaned) < amount:
         fallback = _fallback_visual_terms(video_subject, "", amount - len(cleaned))
         for f in fallback:
@@ -556,8 +562,8 @@ Generate {amount} search terms for stock videos, based on the subject and script
 1. Return a JSON-array of strings. Example: ["term1", "term2", "term3"]
 2. Each search term must be a concrete VISUAL description (3-5 words) in English.
 3. Do NOT use abstract concepts. Describe what can be SEEN.
-4. The search terms MUST be directly related to the video subject: "{video_subject}". PRIORITIZE the subject over the script.
-5. Do NOT generate generic terms. Use specific nouns and actions related to "{video_subject}".
+4. The search terms MUST be directly related to the video subject: "{video_subject}". You MUST include the subject keyword in the search terms.
+5. Do NOT generate generic terms. Always combine the subject "{video_subject}" with visual words (e.g. "{video_subject} close up", "{video_subject} in background").
 6. Return ONLY the JSON-array. No other text.
 
 ## Context:

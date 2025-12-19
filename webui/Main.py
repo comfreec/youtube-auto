@@ -1074,19 +1074,35 @@ if start_button:
                     col1, col2 = st.columns(2)
                     with col1:
                         # Add a download button for safety
-                        with open(video_path, "rb") as video_file:
-                            video_bytes = video_file.read()
-                        file_name = os.path.basename(video_path)
-                        st.download_button(
-                            label=f"다운로드 {file_name}",
-                            data=video_bytes,
-                            file_name=file_name,
-                            mime="video/mp4",
-                            use_container_width=True
-                        )
+                        try:
+                            with open(video_path, "rb") as video_file:
+                                video_bytes = video_file.read()
+                            file_name = os.path.basename(video_path)
+                            st.download_button(
+                                label=f"📥 영상 다운로드 ({file_name})",
+                                data=video_bytes,
+                                file_name=file_name,
+                                mime="video/mp4",
+                                key=f"dl_btn_{i}",
+                                use_container_width=True
+                            )
+                        except Exception as e:
+                            st.error(f"다운로드 준비 중 오류 발생: {e}")
+                        
+                        # Add Copy to Desktop button
+                        if st.button(f"📂 바탕화면으로 복사", key=f"copy_desk_{i}", use_container_width=True):
+                            try:
+                                desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
+                                dest_file = os.path.join(desktop_path, file_name)
+                                import shutil
+                                shutil.copy2(video_path, dest_file)
+                                st.success(f"바탕화면에 복사되었습니다: {dest_file}")
+                            except Exception as e:
+                                st.error(f"복사 실패: {e}")
+
                     with col2:
                         # Add Open in System Player button
-                        if st.button("시스템 플레이어에서 재생", key=f"play_sys_{i}", use_container_width=True):
+                        if st.button("💻 시스템 플레이어에서 재생", key=f"play_sys_{i}", use_container_width=True):
                             try:
                                 if os.name == 'nt':
                                     os.startfile(video_path)
@@ -1094,7 +1110,7 @@ if start_button:
                                     import subprocess
                                     subprocess.call(('xdg-open', video_path))
                             except Exception as e:
-                                st.error(f"Could not open player: {e}")
+                                st.error(f"플레이어 실행 실패: {e}. (다른 플레이어로 파일을 열어보세요)")
 
                 else:
                     st.error(f"Video file not found: {video_path}")
@@ -1124,8 +1140,36 @@ if "generated_video_files" in st.session_state and st.session_state["generated_v
                 
                 col1, col2 = st.columns(2)
                 with col1:
+                    # Add Download button (Persistent view)
+                    try:
+                        with open(video_path, "rb") as video_file:
+                            video_bytes = video_file.read()
+                        file_name = os.path.basename(video_path)
+                        st.download_button(
+                            label=f"📥 영상 다운로드 ({file_name})",
+                            data=video_bytes,
+                            file_name=file_name,
+                            mime="video/mp4",
+                            key=f"dl_btn_pers_{i}",
+                            use_container_width=True
+                        )
+                    except Exception as e:
+                        st.error(f"다운로드 준비 중 오류 발생: {e}")
+                    
+                    # Add Copy to Desktop button (Persistent view)
+                    if st.button(f"📂 바탕화면으로 복사", key=f"copy_desk_pers_{i}", use_container_width=True):
+                        try:
+                            desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
+                            dest_file = os.path.join(desktop_path, file_name)
+                            import shutil
+                            shutil.copy2(video_path, dest_file)
+                            st.success(f"바탕화면에 복사되었습니다: {dest_file}")
+                        except Exception as e:
+                            st.error(f"복사 실패: {e}")
+
+                with col2:
                     # Add Open in System Player button (Persistent view)
-                    if st.button(tr("Play in System Player"), key=f"play_sys_pers_{i}", use_container_width=True):
+                    if st.button("💻 시스템 플레이어에서 재생", key=f"play_sys_pers_{i}", use_container_width=True):
                         try:
                             if os.name == 'nt':
                                 os.startfile(video_path)
@@ -1133,7 +1177,7 @@ if "generated_video_files" in st.session_state and st.session_state["generated_v
                                 import subprocess
                                 subprocess.call(('xdg-open', video_path))
                         except Exception as e:
-                            st.error(f"Could not open player: {e}")
+                            st.error(f"플레이어 실행 실패: {e}. (다른 플레이어로 파일을 열어보세요)")
                 
             except Exception:
                 pass # Already handled or transient error
