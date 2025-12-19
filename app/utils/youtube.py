@@ -36,7 +36,7 @@ def get_authenticated_service(client_secrets_file, token_file='token.pickle'):
 
     return build('youtube', 'v3', credentials=creds)
 
-def upload_video(youtube, file_path, title, description, category="22", keywords="", privacy_status="private"):
+def upload_video(youtube, file_path, title, description, category="22", keywords="", privacy_status="private", progress_callback=None):
     """
     Uploads a video to YouTube.
     
@@ -48,6 +48,7 @@ def upload_video(youtube, file_path, title, description, category="22", keywords
         category: Video category ID (22 is People & Blogs, 28 is Science & Technology, etc.).
         keywords: Comma-separated list of tags.
         privacy_status: "public", "private", or "unlisted".
+        progress_callback: Optional callback function(progress_percent)
     
     Returns:
         The uploaded video ID if successful, None otherwise.
@@ -72,14 +73,17 @@ def upload_video(youtube, file_path, title, description, category="22", keywords
         insert_request = youtube.videos().insert(
             part=','.join(body.keys()),
             body=body,
-            media_body=MediaFileUpload(file_path, chunksize=-1, resumable=True)
+            media_body=MediaFileUpload(file_path, chunksize=1024*1024, resumable=True)
         )
 
         response = None
         while response is None:
             status, response = insert_request.next_chunk()
             if status:
-                logger.info(f"Uploaded {int(status.progress() * 100)}%")
+                progress = int(status.progress() * 100)
+                logger.info(f"Uploaded {progress}%")
+                if progress_callback:
+                    progress_callback(progress)
 
         logger.success(f"Video uploaded successfully! Video ID: {response['id']}")
         return response['id']

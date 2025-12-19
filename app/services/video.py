@@ -542,8 +542,9 @@ def generate_video(
 
     def create_text_clip(subtitle_item):
         params.font_size = int(params.font_size)
-        if aspect == VideoAspect.portrait:
-             params.font_size = int(params.font_size * 1.3) # Increase font size for Shorts
+        # Removed 1.3x multiplier for Shorts to prevent oversized text
+        # if aspect == VideoAspect.portrait:
+        #      params.font_size = int(params.font_size * 1.3) 
 
         params.stroke_width = max(3, int(params.stroke_width)) # Ensure visible outline
         params.stroke_color = params.stroke_color or "#000000" # Default to black outline
@@ -690,27 +691,59 @@ def generate_video(
         logger.info(f"  Adding title: {params.video_subject}")
         title_text = params.video_subject
         
-        title_font_size = int(video_width * 0.12) # Dynamic size
-
+        # Hardcode font size to 85 (increased from 60 based on user feedback)
+        title_font_size = 85
+        
         # Use wrap_text to handle long titles
-        wrapped_title, _ = wrap_text(title_text, max_width=video_width * 0.9, font=font_path, fontsize=title_font_size)
+        wrapped_title, _ = wrap_text(title_text, max_width=video_width * 0.8, font=font_path, fontsize=title_font_size)
 
-        # Create a text file for the title
-        title_file_path = os.path.join(task_dir, "title.txt")
-        with open(title_file_path, "w", encoding="utf-8") as f:
+        # Use drawtext filter for absolute positioning
+        # This avoids ASS/SRT alignment issues where text appears in the middle
+        
+        # Create text file
+        title_txt_path = os.path.join(task_dir, "title.txt")
+        with open(title_txt_path, "w", encoding="utf-8") as f:
             f.write(wrapped_title)
+            
+        # Copy font to task directory to allow relative path usage in ffmpeg
+        # This avoids Windows path escaping issues (colons in drive letters)
+        title_font_name = "title_font.ttf"
+        title_font_path = os.path.join(task_dir, title_font_name)
         
-        title_file_escaped = "title.txt"
+        try:
+             if os.path.exists(font_path):
+                 shutil.copy2(font_path, title_font_path)
+                 logger.info(f"Copied title font to {title_font_path}")
+             else:
+                 # Fallback to system font if font_path doesn't exist
+                 # Should not happen as font_path is validated earlier, but just in case
+                 if os.path.exists("C:/Windows/Fonts/malgun.ttf"):
+                      shutil.copy2("C:/Windows/Fonts/malgun.ttf", title_font_path)
+        except Exception as e:
+            logger.error(f"Failed to copy title font: {e}")
+
+        # Use relative paths for ffmpeg command
+        font_path_f = title_font_name
+        title_txt_path_f = "title.txt"
         
-        # Use local font file
-        font_file_escaped = local_font_name
+        # Drawtext settings
+        # y = 10% from top
+        # fontcolor = Gold (#FFD700)
+        # Border/Shadow for visibility
         
-        # Title Styling
-        title_y = int(video_height * 0.15)
+        drawtext_cmd = (
+            f"drawtext=fontfile='{font_path_f}':"
+            f"textfile='{title_txt_path_f}':"
+            f"fontcolor=0xFFD700:"
+            f"fontsize={title_font_size}:"
+            f"borderw=2:bordercolor=black:"
+            f"shadowx=2:shadowy=2:shadowcolor=black@0.6:"
+            f"x=(w-text_w)/2:"
+            f"y=h*0.10"
+        )
         
-        # Yellow Title with thicker stroke
-        drawtext = f"drawtext=fontfile='{font_file_escaped}':textfile='{title_file_escaped}':fontcolor=#FFD700:fontsize={title_font_size}:x=(w-text_w)/2:y={title_y}:borderw=8:bordercolor=black:shadowx=2:shadowy=2"
-        video_filter_chain.append(drawtext)
+        logger.info(f"  Adding title with drawtext: {drawtext_cmd}")
+        video_filter_chain.append(drawtext_cmd)
 
     # Combine video filters
     if video_filter_chain:
