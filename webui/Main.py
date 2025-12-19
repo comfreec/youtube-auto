@@ -184,18 +184,23 @@ streamlit_style = """
         box-shadow: 0 0 10px rgba(255, 255, 255, 0.1) !important;
     }
     
-    /* Download Button Specific Styling - Dark Background, White Text */
+    /* Download Button Specific Styling - Matched to Primary Button */
     .stDownloadButton > button {
-        background-color: #1a1a1a !important; /* Very dark background */
-        color: #FFFFFF !important; /* White text for max visibility */
-        border: 1px solid #555555 !important;
-        font-weight: 700 !important;
+        background: #2D2D2D !important; 
+        border: 1px solid #FFFFFF !important; 
+        color: #FFFFFF !important; 
+        font-weight: 900 !important; 
+        font-size: 1.2rem !important;
+        padding: 1rem 3rem !important; 
+        border-radius: 12px !important; 
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5) !important;
     }
     .stDownloadButton > button:hover {
-        background-color: #333333 !important;
+        background-color: #404040 !important;
+        transform: translateY(-2px); 
+        box-shadow: 0 6px 15px rgba(255, 255, 255, 0.1) !important;
         color: #FFFFFF !important;
         border-color: #FFFFFF !important;
-        box-shadow: 0 0 10px rgba(255, 255, 255, 0.2) !important;
     }
     
     /* Primary Buttons (Gradient) - REMOVED YELLOW BACKGROUND */

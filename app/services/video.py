@@ -739,7 +739,8 @@ def generate_video(
             f"borderw=2:bordercolor=black:"
             f"shadowx=2:shadowy=2:shadowcolor=black@0.6:"
             f"x=(w-text_w)/2:"
-            f"y=h*0.10"
+            f"y=h*0.10:"
+            f"line_spacing=-30"  # Reduce line spacing to bring lines closer
         )
         
         logger.info(f"  Adding title with drawtext: {drawtext_cmd}")
