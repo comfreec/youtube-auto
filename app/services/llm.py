@@ -565,7 +565,9 @@ Generate {amount} search terms for stock videos, based on the subject and script
 5. **IMPORTANT**: You MUST provide search terms in **ENGLISH**. Even if the subject is in Korean, translate the visual concepts into English (e.g., if subject is "강황", use "Turmeric powder", "healthy spices").
 6. Stock video sites (Pexels/Pixabay) have very poor Korean support. **English terms are required** to find matching videos.
 7. You may include 1 or 2 Korean terms at the very end of the list as a backup, but the first {amount} terms MUST be English.
-8. Return ONLY the JSON-array. No other text.
+8. **Analyze the provided script thoroughly.** Extract key visual elements from each sentence.
+9. Generate search terms that MATCH the specific scenes described in the script, not just the general topic.
+10. Return ONLY the JSON-array. No other text.
 
 ## Context:
 ### Video Subject
