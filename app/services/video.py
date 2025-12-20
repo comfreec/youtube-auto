@@ -207,6 +207,7 @@ def combine_videos(
     # Required duration of each clip
     req_dur = max_clip_duration
     logger.info(f"maximum clip duration: {req_dur} seconds")
+    logger.info(f"video transition mode: {video_transition_mode}")
     output_dir = os.path.dirname(combined_video_path)
 
     processed_clips = []
@@ -361,8 +362,67 @@ def combine_videos(
         logger.warning("no clips available for merging")
         return combined_video_path
     
-    try:
-        # Create concat list file for ffmpeg
+    # Check if we need to use MoviePy for transitions (if transition mode is active)
+    # ffmpeg concat demuxer does not support overlapping transitions, so we use MoviePy if transitions are requested.
+    # However, our current transition implementation (SlideIn/FadeIn) applies to the clip itself (entering/fading),
+    # so simple concatenation might be sufficient if "over black" is acceptable.
+    # But to ensure best compatibility with effects, we can use concatenate_videoclips.
+    # Given the user reported "not applied", we switch to MoviePy composition for transition modes.
+    
+    use_moviepy_concat = False
+    if video_transition_mode and video_transition_mode.value != VideoTransitionMode.none.value:
+        use_moviepy_concat = True
+        logger.info(f"Transition mode {video_transition_mode} active, using MoviePy concatenate_videoclips")
+
+    if use_moviepy_concat:
+        try:
+            clips_to_concat = []
+            for clip_data in processed_clips:
+                if os.path.exists(clip_data.file_path) and os.path.getsize(clip_data.file_path) > 0:
+                    # Load clip from temp file
+                    # We must use VideoFileClip to load the encoded temp file with effects baked in?
+                    # Wait, if we used write_videofile previously, the effects are in the file.
+                    # So loading it is fine.
+                    clip = VideoFileClip(clip_data.file_path)
+                    clips_to_concat.append(clip)
+            
+            if not clips_to_concat:
+                 logger.error("no valid clips to merge")
+                 return combined_video_path
+
+            # Use method='compose' to handle any alpha/transparency or effects better
+            final_clip = concatenate_videoclips(clips_to_concat, method="compose")
+            
+            final_clip.write_videofile(
+                combined_video_path,
+                logger=None,
+                fps=30, # Default fps
+                codec="libx264",
+                preset="ultrafast",
+                threads=threads,
+                audio_codec="aac"
+            )
+            
+            # Close clips
+            for clip in clips_to_concat:
+                close_clip(clip)
+            close_clip(final_clip)
+            
+            logger.info("MoviePy concatenation completed")
+            
+            # Verify output
+            if not os.path.exists(combined_video_path) or os.path.getsize(combined_video_path) == 0:
+                 raise Exception("MoviePy produced empty or missing file")
+                 
+        except Exception as e:
+            logger.error(f"MoviePy concatenation failed: {e}")
+            # Fallback to ffmpeg concat if MoviePy fails?
+            logger.info("Falling back to ffmpeg concat")
+            use_moviepy_concat = False
+
+    if not use_moviepy_concat:
+        try:
+            # Create concat list file for ffmpeg
         concat_list_path = os.path.join(output_dir, "concat_list.txt")
         valid_clips_count = 0
         with open(concat_list_path, "w", encoding="utf-8") as f:
@@ -723,9 +783,9 @@ def generate_video(
             shadow_offset = (3, 3)
             
             # Line spacing - reduce it to bring lines closer
-            # spacing in PIL is pixels between lines. Negative values might work or just use 0.
+            # spacing in PIL is pixels between lines. Negative values reduce the gap.
             # For 130px font, we want tight spacing.
-            line_spacing = 10 
+            line_spacing = -20
             
             # Draw shadow first (by drawing text multiple times or offset)
             # PIL doesn't have built-in shadow for text, so we simulate it
