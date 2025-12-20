@@ -446,7 +446,7 @@ with tab_main:
             # Script Language UI Removed - Forced to Korean
             params.video_language = "ko-KR"
             auto_script_enabled = st.checkbox(
-                "실시간 자동 생성", value=config.ui.get("auto_script_enabled", True)
+                "실시간 자동 생성", value=config.ui.get("auto_script_enabled", False)
             )
             config.ui["auto_script_enabled"] = auto_script_enabled
 
@@ -524,6 +524,9 @@ with tab_main:
             else:
                 st.session_state["video_script"] = script
                 st.session_state["video_terms"] = ", ".join(terms)
+                # Update auto-generation state to prevent re-triggering
+                st.session_state["last_auto_subject"] = params.video_subject
+                st.session_state["last_auto_ts"] = time.time()
 
         # Script & Keywords (Side-by-side)
         col_script, col_terms = st.columns(2)
@@ -981,11 +984,14 @@ with tab_settings:
             col_font, col_pos = st.columns(2)
             with col_font:
                 font_names = get_all_fonts()
-                saved_font_name = config.ui.get("font_name", "MicrosoftYaHeiBold.ttc")
+                saved_font_name = config.ui.get("font_name", "NanumGothic-Bold.ttf")
                 try:
                     saved_font_name_index = font_names.index(saved_font_name)
                 except ValueError:
-                    saved_font_name_index = 0
+                    try:
+                         saved_font_name_index = font_names.index("MicrosoftYaHeiBold.ttc")
+                    except ValueError:
+                        saved_font_name_index = 0
                 params.font_name = st.selectbox("폰트", font_names, index=saved_font_name_index, key="settings_font_name")
                 config.ui["font_name"] = params.font_name
                 
