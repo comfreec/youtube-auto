@@ -423,64 +423,64 @@ def combine_videos(
     if not use_moviepy_concat:
         try:
             # Create concat list file for ffmpeg
-        concat_list_path = os.path.join(output_dir, "concat_list.txt")
-        valid_clips_count = 0
-        with open(concat_list_path, "w", encoding="utf-8") as f:
-            for clip_data in processed_clips:
-                if os.path.exists(clip_data.file_path) and os.path.getsize(clip_data.file_path) > 0:
-                    # Escape path for ffmpeg concat demuxer
-                    path = clip_data.file_path.replace("\\", "/")
-                    f.write(f"file '{path}'\n")
-                    valid_clips_count += 1
-                else:
-                    logger.warning(f"skipping invalid clip: {clip_data.file_path}")
+            concat_list_path = os.path.join(output_dir, "concat_list.txt")
+            valid_clips_count = 0
+            with open(concat_list_path, "w", encoding="utf-8") as f:
+                for clip_data in processed_clips:
+                    if os.path.exists(clip_data.file_path) and os.path.getsize(clip_data.file_path) > 0:
+                        # Escape path for ffmpeg concat demuxer
+                        path = clip_data.file_path.replace("\\", "/")
+                        f.write(f"file '{path}'\n")
+                        valid_clips_count += 1
+                    else:
+                        logger.warning(f"skipping invalid clip: {clip_data.file_path}")
 
-        if valid_clips_count == 0:
-            logger.error("no valid clips to merge")
-            return combined_video_path
+            if valid_clips_count == 0:
+                logger.error("no valid clips to merge")
+                return combined_video_path
 
-        logger.info(f"concatenating {valid_clips_count} clips using ffmpeg: {concat_list_path}")
-        
-        ffmpeg_exe = get_ffmpeg_exe()
-        cmd = [
-            ffmpeg_exe,
-            "-y",
-            "-f", "concat",
-            "-safe", "0",
-            "-i", concat_list_path,
-            "-c:v", "libx264",
-            "-pix_fmt", "yuv420p",
-            "-preset", "ultrafast",
-            "-crf", "23",
-            "-c:a", "aac",
-            "-b:a", "128k",
-            combined_video_path
-        ]
-        
-        # Run ffmpeg
-        logger.info(f"running ffmpeg command: {' '.join(cmd)}")
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            encoding='utf-8',
-            errors='replace'
-        )
-        
-        if result.returncode != 0:
-            logger.error(f"ffmpeg concatenation failed: {result.stderr}")
-            raise Exception(f"ffmpeg concatenation failed: {result.stderr}")
+            logger.info(f"concatenating {valid_clips_count} clips using ffmpeg: {concat_list_path}")
             
-        logger.info("ffmpeg concatenation completed")
-        
-        # Verify output
-        if not os.path.exists(combined_video_path) or os.path.getsize(combined_video_path) == 0:
-             logger.error("ffmpeg produced empty or missing file")
-             raise Exception("ffmpeg produced empty or missing file")
+            ffmpeg_exe = get_ffmpeg_exe()
+            cmd = [
+                ffmpeg_exe,
+                "-y",
+                "-f", "concat",
+                "-safe", "0",
+                "-i", concat_list_path,
+                "-c:v", "libx264",
+                "-pix_fmt", "yuv420p",
+                "-preset", "ultrafast",
+                "-crf", "23",
+                "-c:a", "aac",
+                "-b:a", "128k",
+                combined_video_path
+            ]
+            
+            # Run ffmpeg
+            logger.info(f"running ffmpeg command: {' '.join(cmd)}")
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                encoding='utf-8',
+                errors='replace'
+            )
+            
+            if result.returncode != 0:
+                logger.error(f"ffmpeg concatenation failed: {result.stderr}")
+                raise Exception(f"ffmpeg concatenation failed: {result.stderr}")
+                
+            logger.info("ffmpeg concatenation completed")
+            
+            # Verify output
+            if not os.path.exists(combined_video_path) or os.path.getsize(combined_video_path) == 0:
+                 logger.error("ffmpeg produced empty or missing file")
+                 raise Exception("ffmpeg produced empty or missing file")
 
-    except Exception as e:
-        logger.error(f"failed to merge clips: {str(e)}")
-        raise e
+        except Exception as e:
+            logger.error(f"failed to merge clips: {str(e)}")
+            raise e
 
     # clean temp files
     clip_files = [clip.file_path for clip in processed_clips]

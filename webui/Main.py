@@ -168,34 +168,20 @@ streamlit_style = """
         fill: #D4AF37 !important;
     }
     
-    /* Buttons */
-    .stButton > button {
-        background-color: #2D2D2D !important;
-        color: #E0E0E0 !important;
-        border: 1px solid #555555 !important;
-        border-radius: 8px !important;
-        font-weight: 600 !important;
-        transition: all 0.2s ease;
-    }
-    .stButton > button:hover {
-        background-color: #404040 !important;
-        color: #FFFFFF !important;
-        border-color: #FFFFFF !important;
-        box-shadow: 0 0 10px rgba(255, 255, 255, 0.1) !important;
-    }
-    
-    /* Download Button Specific Styling - Matched to Primary Button */
-    .stDownloadButton > button {
+    /* Unified Button Styling (Standardized for Save, Play, Upload, and Start) */
+    .stButton > button, .stDownloadButton > button {
         background: #2D2D2D !important; 
         border: 1px solid #FFFFFF !important; 
         color: #FFFFFF !important; 
         font-weight: 900 !important; 
         font-size: 1.2rem !important;
-        padding: 1rem 3rem !important; 
+        padding: 1rem 2rem !important; 
         border-radius: 12px !important; 
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5) !important;
+        width: 100% !important;
+        margin-bottom: 10px !important;
     }
-    .stDownloadButton > button:hover {
+    .stButton > button:hover, .stDownloadButton > button:hover {
         background-color: #404040 !important;
         transform: translateY(-2px); 
         box-shadow: 0 6px 15px rgba(255, 255, 255, 0.1) !important;
