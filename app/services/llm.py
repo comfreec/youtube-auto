@@ -503,7 +503,7 @@ def _postprocess_terms(video_subject: str, terms: List[str], amount: int) -> Lis
     cleaned = []
     seen = set()
     # Prepare normalized subject for comparison
-    subj = re.sub(r"[^A-Za-z\s]", " ", (video_subject or "")).strip().lower()
+    subj = re.sub(r"[^A-Za-z0-9\s가-힣]", " ", (video_subject or "")).strip().lower()
     subj = re.sub(r"\s+", " ", subj)
     for t in terms:
         if not isinstance(t, str):
@@ -512,14 +512,15 @@ def _postprocess_terms(video_subject: str, terms: List[str], amount: int) -> Lis
         if not x:
             continue
         x = x.replace("_", " ").replace("-", " ").strip()
-        x = re.sub(r"[^A-Za-z\\s]", " ", x)
-        x = re.sub(r"\\s+", " ", x).strip()
+        # Allow English, Numbers, and Korean characters
+        x = re.sub(r"[^A-Za-z0-9\s가-힣]", " ", x)
+        x = re.sub(r"\s+", " ", x).strip()
         if not x:
             continue
         words = x.split(" ")
         if len(words) > 5:
             x = " ".join(words[:5])
-        if len(x) < 3:
+        if len(x) < 2:  # Allow shorter words if they are Korean (e.g. '돈')
             continue
         key = x.lower()
         if key in seen:
@@ -558,11 +559,13 @@ Generate {amount} search terms for stock videos, based on the subject and script
 
 ## Constraints:
 1. Return a JSON-array of strings. Example: ["term1", "term2", "term3"]
-2. Each search term must be a concrete VISUAL description (3-5 words) in English.
+2. Each search term must be a concrete VISUAL description (3-5 words).
 3. Do NOT use abstract concepts. Describe what can be SEEN.
 4. The search terms MUST be directly related to the video subject: "{video_subject}".
-5. If the subject contains proper nouns (e.g. company names, specific people) that might not exist in stock video libraries, replace them with VISUAL SYNONYMS or GENERIC REPRESENTATIONS (e.g. for "Coupang", use "delivery packages" or "logistics warehouse").
-6. Return ONLY the JSON-array. No other text.
+5. **IMPORTANT**: You MUST provide search terms in **ENGLISH**. Even if the subject is in Korean, translate the visual concepts into English (e.g., if subject is "강황", use "Turmeric powder", "healthy spices").
+6. Stock video sites (Pexels/Pixabay) have very poor Korean support. **English terms are required** to find matching videos.
+7. You may include 1 or 2 Korean terms at the very end of the list as a backup, but the first {amount} terms MUST be English.
+8. Return ONLY the JSON-array. No other text.
 
 ## Context:
 ### Video Subject

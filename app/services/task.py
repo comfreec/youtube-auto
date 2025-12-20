@@ -229,6 +229,17 @@ def generate_final_videos(
             utils.task_dir(task_id), f"combined-{index}.mp4"
         )
         logger.info(f"\n\n## combining video: {index} => {combined_video_path}")
+        
+        # Calculate progress range for this step
+        # Total progress allocated for this video's combine step is (50 / params.video_count / 2)
+        step_progress_size = 50 / params.video_count / 2
+        start_progress = _progress
+        
+        def combine_progress_callback(percent):
+            # percent is 0-100
+            current_p = start_progress + (percent / 100) * step_progress_size
+            sm.state.update_task(task_id, progress=current_p, message=f"영상 클립 병합 중 ({index}/{params.video_count}) - {percent}%")
+
         video.combine_videos(
             combined_video_path=combined_video_path,
             video_paths=downloaded_videos,
@@ -238,9 +249,10 @@ def generate_final_videos(
             video_transition_mode=video_transition_mode,
             max_clip_duration=params.video_clip_duration,
             threads=params.n_threads,
+            progress_callback=combine_progress_callback,
         )
 
-        _progress += 50 / params.video_count / 2
+        _progress += step_progress_size
         sm.state.update_task(task_id, progress=_progress, message=f"최종 영상 렌더링 중 ({index}/{params.video_count}) - 몇 분 정도 걸릴 수 있습니다...")
 
         final_video_path = path.join(utils.task_dir(task_id), f"final-{index}.mp4")

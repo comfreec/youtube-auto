@@ -22,6 +22,7 @@ from moviepy import (
 )
 from moviepy.video.tools.subtitles import SubtitlesClip
 from PIL import ImageFont
+from proglog import ProgressBarLogger
 
 from app.models import const
 from app.models.schema import (
@@ -33,6 +34,24 @@ from app.models.schema import (
 )
 from app.services.utils import video_effects
 from app.utils import utils
+
+class TaskProgressLogger(ProgressBarLogger):
+    def __init__(self, callback):
+        super().__init__()
+        self.callback = callback
+
+    def bars_callback(self, bar, attr, value, old_value=None):
+        if bar == 't' and self.callback:
+            total = self.bars[bar]['total']
+            if total > 0:
+                # Map 0-100% of write process to 90-100% of total task
+                p = 90 + int((value / total) * 10)
+                # Ensure we don't exceed 99% until fully done
+                p = min(p, 99)
+                self.callback(p)
+
+    def log(self, message):
+        pass
 
 class SubClippedVideoClip:
     def __init__(self, file_path, start_time=None, end_time=None, width=None, height=None, duration=None):
@@ -179,6 +198,7 @@ def combine_videos(
     video_transition_mode: VideoTransitionMode = None,
     max_clip_duration: int = 5,
     threads: int = 2,
+    progress_callback=None,
 ) -> str:
     audio_clip = AudioFileClip(audio_file)
     audio_duration = audio_clip.duration
@@ -236,10 +256,20 @@ def combine_videos(
     logger.debug(f"total subclipped items: {len(subclipped_items)}")
     
     # Add downloaded clips over and over until the duration of the audio (max_duration) has been reached
+    total_subclips = len(subclipped_items)
     for i, subclipped_item in enumerate(subclipped_items):
         if video_duration > audio_duration:
             break
         
+        # Report progress (0-80% of this phase)
+        if progress_callback:
+            # We estimate we might use all clips, or loop. 
+            # Let's just map the processed count against total available clips for now, 
+            # or better, against target audio duration if possible. 
+            # But simpler: map i to total_subclips.
+            current_progress = int((i / total_subclips) * 90) # Reserve 10% for concatenation
+            progress_callback(current_progress)
+
         logger.debug(f"processing clip {i+1}: {subclipped_item.width}x{subclipped_item.height}, current duration: {video_duration:.2f}s, remaining: {audio_duration - video_duration:.2f}s")
         
         try:
@@ -358,6 +388,9 @@ def combine_videos(
      
     # merge video clips progressively, avoid loading all videos at once to avoid memory overflow
     logger.info("starting clip merging process")
+    if progress_callback:
+        progress_callback(90) # Clips prepared, starting merge
+
     if not processed_clips:
         logger.warning("no clips available for merging")
         return combined_video_path
@@ -393,9 +426,14 @@ def combine_videos(
             # Use method='compose' to handle any alpha/transparency or effects better
             final_clip = concatenate_videoclips(clips_to_concat, method="compose")
             
+            # Setup logger if callback is provided
+            write_logger = None
+            if progress_callback:
+                write_logger = TaskProgressLogger(progress_callback)
+
             final_clip.write_videofile(
                 combined_video_path,
-                logger=None,
+                logger=write_logger,
                 fps=30, # Default fps
                 codec="libx264",
                 preset="ultrafast",
@@ -785,7 +823,7 @@ def generate_video(
             # Line spacing - reduce it to bring lines closer
             # spacing in PIL is pixels between lines. Negative values reduce the gap.
             # For 130px font, we want tight spacing.
-            line_spacing = -20
+            line_spacing = -10
             
             # Draw shadow first (by drawing text multiple times or offset)
             # PIL doesn't have built-in shadow for text, so we simulate it

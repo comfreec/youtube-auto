@@ -34,3 +34,7 @@ debug/
 debug_*.py
 test_*.py
 streamlit.log
+
+# Secrets
+token.pickle
+client_secrets.json
