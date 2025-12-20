@@ -560,8 +560,8 @@ Generate {amount} search terms for stock videos, based on the subject and script
 1. Return a JSON-array of strings. Example: ["term1", "term2", "term3"]
 2. Each search term must be a concrete VISUAL description (3-5 words) in English.
 3. Do NOT use abstract concepts. Describe what can be SEEN.
-4. The search terms MUST be directly related to the video subject: "{video_subject}". You MUST include the subject keyword in the search terms.
-5. Do NOT generate generic terms. Always combine the subject "{video_subject}" with visual words (e.g. "{video_subject} close up", "{video_subject} in background").
+4. The search terms MUST be directly related to the video subject: "{video_subject}".
+5. If the subject contains proper nouns (e.g. company names, specific people) that might not exist in stock video libraries, replace them with VISUAL SYNONYMS or GENERIC REPRESENTATIONS (e.g. for "Coupang", use "delivery packages" or "logistics warehouse").
 6. Return ONLY the JSON-array. No other text.
 
 ## Context:
