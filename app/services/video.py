@@ -687,71 +687,111 @@ def generate_video(
         logger.info(f"Adding subtitles: {sub_filename} with style: {style}")
 
     # 2. Title Overlay
+    title_overlay_filter = ""
     if params.video_subject:
         logger.info(f"  Adding title: {params.video_subject}")
         title_text = params.video_subject
         
-        # Hardcode font size to 130 (increased significantly based on user feedback)
+        # Hardcode font size to 130
         title_font_size = 130
         
         # Use wrap_text to handle long titles
         wrapped_title, _ = wrap_text(title_text, max_width=video_width * 0.9, font=font_path, fontsize=title_font_size)
-
-        # Use drawtext filter for absolute positioning
-        # This avoids ASS/SRT alignment issues where text appears in the middle
         
-        # Create text file
-        title_txt_path = os.path.join(task_dir, "title.txt")
-        with open(title_txt_path, "w", encoding="utf-8") as f:
-            f.write(wrapped_title)
-            
-        # Copy font to task directory to allow relative path usage in ffmpeg
-        # This avoids Windows path escaping issues (colons in drive letters)
-        title_font_name = "title_font.ttf"
-        title_font_path = os.path.join(task_dir, title_font_name)
-        
+        # Create title image using PIL for better control over alignment and spacing
         try:
-             if os.path.exists(font_path):
-                 shutil.copy2(font_path, title_font_path)
-                 logger.info(f"Copied title font to {title_font_path}")
-             else:
-                 # Fallback to system font if font_path doesn't exist
-                 # Should not happen as font_path is validated earlier, but just in case
-                 if os.path.exists("C:/Windows/Fonts/malgun.ttf"):
-                      shutil.copy2("C:/Windows/Fonts/malgun.ttf", title_font_path)
+            # Create a transparent image matching video size
+            title_img = Image.new('RGBA', (video_width, video_height), (0, 0, 0, 0))
+            draw = ImageDraw.Draw(title_img)
+            
+            # Load font
+            try:
+                font = ImageFont.truetype(font_path, title_font_size)
+            except Exception:
+                # Fallback to default if font load fails
+                font = ImageFont.load_default()
+            
+            # Draw text with stroke and shadow
+            # Calculate position to center horizontally and place at 10% from top
+            # We draw centered text, so x should be video_width / 2, and anchor='ma' (middle ascender/top)
+            
+            # Shadow/Stroke settings
+            text_color = "#FFD700" # Gold
+            stroke_color = "black"
+            stroke_width = 3
+            shadow_color = (0, 0, 0, 150) # Semi-transparent black
+            shadow_offset = (3, 3)
+            
+            # Line spacing - reduce it to bring lines closer
+            # spacing in PIL is pixels between lines. Negative values might work or just use 0.
+            # For 130px font, we want tight spacing.
+            line_spacing = 10 
+            
+            # Draw shadow first (by drawing text multiple times or offset)
+            # PIL doesn't have built-in shadow for text, so we simulate it
+            draw.multiline_text(
+                (video_width / 2 + shadow_offset[0], video_height * 0.10 + shadow_offset[1]),
+                wrapped_title,
+                font=font,
+                fill=shadow_color,
+                align="center",
+                anchor="ma",
+                spacing=line_spacing
+            )
+            
+            # Draw main text with stroke
+            draw.multiline_text(
+                (video_width / 2, video_height * 0.10),
+                wrapped_title,
+                font=font,
+                fill=text_color,
+                align="center",
+                anchor="ma",
+                spacing=line_spacing,
+                stroke_width=stroke_width,
+                stroke_fill=stroke_color
+            )
+            
+            # Save to file
+            title_img_path = os.path.join(task_dir, "title.png")
+            title_img.save(title_img_path)
+            logger.info(f"Generated title image at {title_img_path}")
+            
+            # Add overlay filter
+            # Use 'movie' source to load the image
+            # [v_in][title]overlay=0:0[v_out]
+            # We assume the image is same size as video, so 0:0 is correct
+            title_overlay_filter = f"movie='title.png'[title];[v_subbed][title]overlay=0:0"
+            
         except Exception as e:
-            logger.error(f"Failed to copy title font: {e}")
-
-        # Use relative paths for ffmpeg command
-        font_path_f = title_font_name
-        title_txt_path_f = "title.txt"
-        
-        # Drawtext settings
-        # y = 10% from top
-        # fontcolor = Gold (#FFD700)
-        # Border/Shadow for visibility
-        
-        drawtext_cmd = (
-            f"drawtext=fontfile='{font_path_f}':"
-            f"textfile='{title_txt_path_f}':"
-            f"fontcolor=0xFFD700:"
-            f"fontsize={title_font_size}:"
-            f"borderw=2:bordercolor=black:"
-            f"shadowx=2:shadowy=2:shadowcolor=black@0.6:"
-            f"x=(w-text_w)/2:"
-            f"y=h*0.10:"
-            f"line_spacing=-30"  # Reduce line spacing to bring lines closer
-        )
-        
-        logger.info(f"  Adding title with drawtext: {drawtext_cmd}")
-        video_filter_chain.append(drawtext_cmd)
+            logger.error(f"Failed to generate title image: {e}")
+            # Fallback to old drawtext if PIL fails?
+            # For now, just log error. The video will be generated without title if this fails.
 
     # Combine video filters
+    # Logic:
+    # 1. subtitles (if any) -> [v_subbed]
+    # 2. title (if any) -> takes [v_subbed] (or [0:v] if no subtitles), outputs [v_out]
+    
+    current_stream = "0:v"
+    
     if video_filter_chain:
-        filters.append(f"[0:v]{','.join(video_filter_chain)}[v_out]")
+        # If we have filters (subtitles), apply them
+        filters.append(f"[{current_stream}]{','.join(video_filter_chain)}[v_subbed]")
+        current_stream = "v_subbed"
+    
+    if title_overlay_filter:
+        # If we have title, apply overlay
+        # Note: title_overlay_filter string constructed above assumes [v_subbed] input
+        # We need to adjust it to use {current_stream}
+        title_overlay_filter = title_overlay_filter.replace("[v_subbed]", f"[{current_stream}]")
+        filters.append(f"{title_overlay_filter}[v_out]")
         video_map = "[v_out]"
     else:
-        video_map = "0:v"
+        if current_stream == "0:v":
+            video_map = "0:v"
+        else:
+            video_map = f"[{current_stream}]"
 
     # Construct complete command
     cmd = [ffmpeg_exe, "-y"]
