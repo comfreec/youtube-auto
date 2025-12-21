@@ -40,6 +40,17 @@ def save_config():
         _cfg["ui"] = ui
         f.write(toml.dumps(_cfg))
 
+def reload():
+    global _cfg, app, whisper, proxy, azure, siliconflow, ui
+    _cfg = load_config()
+    app.update(_cfg.get("app", {}))
+    whisper.update(_cfg.get("whisper", {}))
+    proxy.update(_cfg.get("proxy", {}))
+    azure.update(_cfg.get("azure", {}))
+    siliconflow.update(_cfg.get("siliconflow", {}))
+    ui.update(_cfg.get("ui", {}))
+    logger.info("Config reloaded")
+
 
 _cfg = load_config()
 app = _cfg.get("app", {})

@@ -20,6 +20,13 @@ model = None
 
 def create(audio_file, subtitle_file: str = ""):
     global model
+    # Reload config params
+    config.reload()
+    global model_size, device, compute_type
+    model_size = config.whisper.get("model_size", "large-v3")
+    device = config.whisper.get("device", "cpu")
+    compute_type = config.whisper.get("compute_type", "int8")
+    
     if WhisperModel is None:
         logger.warning("faster_whisper not available, skipping whisper subtitle generation")
         return ""

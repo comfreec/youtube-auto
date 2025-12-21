@@ -1,5 +1,6 @@
 import os
 import glob
+import random
 import platform
 import sys
 import time
@@ -308,6 +309,7 @@ config.ui["language"] = "ko-KR"
 
 # 타이틀만 표시 (언어 선택 컬럼 제거)
 st.title("유튜브 쇼츠영상 자동생성기")
+st.success("✅ 시스템 업데이트 완료! (Gemini 2.5 Flash 탑재)")
 
 support_locales = [
     "ko-KR",
@@ -402,6 +404,7 @@ def init_log():
         format=format_record,
         colorize=True,
     )
+    logger.add("debug_session.log", level="DEBUG", format=format_record, rotation="10 MB")
 
 
 init_log()
@@ -432,7 +435,7 @@ with tab_main:
         st.write("📝 **대본 및 기획**")
         
         # Subject Input & Auto-Generate Controls
-        col_subject, col_auto = st.columns([0.7, 0.3])
+        col_subject, col_auto = st.columns([1.0, 0.01]) # Adjusted column ratio since checkbox is gone
         with col_subject:
             params.video_subject = st.text_input(
                 "영상 주제",
@@ -445,88 +448,118 @@ with tab_main:
         with col_auto:
             # Script Language UI Removed - Forced to Korean
             params.video_language = "ko-KR"
-            auto_script_enabled = st.checkbox(
-                "실시간 자동 생성", value=config.ui.get("auto_script_enabled", False)
-            )
-            config.ui["auto_script_enabled"] = auto_script_enabled
+            # Auto-script checkbox removed as per user request
 
-        # Auto-generation Logic (Keep existing)
-        if auto_script_enabled:
-            subject_changed = (
-                params.video_subject
-                and params.video_subject != st.session_state.get("last_auto_subject", "")
-            )
-            now_ts = time.time()
-            last_ts = st.session_state.get("last_auto_ts", 0.0)
-            can_trigger = now_ts - last_ts > 1.0 and len(params.video_subject) >= 4
-            if subject_changed and can_trigger:
-                progress_bar = st.progress(0)
-                status_text = st.empty()
+        # Manual Generate Button
+        if st.button(
+            "✨ 주제 기반 대본 및 키워드 생성 (고속 모드)", key="auto_generate_script", use_container_width=True, type="primary"
+        ):
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+            
+            try:
+                import concurrent.futures
                 
-                status_text.text("AI가 제목을 기반으로 대본을 생성 중입니다... (10%)")
-                progress_bar.progress(10)
+                # 1. Generate Script first
+                status_text.text("AI가 대본을 생성 중입니다... (0%)")
+                progress_bar.progress(0)
                 
-                script = llm.generate_script(
-                    video_subject=params.video_subject,
-                    language=params.video_language,
-                    paragraph_number=4,
-                )
+                script = ""
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(
+                        llm.generate_script,
+                        video_subject=params.video_subject,
+                        language=params.video_language,
+                        paragraph_number=4
+                    )
+                    
+                    # Simulate progress while waiting (up to 45%)
+                    # Timeout is 60s, so we can step slowly
+                    # Simulate progress while waiting (up to 45%)
+                    # Timeout is 60s, so we wait up to 75s (150 * 0.5) to avoid blocking UI
+                    for i in range(150):
+                        if future.done():
+                            break
+                        time.sleep(0.5)
+                        # Go up to 45% (slowly)
+                        # Map 0-150 steps to 0-45%
+                        current_p = min(int(i * 0.3), 45)
+                        progress_bar.progress(current_p)
+                        status_text.text(f"AI가 대본을 생성 중입니다... ({current_p}%)")
+                        # Go up to 45%
+                        current_p = min(int(i * 1.5), 45)
+                        progress_bar.progress(current_p)
+                        status_text.text(f"AI가 대본을 생성 중입니다... ({current_p}%)")
+                    
+                    script = future.result()
                 
-                status_text.text("대본 생성 완료. 키워드를 생성 중입니다... (50%)")
+                if not script or "Error:" in script:
+                    st.error(f"대본 생성 실패: {script}")
+                    status_text.empty()
+                    progress_bar.empty()
+                    # Cannot use return here as it's not a function
+                    # Use a flag to skip the rest or just raise an exception to be caught by the block
+                    raise Exception(f"Script generation failed: {script}")
+
+                # 2. Generate Terms based on the script
+                status_text.text("대본 생성 완료! 대본을 분석하여 키워드를 추출 중입니다... (50%)")
                 progress_bar.progress(50)
                 
-                terms = llm.generate_terms(params.video_subject, script)
+                terms = []
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(
+                        llm.generate_terms,
+                        video_subject=params.video_subject,
+                        video_script=script, 
+                        amount=5
+                    )
+                    
+                    # Simulate progress while waiting (50% -> 90%)
+                    # Simulate progress while waiting (up to 45%)
+                    # Timeout is 60s, so we wait up to 75s (150 * 0.5) to avoid blocking UI
+                    for i in range(150):
+                        if future.done():
+                            break
+                        time.sleep(0.5)
+                        # Go up to 45% (slowly)
+                        # Map 0-150 steps to 0-45%
+                        current_p = min(int(i * 0.3), 45)
+                        progress_bar.progress(current_p)
+                        status_text.text(f"AI가 대본을 생성 중입니다... ({current_p}%)")
+                        # Go from 50 to 90
+                        current_p = min(50 + int(i * 1.5), 90)
+                        progress_bar.progress(current_p)
+                        status_text.text(f"키워드 추출 중... ({current_p}%)")
+                        
+                    terms = future.result()
                 
+                if not terms or (isinstance(terms, str) and "Error:" in terms):
+                     st.error(f"키워드 생성 실패: {terms}")
+                     # We still have the script, so maybe we shouldn't stop? 
+                     # But for now let's report error. Actually, generate_terms has fallbacks, so it rarely fails completely.
+                     terms = [params.video_subject] # Fallback just in case
+
                 status_text.text("생성 완료! (100%)")
                 progress_bar.progress(100)
                 time.sleep(0.5)
                 status_text.empty()
                 progress_bar.empty()
 
-                if isinstance(script, str) and "Error: " not in script:
-                    st.session_state["video_script"] = script
-                    if isinstance(terms, list):
-                        st.session_state["video_terms"] = ", ".join(terms)
-                    st.session_state["last_auto_subject"] = params.video_subject
-                    st.session_state["last_auto_ts"] = now_ts
-
-        # Manual Generate Button
-        if st.button(
-            "✨ 주제 기반 대본 및 키워드 생성", key="auto_generate_script", use_container_width=True, type="primary"
-        ):
-            progress_bar = st.progress(0)
-            status_text = st.empty()
-            
-            status_text.text("AI가 영상 대본을 생성 중입니다... (10%)")
-            progress_bar.progress(10)
-            
-            script = llm.generate_script(
-                video_subject=params.video_subject,
-                language=params.video_language,
-                paragraph_number=4,
-            )
-            
-            status_text.text("영상 대본 생성 완료. 키워드를 생성 중입니다... (50%)")
-            progress_bar.progress(50)
-            
-            terms = llm.generate_terms(params.video_subject, script)
-            
-            status_text.text("생성 완료! (100%)")
-            progress_bar.progress(100)
-            time.sleep(0.5)
-            status_text.empty()
-            progress_bar.empty()
-
-            if "Error: " in script:
-                st.error(tr(script))
-            elif "Error: " in terms:
-                st.error(tr(terms))
-            else:
                 st.session_state["video_script"] = script
                 st.session_state["video_terms"] = ", ".join(terms)
-                # Update auto-generation state to prevent re-triggering
+                
+                # Update auto-generation state
                 st.session_state["last_auto_subject"] = params.video_subject
                 st.session_state["last_auto_ts"] = time.time()
+                st.rerun()
+
+            except Exception as e:
+                error_msg = str(e)
+                if "AI generation failed" in error_msg:
+                    error_msg = "AI 대본 생성에 실패했습니다. 잠시 후 다시 시도해 주세요."
+                st.error(f"생성 중 오류 발생: {error_msg}")
+                status_text.empty()
+                progress_bar.empty()
 
         # Script & Keywords (Side-by-side)
         col_script, col_terms = st.columns(2)
@@ -596,17 +629,86 @@ with tab_main:
         time.sleep(1)
         st.rerun()
 
+    # --- TIMER VIDEO GENERATION ---
+    st.write("")
+    with st.expander("⏱️ 타이머 영상 생성 (Timer Video Generation)", expanded=False):
+        st.info("설정된 시간만큼 작동하는 타이머 영상을 생성합니다. (검은 배경, 중앙 흰색 글씨)")
+        
+        timer_col1, timer_col2 = st.columns([3, 1])
+        with timer_col1:
+            timer_duration = st.number_input("타이머 시간 (분)", min_value=1, max_value=60, value=1, step=1, key="timer_duration_input")
+        
+        with timer_col2:
+            st.write("") # Spacing
+            st.write("") # Spacing
+            if st.button("⏱️ 생성 시작", use_container_width=True, key="timer_generate_btn"):
+                # Generation Logic
+                timer_seconds = timer_duration * 60
+                
+                # Output file
+                task_id = str(uuid4())
+                output_dir = os.path.join(root_dir, "storage", "tasks", task_id)
+                os.makedirs(output_dir, exist_ok=True)
+                output_file = os.path.join(output_dir, "timer_video.mp4")
+                
+                status_text = st.empty()
+                progress_bar = st.progress(0)
+                
+                try:
+                    status_text.text(f"타이머 영상 생성 중... ({timer_duration}분)")
+                    
+                    # Import video service inside to avoid circular deps
+                    from app.services import video
+                    
+                    # Prepare assets
+                    bg_video_path = os.path.join(root_dir, "resource", "materials", "rollercoaster_timer_bg.mp4")
+                    
+                    # Pick a random song
+                    song_dir = os.path.join(root_dir, "resource", "songs")
+                    songs = glob.glob(os.path.join(song_dir, "*.mp3"))
+                    bg_music_path = random.choice(songs) if songs else None
+                    
+                    # Run in ThreadPoolExecutor
+                    with concurrent.futures.ThreadPoolExecutor() as executor:
+                        future = executor.submit(video.generate_timer_video, timer_seconds, output_file, None, 150, bg_video_path, bg_music_path)
+                        
+                        while not future.done():
+                            time.sleep(0.5)
+                            status_text.text(f"타이머 영상 생성 중... (진행 중)")
+                        
+                        result_file = future.result()
+                        
+                    status_text.text("생성 완료!")
+                    progress_bar.progress(100)
+                    
+                    st.success(f"타이머 영상이 생성되었습니다: {timer_duration}분")
+                    
+                    # Add to session state
+                    if "generated_video_files" not in st.session_state:
+                         st.session_state["generated_video_files"] = []
+                    st.session_state["generated_video_files"].insert(0, result_file)
+                    st.rerun()
+                    
+                except Exception as e:
+                    st.error(f"오류 발생: {str(e)}")
+                    logger.error(f"Timer generation failed: {e}")
+
     # START GENERATION BUTTON (Moved Up)
     st.write("")
-    start_button = st.button("🚀 영상 생성 시작", use_container_width=True, type="primary")
     
+    col_btn_start, col_chk_eng = st.columns([0.6, 0.4])
+    with col_btn_start:
+        start_button = st.button("🚀 영상 생성 시작", use_container_width=True, type="primary")
+    with col_chk_eng:
+        generate_english_version = st.checkbox("🇺🇸 영어 버전 추가 생성", value=False, help="체크하면 한국어 영상 생성 후, 영어 자막/성우가 적용된 글로벌 버전을 추가로 생성합니다.")
+
     # Container for progress bar (placed immediately after the button)
     generation_status_container = st.empty()
 
     # --- Video Result ---
     if "generated_video_files" in st.session_state and st.session_state["generated_video_files"]:
         st.write("---")
-        st.subheader("🎥 완성된 영상")
+        # st.subheader("🎥 완성된 영상") - Removed by user request
         video_files = st.session_state["generated_video_files"]
         
         for i, video_path in enumerate(video_files):
@@ -979,22 +1081,10 @@ with tab_settings:
     # Settings Tab Content
     with tab_settings:
         with st.expander("🎨 자막 및 스타일 설정", expanded=True):
-            params.subtitle_enabled = st.checkbox("자막 활성화", value=True, key="settings_subtitle_enabled")
+            col_enable, col_pos = st.columns([0.4, 0.6])
+            with col_enable:
+                params.subtitle_enabled = st.checkbox("자막 활성화", value=True, key="settings_subtitle_enabled")
             
-            col_font, col_pos = st.columns(2)
-            with col_font:
-                font_names = get_all_fonts()
-                saved_font_name = config.ui.get("font_name", "NanumGothic-Bold.ttf")
-                try:
-                    saved_font_name_index = font_names.index(saved_font_name)
-                except ValueError:
-                    try:
-                         saved_font_name_index = font_names.index("MicrosoftYaHeiBold.ttc")
-                    except ValueError:
-                        saved_font_name_index = 0
-                params.font_name = st.selectbox("폰트", font_names, index=saved_font_name_index, key="settings_font_name")
-                config.ui["font_name"] = params.font_name
-                
             with col_pos:
                 subtitle_positions = [
                     ("상단", "top"),
@@ -1010,6 +1100,8 @@ with tab_settings:
                     key="settings_subtitle_position"
                 )
                 params.subtitle_position = subtitle_positions[selected_index][1]
+
+            # Font Selection Removed (Forced to Malgun Gothic/System Font for reliability)
 
             col_color, col_size = st.columns(2)
             with col_color:
@@ -1046,6 +1138,11 @@ with tab_settings:
             llm_api_key = config.app.get(f"{llm_provider}_api_key", "")
             st_llm_api_key = st.text_input("LLM API 키", value=llm_api_key, type="password")
             if st_llm_api_key: config.app[f"{llm_provider}_api_key"] = st_llm_api_key
+
+            # Model Name Input
+            llm_model_name = config.app.get(f"{llm_provider}_model_name", "")
+            st_llm_model_name = st.text_input("모델 이름 (선택 사항)", value=llm_model_name, placeholder="예: gemini-2.5-flash, gpt-4o")
+            if st_llm_model_name: config.app[f"{llm_provider}_model_name"] = st_llm_model_name
             
             st.write("---")
             st.write("**Pexels/Pixabay API 키**")
@@ -1233,116 +1330,132 @@ if start_button:
 
     # Progress bar and status container
     # Use the container created above (generation_status_container)
+    tasks_to_run = []
+    
+    # Task 1: Korean (Original)
+    tasks_to_run.append({
+        "label": "🇰🇷 한국어 버전 생성",
+        "params": params.copy()
+    })
+    
+    # Task 2: English (Optional)
+    if generate_english_version:
+        with st.spinner("🇺🇸 영어 버전 준비 중... (대본 번역)"):
+            try:
+                english_script = llm.translate_to_english(params.video_script)
+                if "Error" in english_script:
+                    st.error(f"영어 대본 번역 실패: {english_script}")
+                else:
+                    eng_params = params.copy()
+                    eng_params.video_script = english_script
+                    eng_params.video_subject = llm.translate_to_english(params.video_subject)
+                    eng_params.voice_name = "en-US-AndrewNeural" # Default English Voice
+                    
+                    tasks_to_run.append({
+                        "label": "🇺🇸 영어 버전 생성",
+                        "params": eng_params
+                    })
+            except Exception as e:
+                st.error(f"영어 버전 준비 실패: {e}")
+
+    final_video_files = []
+
     with generation_status_container:
-        st.info("작업 초기화 중...")
-        progress_bar = st.progress(0)
-        status_text = st.empty()
-    
-    result = None
-    
-    try:
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            future = executor.submit(tm.start, task_id=task_id, params=params)
+        for i, task in enumerate(tasks_to_run):
+            task_label = task["label"]
+            task_params = task["params"]
             
-            while not future.done():
-                task_info = sm.state.get_task(task_id)
-                if task_info:
-                    progress = task_info.get("progress", 0)
-                    state = task_info.get("state", const.TASK_STATE_PROCESSING)
-                    task_msg = task_info.get("message", "")
+            st.write(f"### {task_label}")
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+            
+            task_id = str(uuid4())
+            status_text.info(f"작업 시작... ({task_id})")
+            
+            try:
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(tm.start, task_id=task_id, params=task_params)
                     
-                    # Update progress bar
-                    progress_bar.progress(min(int(progress) / 100, 1.0))
+                    while not future.done():
+                        task_info = sm.state.get_task(task_id)
+                        if task_info:
+                            progress = task_info.get("progress", 0)
+                            state = task_info.get("state", const.TASK_STATE_PROCESSING)
+                            task_msg = task_info.get("message", "")
+                            
+                            progress_bar.progress(min(int(progress) / 100, 1.0))
+                            
+                            if state == const.TASK_STATE_PROCESSING:
+                                status_text.info(f"{task_msg} ({int(progress)}%)" if task_msg else f"처리 중... {int(progress)}%")
+                            elif state == const.TASK_STATE_FAILED:
+                                status_text.error(f"실패: {task_msg}")
+                                break
+                            elif state == const.TASK_STATE_COMPLETE:
+                                status_text.success("완료!")
+                        time.sleep(1)
                     
-                    # Update status text
-                    if state == const.TASK_STATE_PROCESSING:
-                        if task_msg:
-                            status_text.info(f"{task_msg} ({int(progress)}%)")
-                        else:
-                            status_text.info(f"처리 중... {int(progress)}%")
-                    elif state == const.TASK_STATE_FAILED:
-                        if task_msg:
-                            status_text.error(f"영상 생성 실패: {task_msg}")
+                    if future.done():
+                        result = future.result()
+                        if result and "videos" in result:
+                            generated_videos = result["videos"]
+                            final_video_files.extend(generated_videos)
+                            status_text.success("영상 생성 완료")
+
+                            # Auto Upload Logic (Integrated)
+                            if st.session_state.get("yt_auto_upload"):
+                                token_file = os.path.join(root_dir, "token.pickle")
+                                client_secrets_file = os.path.join(root_dir, "client_secrets.json")
+                                
+                                if os.path.exists(token_file) and os.path.exists(client_secrets_file):
+                                    for video_path in generated_videos:
+                                        if os.path.exists(video_path):
+                                            status_text.info(f"유튜브 업로드 시작: {os.path.basename(video_path)}")
+                                            try:
+                                                youtube = get_authenticated_service(client_secrets_file, token_file)
+                                                
+                                                # Use task-specific subject (Korean or English)
+                                                title_subject = task_params.video_subject
+                                                
+                                                # Add English suffix or prefix if it's the English version to avoid dupes or clarify?
+                                                # User asked for English title/desc. task_params.video_subject is already translated.
+                                                
+                                                title = f"{st.session_state.get('yt_title_prefix', '')} {title_subject}"
+                                                description = f"Generated by MoneyPrinterTurbo\nSubject: {title_subject}\n\n#shorts #ai #motivation"
+                                                keywords = "shorts,ai,video"
+                                                
+                                                vid_id = upload_video(
+                                                    youtube, 
+                                                    video_path, 
+                                                    title=title[:100],
+                                                    description=description,
+                                                    category=st.session_state.get("yt_category", "22"),
+                                                    keywords=keywords,
+                                                    privacy_status=st.session_state.get("yt_privacy", "private")
+                                                )
+                                                
+                                                if vid_id:
+                                                    status_text.success(f"업로드 성공! Video ID: {vid_id}")
+                                                else:
+                                                    status_text.error("업로드 실패")
+                                            except Exception as e:
+                                                status_text.error(f"업로드 중 오류 발생: {e}")
+                                else:
+                                    status_text.warning("자동 업로드가 켜져있지만 인증 정보가 없습니다.")
+
                         else:
                             status_text.error("영상 생성 실패")
-                        break # Exit loop if failed
-                    elif state == const.TASK_STATE_COMPLETE:
-                        if task_msg:
-                            status_text.success(f"{task_msg}")
-                        else:
-                            status_text.success("영상 생성 완료")
-                else:
-                    # Retry getting task info or just show starting
-                    status_text.info(f"작업 시작 중... ({task_id})")
-                
-                time.sleep(0.5)
-            
-            result = future.result()
-            
-    except Exception as e:
-        logger.error(f"Error during video generation: {e}")
-        status_text.error(f"오류: {e}")
-        st.stop()
+                            
+            except Exception as e:
+                logger.error(f"Error during video generation: {e}")
+                status_text.error(f"오류: {e}")
 
-    if not result or "videos" not in result:
-        progress_bar.progress(0)
-        status_text.error(tr("Video Generation Failed"))
-        logger.error(tr("Video Generation Failed"))
-        # scroll_to_bottom()
-        st.stop()
-
-    # Final success state
-    progress_bar.progress(1.0)
-    status_text.success(tr("Video Generation Completed"))
-    
-    if "generated_video_files" not in st.session_state:
-        st.session_state["generated_video_files"] = []
-
-    video_files = result.get("videos", [])
-    st.session_state["generated_video_files"] = video_files
-    
-    # Auto Upload Logic
-    if st.session_state.get("yt_auto_upload"):
-        token_file = os.path.join(root_dir, "token.pickle")
-        client_secrets_file = os.path.join(root_dir, "client_secrets.json")
-        
-        if os.path.exists(token_file) and os.path.exists(client_secrets_file):
-            for video_path in video_files:
-                if os.path.exists(video_path):
-                    st.info(f"유튜브 업로드 시작: {os.path.basename(video_path)}")
-                    try:
-                        youtube = get_authenticated_service(client_secrets_file, token_file)
-                        
-                        # Generate Title/Desc
-                        title = f"{st.session_state.get('yt_title_prefix', '')} {params.video_subject}"
-                        description = f"Generated by MoneyPrinterTurbo\nSubject: {params.video_subject}\n\n{params.video_script[:200] if params.video_script else ''}..."
-                        keywords = params.video_terms if isinstance(params.video_terms, str) else ",".join(params.video_terms) if params.video_terms else "shorts,ai"
-                        
-                        vid_id = upload_video(
-                            youtube, 
-                            video_path, 
-                            title=title[:100],
-                            description=description,
-                            category=st.session_state.get("yt_category", "22"),
-                            keywords=keywords,
-                            privacy_status=st.session_state.get("yt_privacy", "private")
-                        )
-                        
-                        if vid_id:
-                            st.success(f"업로드 성공! Video ID: {vid_id}")
-                            st.markdown(f"[영상 보러가기](https://youtu.be/{vid_id})")
-                        else:
-                            st.error("업로드 실패")
-                    except Exception as e:
-                        st.error(f"업로드 중 오류 발생: {e}")
-        else:
-            st.warning("자동 업로드가 켜져있지만 인증 정보가 없습니다.")
-
-    open_task_folder(task_id)
-    logger.info(tr("Video Generation Completed"))
-    
-    # Rerun to show the result in the right column
-    st.rerun()
+    if final_video_files:
+        st.session_state["generated_video_files"] = final_video_files
+        st.toast("모든 작업이 완료되었습니다!")
+        time.sleep(1)
+        st.rerun()
+    else:
+        st.error("영상 생성에 실패했습니다.")
 
 # Always check if there are generated videos in session state to display (persistence)
 # (Moved to Right Column - see above)

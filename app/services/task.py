@@ -300,11 +300,26 @@ def start(task_id, params: VideoParams, stop_at: str = "video"):
     # 2. Generate terms
     video_terms = ""
     if params.video_source != "local":
-        sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=15, message="영상 키워드 생성 중...")
-        video_terms = generate_terms(task_id, params, video_script)
+        sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=12, message="영상 키워드 생성 중...")
+        # Use simple wrapper or call llm directly? 
+        # The imported generate_terms signature is different in llm.py vs local wrapper?
+        # Let's check imports.
+        # Wait, the code calls `generate_terms(task_id, params, video_script)` but llm.py has `generate_terms(subject, script, amount)`
+        # There must be a wrapper in this file or I need to fix the call.
+        # Let's fix the call to match llm.py signature.
+        try:
+            video_terms = llm.generate_terms(params.video_subject, video_script, amount=5)
+        except Exception as e:
+            logger.error(f"Failed to generate terms via LLM: {e}")
+            video_terms = []
+            
         if not video_terms:
-            sm.state.update_task(task_id, state=const.TASK_STATE_FAILED, message="키워드 생성 실패")
-            return
+            logger.warning("Keywords generation failed, using subject as fallback.")
+            video_terms = [params.video_subject]
+            
+        sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=15, message=f"키워드: {', '.join(video_terms[:3])}...")
+    else:
+        video_terms = [] # Local source doesn't need search terms
 
     save_script_data(task_id, video_script, video_terms, params)
 
@@ -317,9 +332,11 @@ def start(task_id, params: VideoParams, stop_at: str = "video"):
     sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=20, message="오디오 생성 중...")
 
     # 3. Generate audio
+    logger.info("Calling generate_audio...")
     audio_file, audio_duration, sub_maker = generate_audio(
         task_id, params, video_script
     )
+    logger.info(f"generate_audio returned: {audio_file}, {audio_duration}")
     if not audio_file:
         sm.state.update_task(task_id, state=const.TASK_STATE_FAILED, message="오디오 생성 실패")
         return

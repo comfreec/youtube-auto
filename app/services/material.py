@@ -219,6 +219,23 @@ def download_videos(
         )
         logger.info(f"found {len(video_items)} videos for '{search_term}'")
 
+        if not video_items:
+            logger.warning(f"No videos found for '{search_term}', trying translation to English...")
+            try:
+                translated_term = llm.translate_to_english(search_term)
+                if translated_term and "Error" not in translated_term and translated_term != search_term:
+                    logger.info(f"Translated '{search_term}' to '{translated_term}'")
+                    video_items = search_videos(
+                        search_term=translated_term,
+                        minimum_duration=max_clip_duration,
+                        video_aspect=video_aspect,
+                    )
+                    logger.info(f"found {len(video_items)} videos for '{translated_term}'")
+                else:
+                    logger.warning(f"Translation returned invalid result: {translated_term}")
+            except Exception as e:
+                logger.error(f"Translation failed: {str(e)}")
+
         for item in video_items:
             if item.url not in valid_video_urls:
                 valid_video_items.append(item)

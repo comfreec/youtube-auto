@@ -1178,9 +1178,12 @@ def azure_tts_v1(
             logger.info(f"start, voice name: {voice_name}, try: {i + 1}")
 
             async def _do() -> SubMaker:
+                logger.debug(f"Creating Communicate object for {voice_name}")
                 communicate = edge_tts.Communicate(text, voice_name, rate=rate_str)
                 sub_maker = edge_tts.SubMaker()
+                logger.debug(f"Opening file {voice_file} for writing")
                 with open(voice_file, "wb") as file:
+                    logger.debug("Starting communicate.stream()")
                     async for chunk in communicate.stream():
                         if chunk["type"] == "audio":
                             file.write(chunk["data"])
@@ -1188,9 +1191,16 @@ def azure_tts_v1(
                             sub_maker.create_sub(
                                 (chunk["offset"], chunk["duration"]), chunk["text"]
                             )
+                    logger.debug("communicate.stream() finished")
                 return sub_maker
 
-            sub_maker = asyncio.run(_do())
+            logger.info("Running asyncio.run(_do()) with 60s timeout")
+            async def _do_with_timeout():
+                 return await asyncio.wait_for(_do(), timeout=60)
+            
+            sub_maker = asyncio.run(_do_with_timeout())
+            logger.info("asyncio.run(_do()) finished")
+            
             if not sub_maker or not sub_maker.subs:
                 logger.warning("failed, sub_maker is None or sub_maker.subs is None")
                 continue
