@@ -252,13 +252,54 @@ def _generate_response(prompt: str) -> str:
             
             # Auto-correct invalid model names or use default
             target_model = model_name
-            if not target_model or "3.0" in target_model: # Correct user's 3.0 typo
-                target_model = "gemini-2.5-flash"
+            # If user uses 3.0 or 2.5 (which hit limits), fallback to 1.5-flash for reliability
+            if not target_model or "3.0" in target_model or "2.5" in target_model: 
+                target_model = "gemini-1.5-flash"
                 
             logger.info(f"Using Gemini model: {target_model}")
-            model = genai.GenerativeModel(target_model)
-            response = model.generate_content(prompt)
-            return response.text
+            
+            # Priority list for fallbacks
+            fallback_models = [
+                "gemini-2.5-flash",
+                "gemini-2.0-flash-exp",
+                "gemini-2.0-flash",
+                "gemini-2.0-flash-lite",
+                "gemini-flash-latest"
+            ]
+            
+            # Ensure target_model is tried first
+            models_to_try = [target_model] + [m for m in fallback_models if m != target_model]
+            
+            # Log key status (masked)
+            if api_key:
+                logger.info(f"Gemini API Key present: {api_key[:4]}...{api_key[-4:]}")
+            else:
+                logger.error("Gemini API Key is MISSING!")
+
+            last_error = None
+            for model_tag in models_to_try:
+                try:
+                    logger.info(f"Attempting Gemini model: {model_tag}")
+                    model = genai.GenerativeModel(model_tag)
+                    response = model.generate_content(prompt)
+                    if response and response.text:
+                        return response.text
+                except Exception as e:
+                    logger.warning(f"Gemini model {model_tag} failed: {e}")
+                    last_error = e
+                    continue
+            
+            # If all failed, list available models to debug
+            try:
+                logger.info("Listing available Gemini models for debugging:")
+                for m in genai.list_models():
+                    if 'generateContent' in m.supported_generation_methods:
+                        logger.info(f"Available model: {m.name}")
+            except Exception as list_e:
+                logger.error(f"Failed to list models: {list_e}")
+
+            if last_error:
+                raise last_error
 
         # Add other providers as needed (DeepSeek, Qwen, etc usually generic OpenAI)
         elif llm_provider in ["deepseek", "qwen", "ollama", "oneapi", "cloudflare", "ernie", "modelscope"]:

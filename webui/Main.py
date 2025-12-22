@@ -237,6 +237,41 @@ streamlit_style = """
         gap: 1rem;
     }
     
+    /* MOBILE OPTIMIZATION (Media Query) */
+    @media (max-width: 768px) {
+        /* Reduce padding on mobile */
+        .block-container {
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+            padding-top: 1rem !important;
+        }
+        
+        /* Make content cards use full width */
+        div[data-testid="stVerticalBlockBorderWrapper"] {
+            padding: 16px !important;
+            margin-bottom: 12px !important;
+        }
+        
+        /* Adjust font sizes for mobile */
+        h1 { font-size: 1.3rem !important; }
+        p, label { font-size: 0.95rem !important; }
+        
+        /* Buttons: Stack vertically and larger touch targets */
+        .stButton button {
+            width: 100% !important;
+            min-height: 50px !important; /* Easier to tap */
+            margin-bottom: 8px !important;
+            font-size: 1rem !important;
+        }
+        
+        /* Hide sidebar on mobile load (Streamlit handles this, but we can style it) */
+        
+        /* Reduce gap between columns on mobile */
+        div[data-testid="column"] {
+            gap: 0.5rem !important;
+        }
+    }
+    
     /* HIDE STREAMLIT HEADER (Deploy button, Menu, etc.) */
     header[data-testid="stHeader"] {
         display: none !important;
