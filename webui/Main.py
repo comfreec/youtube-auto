@@ -228,15 +228,40 @@ streamlit_style = """
         color: #E0E0E0 !important;
     }
     
-    /* Compact spacing */
+    /* Compact spacing - AGGRESSIVE */
     .block-container {
-        padding-top: 2rem !important;
-        padding-bottom: 2rem !important;
+        padding-top: 1rem !important;
+        padding-bottom: 1rem !important;
+        max-width: 1000px !important; /* Limit width for readability */
     }
     div[data-testid="column"] {
-        gap: 1rem;
+        gap: 0.5rem;
     }
     
+    /* Reduce element spacing */
+    div.stButton > button {
+        margin-bottom: 0.2rem !important;
+    }
+    
+    /* Headings */
+    h1 { 
+        font-family: 'Pretendard'; 
+        font-weight: 800; 
+        font-size: 1.5rem !important;
+        padding-bottom: 0.2rem !important; /* Tighter */
+        margin-bottom: 0.5rem !important;
+        text-align: center;
+    }
+    
+    /* Card Padding */
+    div[data-testid="stVerticalBlockBorderWrapper"] { 
+        padding: 16px !important; 
+        margin-bottom: 10px !important;
+    }
+    
+    /* Divider spacing */
+    hr { margin-top: 0.5rem !important; margin-bottom: 0.5rem !important; }
+
     /* MOBILE OPTIMIZATION (Media Query) */
     @media (max-width: 768px) {
         /* Reduce padding on mobile */
@@ -528,13 +553,13 @@ with tab_main:
                     
                     script = future.result()
                 
-                if not script or "Error:" in script:
+                # Check for failure message from llm.generate_script
+                if not script or "실패했습니다" in script or "Error:" in script:
                     st.error(f"대본 생성 실패: {script}")
                     status_text.empty()
                     progress_bar.empty()
-                    # Cannot use return here as it's not a function
-                    # Use a flag to skip the rest or just raise an exception to be caught by the block
-                    raise Exception(f"Script generation failed: {script}")
+                    # Stop here. Do not generate terms for failed script.
+                    st.stop()
 
                 # 2. Generate Terms based on the script
                 status_text.text("대본 생성 완료! 대본을 분석하여 키워드를 추출 중입니다... (50%)")
@@ -669,6 +694,36 @@ with tab_main:
     with st.expander("⏱️ 타이머 영상 생성 (Timer Video Generation)", expanded=False):
         st.info("설정된 시간만큼 작동하는 타이머 영상을 생성합니다. (검은 배경, 중앙 흰색 글씨)")
         
+        # --- NEW: Timer Channel Auth Section ---
+        st.markdown("#### 📺 타이머 전용 채널 설정")
+        col_auth_timer, col_status_timer = st.columns([0.4, 0.6])
+        timer_token_file = os.path.join(root_dir, "token_timer.pickle")
+        client_secrets_file = os.path.join(root_dir, "client_secrets.json")
+        
+        with col_auth_timer:
+            if st.button("🔴 타이머 채널 인증하기 (클릭)", key="auth_timer_channel", use_container_width=True):
+                if os.path.exists(client_secrets_file):
+                    try:
+                        # Remove old token to force re-login
+                        if os.path.exists(timer_token_file):
+                            os.remove(timer_token_file)
+                        get_authenticated_service(client_secrets_file, timer_token_file)
+                        st.success("인증 완료! (팝업창 확인)")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"인증 실패: {e}")
+                else:
+                    st.error("client_secrets.json 파일이 없습니다.")
+        
+        with col_status_timer:
+            if os.path.exists(timer_token_file):
+                st.success("✅ 인증됨 (@타이머채널)")
+            else:
+                st.error("❌ 인증 안됨 (업로드 불가)")
+        
+        st.divider()
+        # ---------------------------------------
+
         timer_col1, timer_col2 = st.columns([3, 1])
         with timer_col1:
             timer_duration = st.number_input("타이머 시간 (분)", min_value=1, max_value=60, value=1, step=1, key="timer_duration_input")
@@ -684,7 +739,8 @@ with tab_main:
                 task_id = str(uuid4())
                 output_dir = os.path.join(root_dir, "storage", "tasks", task_id)
                 os.makedirs(output_dir, exist_ok=True)
-                output_file = os.path.join(output_dir, "timer_video.mp4")
+                # Use unique filename to prevent caching
+                output_file = os.path.join(output_dir, f"timer_video_{int(time.time())}.mp4")
                 
                 status_text = st.empty()
                 progress_bar = st.progress(0)
@@ -693,10 +749,67 @@ with tab_main:
                     status_text.text(f"타이머 영상 생성 중... ({timer_duration}분)")
                     
                     # Import video service inside to avoid circular deps
-                    from app.services import video
+                    from app.services import video, material
                     
-                    # Prepare assets
-                    bg_video_path = os.path.join(root_dir, "resource", "materials", "rollercoaster_timer_bg.mp4")
+                    # 1. Download Random Background from Pexels
+                    status_text.text("Pexels에서 배경 영상 검색 및 다운로드 중...")
+                    bg_video_path = None
+                    try:
+                        # Use generic keywords for background
+                        keywords = ["nature", "landscape", "abstract", "sky", "forest", "city"]
+                        keyword = random.choice(keywords)
+                        
+                        # Use material service to fetch video
+                        # material.search_videos usually returns a list of urls/objects
+                        # We need a function to download. app/services/material.py has `download_videos`.
+                        # But that is for full tasks. Let's use a simpler approach or reuse logic.
+                        
+                        # Simple Pexels Search & Download (Inline for robustness)
+                        pexels_api_keys = config.app.get("pexels_api_keys", [])
+                        if pexels_api_keys:
+                            api_key = random.choice(pexels_api_keys)
+                            import requests
+                            
+                            headers = {"Authorization": api_key}
+                            url = f"https://api.pexels.com/videos/search?query={keyword}&per_page=5&orientation=portrait"
+                            r = requests.get(url, headers=headers, timeout=10)
+                            data = r.json()
+                            
+                            if data.get("videos"):
+                                video_info = random.choice(data["videos"])
+                                # Get best quality link
+                                video_files = video_info.get("video_files", [])
+                                # Sort by resolution width desc
+                                video_files.sort(key=lambda x: x.get("width", 0), reverse=True)
+                                # Pick one that is likely HD but not huge, or just the first one
+                                download_url = video_files[0].get("link")
+                                
+                                # Download
+                                temp_dir = utils.storage_dir("temp", create=True)
+                                bg_video_path = os.path.join(temp_dir, f"timer_bg_{uuid4()}.mp4")
+                                
+                                with requests.get(download_url, stream=True) as r:
+                                    r.raise_for_status()
+                                    with open(bg_video_path, 'wb') as f:
+                                        for chunk in r.iter_content(chunk_size=8192):
+                                            f.write(chunk)
+                                            
+                                st.success(f"배경 다운로드 완료: {keyword}")
+                            else:
+                                st.warning("Pexels 검색 결과가 없습니다.")
+                        else:
+                            st.error("Pexels API 키가 없습니다. 로컬 파일이나 검은 배경을 사용합니다.")
+                            
+                    except Exception as e:
+                        st.error(f"배경 다운로드 실패: {e}")
+                        bg_video_path = None
+
+                    # Fallback to local if download failed
+                    if not bg_video_path or not os.path.exists(bg_video_path):
+                         material_dir = os.path.join(root_dir, "resource", "materials")
+                         video_files = glob.glob(os.path.join(material_dir, "*.mp4"))
+                         if video_files:
+                             bg_video_path = random.choice(video_files)
                     
                     # Pick a random song
                     song_dir = os.path.join(root_dir, "resource", "songs")
@@ -704,8 +817,9 @@ with tab_main:
                     bg_music_path = random.choice(songs) if songs else None
                     
                     # Run in ThreadPoolExecutor
+                    # fontsize increased to 250 for visibility
                     with concurrent.futures.ThreadPoolExecutor() as executor:
-                        future = executor.submit(video.generate_timer_video, timer_seconds, output_file, None, 150, bg_video_path, bg_music_path)
+                        future = executor.submit(video.generate_timer_video, timer_seconds, output_file, None, 250, bg_video_path, bg_music_path)
                         
                         while not future.done():
                             time.sleep(0.5)
@@ -761,6 +875,17 @@ with tab_main:
                     st.write("### 영상 작업")
                     # Stack buttons vertically
                     
+                    # Channel selector (default to Timer channel for timer videos)
+                    channels = [("기본 채널", "default"), ("타이머 채널", "timer")]
+                    default_ch_idx = 1 if os.path.basename(video_path).startswith("timer_video_") else 0
+                    selected_channel_index = st.selectbox(
+                        "업로드 채널",
+                        options=range(len(channels)),
+                        format_func=lambda x: channels[x][0],
+                        index=default_ch_idx,
+                        key=f"upload_channel_sel_{i}"
+                    )
+                    
                     try:
                         with open(video_path, "rb") as video_file:
                             video_bytes = video_file.read()
@@ -803,8 +928,21 @@ with tab_main:
                 if st.session_state.get(f"upload_requested_{i}"):
                     # Use the container created above to display progress
                     with upload_progress_container.container():
-                        token_file = os.path.join(root_dir, "token.pickle")
+                        # Choose token file based on selected channel
+                        timer_token_file = os.path.join(root_dir, "token_timer.pickle")
+                        default_token_file = os.path.join(root_dir, "token.pickle")
+                        ch_idx = st.session_state.get(f"upload_channel_sel_{i}", 0)
+                        token_file = timer_token_file if ch_idx == 1 else default_token_file
+                        
+                        # Find client_secrets.json with fallbacks
                         client_secrets_file = os.path.join(root_dir, "client_secrets.json")
+                        if not os.path.exists(client_secrets_file):
+                            alt_copy = os.path.join(root_dir, "client_secrets - 복사본.json")
+                            alt_moneylower = os.path.join(os.path.dirname(root_dir), "moneyprinterturbo", "client_secrets.json")
+                            if os.path.exists(alt_copy):
+                                client_secrets_file = alt_copy
+                            elif os.path.exists(alt_moneylower):
+                                client_secrets_file = alt_moneylower
                         
                         if os.path.exists(token_file) and os.path.exists(client_secrets_file):
                             try:

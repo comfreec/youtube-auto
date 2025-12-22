@@ -15,6 +15,169 @@ from app.config import config
 
 _max_retries = 3
 
+def _generate_free_response(prompt: str) -> str:
+    def try_pollinations_openai():
+        try:
+            import urllib.parse
+            encoded_prompt = urllib.parse.quote(prompt)
+            # Try openai model
+            url = f"https://text.pollinations.ai/{encoded_prompt}?seed={random.randint(100, 999999)}&model=openai"
+            response = requests.get(url, timeout=30) 
+            if response.status_code == 200 and response.text.strip():
+                logger.info("Race win: Pollinations OpenAI")
+                return response.text
+        except Exception:
+            pass
+        return None
+
+    def try_pollinations_mistral():
+        try:
+            import urllib.parse
+            encoded_prompt = urllib.parse.quote(prompt)
+            # Try mistral model
+            url = f"https://text.pollinations.ai/{encoded_prompt}?seed={random.randint(100, 999999)}&model=mistral"
+            response = requests.get(url, timeout=30) 
+            if response.status_code == 200 and response.text.strip():
+                logger.info("Race win: Pollinations Mistral")
+                return response.text
+        except Exception:
+            pass
+        return None
+        
+    def try_pollinations_llama():
+        try:
+            import urllib.parse
+            encoded_prompt = urllib.parse.quote(prompt)
+            # Try llama model
+            url = f"https://text.pollinations.ai/{encoded_prompt}?seed={random.randint(100, 999999)}&model=llama"
+            response = requests.get(url, timeout=30) 
+            if response.status_code == 200 and response.text.strip():
+                logger.info("Race win: Pollinations Llama")
+                return response.text
+        except Exception:
+            pass
+        return None
+        
+    def try_pollinations_searchgpt():
+        try:
+            import urllib.parse
+            encoded_prompt = urllib.parse.quote(prompt)
+            # Try searchgpt model
+            url = f"https://text.pollinations.ai/{encoded_prompt}?seed={random.randint(100, 999999)}&model=searchgpt"
+            response = requests.get(url, timeout=30) 
+            if response.status_code == 200 and response.text.strip():
+                logger.info("Race win: Pollinations SearchGPT")
+                return response.text
+        except Exception:
+            pass
+        return None
+
+    def try_g4f_duckduckgo():
+        try:
+            # DuckDuckGo is often stable
+            resp = g4f.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                provider=g4f.Provider.DuckDuckGo,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            if resp:
+                logger.info("Race win: G4F DuckDuckGo")
+                return resp
+        except Exception:
+            pass
+        return None
+
+    def try_g4f_blackbox():
+        try:
+            # Blackbox is another good free option
+            resp = g4f.ChatCompletion.create(
+                model="gpt-4",
+                provider=g4f.Provider.Blackbox,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            if resp:
+                logger.info("Race win: G4F Blackbox")
+                return resp
+        except Exception:
+            pass
+        return None
+        
+    def try_g4f_auto():
+        try:
+            # Auto selection as last resort
+            resp = g4f.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": prompt}]
+            )
+            if resp:
+                logger.info("Race win: G4F Auto")
+                return resp
+        except Exception:
+            pass
+        return None
+
+    def try_g4f_darkai():
+        try:
+            # DarkAI
+            resp = g4f.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                provider=g4f.Provider.DarkAI,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            if resp:
+                logger.info("Race win: G4F DarkAI")
+                return resp
+        except Exception:
+            pass
+        return None
+
+    def try_g4f_airforce():
+        try:
+            # Airforce
+            resp = g4f.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                provider=g4f.Provider.Airforce,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            if resp:
+                logger.info("Race win: G4F Airforce")
+                return resp
+        except Exception:
+            pass
+        return None
+
+    content = ""
+    # Increase workers to cover new providers
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=10)
+    futures = [
+        executor.submit(try_pollinations_openai),
+        executor.submit(try_pollinations_mistral),
+        executor.submit(try_pollinations_llama),
+        executor.submit(try_pollinations_searchgpt),
+        executor.submit(try_g4f_duckduckgo),
+        executor.submit(try_g4f_blackbox),
+        executor.submit(try_g4f_darkai),
+        executor.submit(try_g4f_airforce),
+        executor.submit(try_g4f_auto)
+    ]
+    
+    try:
+        # Reduce timeout to 30s to keep UI responsive
+        for future in concurrent.futures.as_completed(futures, timeout=30):
+            result = future.result()
+            if result:
+                content = result
+                break
+    except concurrent.futures.TimeoutError:
+        logger.warning("Race timeout (30s)")
+    except Exception as e:
+        logger.error(f"Race error: {e}")
+    finally:
+        # CRITICAL FIX: Do not wait for hanging threads!
+        executor.shutdown(wait=False)
+
+    return content
+
 def _generate_response(prompt: str) -> str:
     # Force reload config to pick up changes
     config.reload()
@@ -25,167 +188,7 @@ def _generate_response(prompt: str) -> str:
 
     # Enhanced Race Strategy for Free/Unstable Providers
     if llm_provider in ["g4f", "pollinations", "free"]:
-        def try_pollinations_openai():
-            try:
-                import urllib.parse
-                encoded_prompt = urllib.parse.quote(prompt)
-                # Try openai model
-                url = f"https://text.pollinations.ai/{encoded_prompt}?seed={random.randint(100, 999999)}&model=openai"
-                response = requests.get(url, timeout=30) 
-                if response.status_code == 200 and response.text.strip():
-                    logger.info("Race win: Pollinations OpenAI")
-                    return response.text
-            except Exception:
-                pass
-            return None
-
-        def try_pollinations_mistral():
-            try:
-                import urllib.parse
-                encoded_prompt = urllib.parse.quote(prompt)
-                # Try mistral model
-                url = f"https://text.pollinations.ai/{encoded_prompt}?seed={random.randint(100, 999999)}&model=mistral"
-                response = requests.get(url, timeout=30) 
-                if response.status_code == 200 and response.text.strip():
-                    logger.info("Race win: Pollinations Mistral")
-                    return response.text
-            except Exception:
-                pass
-            return None
-            
-        def try_pollinations_llama():
-            try:
-                import urllib.parse
-                encoded_prompt = urllib.parse.quote(prompt)
-                # Try llama model
-                url = f"https://text.pollinations.ai/{encoded_prompt}?seed={random.randint(100, 999999)}&model=llama"
-                response = requests.get(url, timeout=30) 
-                if response.status_code == 200 and response.text.strip():
-                    logger.info("Race win: Pollinations Llama")
-                    return response.text
-            except Exception:
-                pass
-            return None
-            
-        def try_pollinations_searchgpt():
-            try:
-                import urllib.parse
-                encoded_prompt = urllib.parse.quote(prompt)
-                # Try searchgpt model
-                url = f"https://text.pollinations.ai/{encoded_prompt}?seed={random.randint(100, 999999)}&model=searchgpt"
-                response = requests.get(url, timeout=30) 
-                if response.status_code == 200 and response.text.strip():
-                    logger.info("Race win: Pollinations SearchGPT")
-                    return response.text
-            except Exception:
-                pass
-            return None
-
-        def try_g4f_duckduckgo():
-            try:
-                # DuckDuckGo is often stable
-                resp = g4f.ChatCompletion.create(
-                    model="gpt-3.5-turbo",
-                    provider=g4f.Provider.DuckDuckGo,
-                    messages=[{"role": "user", "content": prompt}]
-                )
-                if resp:
-                    logger.info("Race win: G4F DuckDuckGo")
-                    return resp
-            except Exception:
-                pass
-            return None
-
-        def try_g4f_blackbox():
-            try:
-                # Blackbox is another good free option
-                resp = g4f.ChatCompletion.create(
-                    model="gpt-4",
-                    provider=g4f.Provider.Blackbox,
-                    messages=[{"role": "user", "content": prompt}]
-                )
-                if resp:
-                    logger.info("Race win: G4F Blackbox")
-                    return resp
-            except Exception:
-                pass
-            return None
-            
-        def try_g4f_auto():
-            try:
-                # Auto selection as last resort
-                resp = g4f.ChatCompletion.create(
-                    model="gpt-3.5-turbo",
-                    messages=[{"role": "user", "content": prompt}]
-                )
-                if resp:
-                    logger.info("Race win: G4F Auto")
-                    return resp
-            except Exception:
-                pass
-            return None
-
-        def try_g4f_darkai():
-            try:
-                # DarkAI
-                resp = g4f.ChatCompletion.create(
-                    model="gpt-3.5-turbo",
-                    provider=g4f.Provider.DarkAI,
-                    messages=[{"role": "user", "content": prompt}]
-                )
-                if resp:
-                    logger.info("Race win: G4F DarkAI")
-                    return resp
-            except Exception:
-                pass
-            return None
-
-        def try_g4f_airforce():
-            try:
-                # Airforce
-                resp = g4f.ChatCompletion.create(
-                    model="gpt-3.5-turbo",
-                    provider=g4f.Provider.Airforce,
-                    messages=[{"role": "user", "content": prompt}]
-                )
-                if resp:
-                    logger.info("Race win: G4F Airforce")
-                    return resp
-            except Exception:
-                pass
-            return None
-
-        content = ""
-        # Increase workers to cover new providers
-        executor = concurrent.futures.ThreadPoolExecutor(max_workers=10)
-        futures = [
-            executor.submit(try_pollinations_openai),
-            executor.submit(try_pollinations_mistral),
-            executor.submit(try_pollinations_llama),
-            executor.submit(try_pollinations_searchgpt),
-            executor.submit(try_g4f_duckduckgo),
-            executor.submit(try_g4f_blackbox),
-            executor.submit(try_g4f_darkai),
-            executor.submit(try_g4f_airforce),
-            executor.submit(try_g4f_auto)
-        ]
-        
-        try:
-            start_time = time.time()
-            # Increase total timeout to 60s to ensure completion even on slow networks
-            for future in concurrent.futures.as_completed(futures, timeout=60):
-                result = future.result()
-                if result:
-                    content = result
-                    break
-        except concurrent.futures.TimeoutError:
-            logger.warning("Race timeout (60s)")
-        except Exception as e:
-            logger.error(f"Race error: {e}")
-        finally:
-            # CRITICAL FIX: Do not wait for hanging threads!
-            # Shutdown immediately so the UI doesn't freeze waiting for a dead thread
-            executor.shutdown(wait=False)
+        content = _generate_free_response(prompt)
 
         if not content:
              logger.warning("All providers failed or timed out in race.")
@@ -198,8 +201,8 @@ def _generate_response(prompt: str) -> str:
                      import google.generativeai as genai
                      genai.configure(api_key=gemini_key)
                      # Fallback model
-                     target_model = config.app.get("gemini_model_name", "gemini-2.5-flash")
-                     if not target_model or "3.0" in target_model: target_model = "gemini-2.5-flash"
+                     target_model = config.app.get("gemini_model_name", "gemini-1.5-flash")
+                     if not target_model or "3.0" in target_model: target_model = "gemini-1.5-flash"
                      
                      model = genai.GenerativeModel(target_model)
                      response = model.generate_content(prompt)
@@ -247,59 +250,47 @@ def _generate_response(prompt: str) -> str:
             return response.choices[0].message.content
             
         elif llm_provider == "gemini":
-            import google.generativeai as genai
-            genai.configure(api_key=api_key)
-            
-            # Auto-correct invalid model names or use default
-            target_model = model_name
-            # If user uses 3.0 or 2.5 (which hit limits), fallback to 1.5-flash for reliability
-            if not target_model or "3.0" in target_model or "2.5" in target_model: 
-                target_model = "gemini-1.5-flash"
-                
-            logger.info(f"Using Gemini model: {target_model}")
-            
-            # Priority list for fallbacks
-            fallback_models = [
-                "gemini-2.5-flash",
-                "gemini-2.0-flash-exp",
-                "gemini-2.0-flash",
-                "gemini-2.0-flash-lite",
-                "gemini-flash-latest"
-            ]
-            
-            # Ensure target_model is tried first
-            models_to_try = [target_model] + [m for m in fallback_models if m != target_model]
-            
-            # Log key status (masked)
-            if api_key:
-                logger.info(f"Gemini API Key present: {api_key[:4]}...{api_key[-4:]}")
-            else:
-                logger.error("Gemini API Key is MISSING!")
-
-            last_error = None
-            for model_tag in models_to_try:
-                try:
-                    logger.info(f"Attempting Gemini model: {model_tag}")
-                    model = genai.GenerativeModel(model_tag)
-                    response = model.generate_content(prompt)
-                    if response and response.text:
-                        return response.text
-                except Exception as e:
-                    logger.warning(f"Gemini model {model_tag} failed: {e}")
-                    last_error = e
-                    continue
-            
-            # If all failed, list available models to debug
             try:
-                logger.info("Listing available Gemini models for debugging:")
-                for m in genai.list_models():
-                    if 'generateContent' in m.supported_generation_methods:
-                        logger.info(f"Available model: {m.name}")
-            except Exception as list_e:
-                logger.error(f"Failed to list models: {list_e}")
-
-            if last_error:
-                raise last_error
+                import google.generativeai as genai
+                genai.configure(api_key=api_key)
+                
+                target_model = (model_name or "gemini-2.5-flash").strip()
+                models_to_try = [
+                    target_model,
+                    "gemini-2.5-flash",
+                    "gemini-flash-latest",
+                    "gemini-2.0-flash",
+                    "gemini-2.0-flash-exp",
+                ]
+                
+                last_error = None
+                for m in models_to_try:
+                    try:
+                        logger.info(f"Using Gemini model: {m}")
+                        model = genai.GenerativeModel(m)
+                        response = model.generate_content(prompt)
+                        if response and getattr(response, "text", None):
+                            return response.text
+                    except Exception as e_try:
+                        last_error = e_try
+                        logger.warning(f"Gemini model {m} failed: {e_try}")
+                        continue
+                
+                try:
+                    logger.info("Listing available Gemini models to auto-correct...")
+                    available = []
+                    for m in genai.list_models():
+                        if 'generateContent' in m.supported_generation_methods:
+                            available.append(m.name)
+                    logger.info(f"Available models: {', '.join(available[:10])}...")
+                except Exception as e_list:
+                    logger.warning(f"Failed to list Gemini models: {e_list}")
+                
+                if last_error:
+                    raise last_error
+            except Exception as e:
+                logger.warning(f"Gemini failed ({e}), falling back to free providers...")
+                return _generate_free_response(prompt)
 
         # Add other providers as needed (DeepSeek, Qwen, etc usually generic OpenAI)
         elif llm_provider in ["deepseek", "qwen", "ollama", "oneapi", "cloudflare", "ernie", "modelscope"]:
@@ -349,40 +340,65 @@ def generate_script(video_subject: str, language: str = "auto", paragraph_number
 
 def generate_terms(video_subject: str, video_script: str, amount: int = 5) -> List[str]:
     prompt = f"""
-    Analyze the following video script and extract {amount} highly visual, concrete English keywords for searching stock footage.
-    The keywords MUST be in English, regardless of the script's language.
-    Focus on physical objects, locations, actions, and atmosphere described in the script.
-    Avoid abstract concepts (e.g., avoid "success", "future"; prefer "skyscraper", "robot", "handshake").
+    You are a professional video editor. Extract {amount} highly relevant English keywords for stock footage search.
+    The keywords MUST directly represent the specific scenes and actions described in the script below.
     
-    Video Subject: {video_subject}
-    Script Snippet: {video_script[:800]}
+    CRITICAL: 
+    - NO abstract words. 
+    - Use concrete visual terms (e.g., if script is about 'Jesus', use 'ancient Israel', 'man preaching', 'desert', 'cross').
+    - Keywords must be in English.
     
-    Return ONLY a comma-separated list of {amount} English keywords. No numbering, no explanations.
-    Example: skyscraper, office meeting, shaking hands, blue sky, running crowd
+    Script: {video_script[:1000]}
+    
+    Return ONLY a comma-separated list.
     """
     
     try:
         response = _generate_response(prompt)
         if response:
-            # Clean up the response
-            cleaned_response = response.replace("Keywords:", "").replace("keywords:", "").strip()
-            terms = [t.strip() for t in cleaned_response.split(",") if t.strip()]
+            # Clean up the response aggressively
+            cleaned = response
+            prefixes = ["Here are", "Keywords:", "keywords:", "Sure", "The keywords"]
+            for p in prefixes:
+                if p in cleaned:
+                    cleaned = cleaned.split(p)[-1]
             
-            # Ensure we have at least some terms
-            if len(terms) < 3:
-                # Fallback to simple subject-based terms if LLM fails to generate enough
-                logger.warning("LLM returned too few terms, adding fallback terms.")
-                terms.extend([video_subject] if video_subject else [])
-                
-            return terms[:amount]
+            cleaned = cleaned.replace("\n", ",").replace("- ", "").replace("* ", "").strip()
+            terms = [t.strip() for t in cleaned.split(",") if t.strip()]
+            terms = [t for t in terms if len(t.split()) <= 5]
+            
+            if len(terms) >= 2:
+                return terms[:amount]
     except Exception as e:
         logger.error(f"failed to generate terms: {e}")
     
-    # Absolute fallback if LLM fails completely
-    fallback = [video_subject] if video_subject else ["video", "background"]
-    # Add some generic terms
-    fallback.extend(["scenery", "nature", "business", "technology"])
-    return fallback[:amount]
+    # IMPROVED FALLBACK: Use Subject and Script words (Translated to English)
+    logger.warning("LLM failed to generate relevant terms. Using translated fallback.")
+    
+    # 1. Start with the subject
+    subject_eng = translate_to_english(video_subject) if video_subject else ""
+    fallback = [subject_eng] if subject_eng else []
+    
+    # 2. Extract some potential keywords from the script
+    words = re.findall(r'\w+', video_script)
+    # Filter Korean words and translate them
+    ko_words = [w for w in words if re.search('[가-힣]', w)][:3]
+    for w in ko_words:
+        eng_w = translate_to_english(w)
+        if eng_w and eng_w != w:
+            fallback.append(eng_w)
+    
+    # 3. Add quality terms
+    fallback.extend(["cinematic", "realistic", "4k background"])
+    
+    # Clean up fallback (unique and English only)
+    unique_fallback = []
+    for f in fallback:
+        # Simple check for English characters
+        if f and not re.search('[가-힣]', f) and f not in unique_fallback:
+            unique_fallback.append(f)
+            
+    return unique_fallback[:amount]
 
 def translate_to_english(text: str) -> str:
     if not text:

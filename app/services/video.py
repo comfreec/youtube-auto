@@ -704,6 +704,42 @@ def generate_video(
         # We need to close these clips properly
         video_clip = VideoFileClip(video_path)
         
+        # --- TITLE OVERLAY (MoviePy) ---
+        if params.video_subject:
+            try:
+                # Use project font
+                font_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "resource", "fonts", "NanumGothic-Bold.ttf")
+                
+                # Wrap text manually
+                font_size = 80 # Big title
+                font = ImageFont.truetype(font_path, font_size)
+                max_width = video_width * 0.8 # 80% width (10% padding each side)
+                
+                wrapped_text, text_h = wrap_text(params.video_subject, max_width, font=font_path, fontsize=font_size)
+                
+                # Draw Text Image
+                dummy_img = Image.new('RGBA', (1, 1))
+                draw = ImageDraw.Draw(dummy_img)
+                bbox = draw.multiline_textbbox((0, 0), wrapped_text, font=font, stroke_width=5, align='center', spacing=10)
+                w = bbox[2] - bbox[0] + 40
+                h = bbox[3] - bbox[1] + 40
+                
+                img = Image.new('RGBA', (int(w), int(h)), (0, 0, 0, 0))
+                draw = ImageDraw.Draw(img)
+                draw.multiline_text((20, 20), wrapped_text, font=font, fill="yellow", stroke_width=5, stroke_fill="black", align='center', spacing=10)
+                
+                title_clip = ImageClip(np.array(img)).with_duration(video_clip.duration)
+                
+                # Position: Top Center with margin
+                title_clip = title_clip.with_position(("center", 100)) # y=100 margin
+                
+                # Composite
+                video_clip = CompositeVideoClip([video_clip, title_clip])
+                logger.info(f"Title overlay applied: {params.video_subject}")
+                
+            except Exception as e:
+                logger.error(f"Failed to add title overlay: {e}")
+
         # Audio setup
         final_audio = AudioFileClip(audio_path)
         bgm_clip = None
@@ -730,8 +766,6 @@ def generate_video(
             logger.error(f"Audio export failed: {e}")
             raise e
         
-        # 2. Merge Audio and Video (and Subtitles) using FFmpeg
-        # Optimization: Skip MoviePy video re-encoding. Use the source video_path directly.
         logger.info("merging video, audio, and subtitles...")
         ffmpeg_exe = get_ffmpeg_exe()
         
@@ -741,34 +775,31 @@ def generate_video(
             "-i", temp_audio_file
         ]
         
-        # Check for subtitles
-        has_subtitles = False
-        if params.subtitle_enabled and os.path.exists(subtitle_path):
-            has_subtitles = True
-            logger.info(f"Burning subtitles from {subtitle_path}")
-            
-            # Escape path for FFmpeg filter
-            # Windows: Replace \ with / and escape : as \:
+        has_subtitles = params.subtitle_enabled and os.path.exists(subtitle_path)
+        filter_parts = []
+        if has_subtitles:
             sub_path_escaped = subtitle_path.replace("\\", "/").replace(":", "\\:")
-            
-            # Subtitle Style
-            # Use Malgun Gothic for Korean support
-            # Fontsize 16 is good for 1080p width roughly, adjust if needed
             style = "Fontname=Malgun Gothic,FontSize=16,PrimaryColour=&HFFFFFF,OutlineColour=&H000000,BorderStyle=1,Outline=1,Shadow=0,MarginV=25,Alignment=2"
-            
-            cmd.extend(["-vf", f"subtitles='{sub_path_escaped}':force_style='{style}',drawtext=fontfile='C\\:/Windows/Fonts/malgunbd.ttf':text='{params.video_subject}':fontcolor=yellow:fontsize=120:x=(w-text_w)/2:y=100:borderw=5:bordercolor=black"])
-            
-            # Re-encode is required for burning subtitles
+            filter_parts.append(f"subtitles='{sub_path_escaped}':force_style='{style}'")
+        
+        if params.video_subject:
+            font_path_title = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "resource", "fonts", "NanumGothic-Bold.ttf")
+            font_path_title = font_path_title.replace("\\", "/").replace(":", "\\:")
+            title_txt = str(params.video_subject)
+            title_txt = title_txt.replace("\\", "\\\\").replace(":", "\\:").replace("'", "\\'")
+            try:
+                base_fs = int(getattr(params, "font_size", 50) or 50)
+            except Exception:
+                base_fs = 50
+            title_fs = max(96, int(base_fs * 2))
+            draw = f"drawtext=fontfile='{font_path_title}':text='{title_txt}':fontsize={title_fs}:fontcolor=yellow:x=(w-text_w)/2:y=80:box=1:boxcolor=black@0.5:boxborderw=16"
+            filter_parts.append(draw)
+        
+        if filter_parts:
+            cmd.extend(["-vf", ",".join(filter_parts)])
             cmd.extend(["-c:v", "libx264", "-preset", "ultrafast", "-crf", "23"])
         else:
-            # Check if we need to draw text even without subtitles
-            if params.video_subject:
-                 logger.info(f"Drawing title: {params.video_subject}")
-                 cmd.extend(["-vf", f"drawtext=fontfile='C\\:/Windows/Fonts/malgunbd.ttf':text='{params.video_subject}':fontcolor=yellow:fontsize=120:x=(w-text_w)/2:y=100:borderw=5:bordercolor=black"])
-                 cmd.extend(["-c:v", "libx264", "-preset", "ultrafast", "-crf", "23"])
-            else:
-                 # Copy stream if no subtitles and no title
-                 cmd.extend(["-c:v", "copy"])
+            cmd.extend(["-c:v", "copy"])
             
         cmd.extend([
             "-c:a", "copy", # Audio copy is fine (already encoded in step 1)
@@ -802,115 +833,81 @@ def generate_video(
     return output_file
 
 
-def generate_timer_video(duration_seconds: int, output_file: str, font_path: str = None, fontsize: int = 150, bg_video_path: str = None, bg_music_path: str = None):
-    """
-    Generates a video with a countdown timer centered on a background using FFmpeg directly for performance.
-    """
-    # Default font path if not provided
-    if not font_path:
-        # Try common Windows fonts
-        candidates = [
-            "C:/Windows/Fonts/malgun.ttf",
-            "C:/Windows/Fonts/arial.ttf",
-            "C:/Windows/Fonts/seguiemj.ttf"
-        ]
-        for f in candidates:
-            if os.path.exists(f):
-                font_path = f
-                break
-        if not font_path:
-             font_path = "arial.ttf" # Fallback hope system finds it
-
-    # Video dimensions (Portrait for Shorts: 1080x1920)
-    width, height = 1080, 1920
+def generate_timer_video(duration_seconds: int, output_file: str, font_path: str = None, fontsize: int = 250, bg_video_path: str = None, bg_music_path: str = None):
+    logger.info(f"Generating timer video (MoviePy): {duration_seconds}s")
     
-    logger.info(f"Generating timer video (FFmpeg): {duration_seconds}s, output: {output_file}")
-    
-    ffmpeg_exe = get_ffmpeg_exe()
-    
-    # Escape font path for FFmpeg filter
-    # Windows: Replace \ with / and escape : as \:
-    # Example: C:/Windows/Fonts/arial.ttf -> C\:/Windows/Fonts/arial.ttf
-    font_path_filter = font_path.replace("\\", "/").replace(":", "\\:")
-    
-    cmd = [ffmpeg_exe, "-y"]
-    
-    # Input 0: Background Video (or black color)
     if bg_video_path and os.path.exists(bg_video_path):
-        logger.info(f"Using background video: {bg_video_path}")
-        cmd.extend(["-stream_loop", "-1", "-i", bg_video_path])
+        try:
+            bg_clip = VideoFileClip(bg_video_path)
+            target_w, target_h = 1080, 1920
+            ratio = bg_clip.w / bg_clip.h
+            target_ratio = target_w / target_h
+            if ratio > target_ratio:
+                bg_clip = bg_clip.resized(height=target_h)
+                bg_clip = bg_clip.cropped(x1=(bg_clip.w - target_w)/2, width=target_w)
+            else:
+                bg_clip = bg_clip.resized(width=target_w)
+                bg_clip = bg_clip.cropped(y1=(bg_clip.h - target_h)/2, height=target_h)
+            bg_clip = bg_clip.with_duration(duration_seconds)
+            if bg_clip.duration < duration_seconds:
+                bg_clip = vfx.loop(bg_clip, duration=duration_seconds)
+        except Exception as e:
+            logger.error(f"Failed to load BG video: {e}")
+            bg_clip = ColorClip(size=(1080, 1920), color=(0,0,0), duration=duration_seconds)
     else:
-        logger.info("Using black background")
-        cmd.extend(["-f", "lavfi", "-i", f"color=c=black:s={width}x{height}:d={duration_seconds}"])
-        
-    # Input 1: Background Music (if exists)
-    has_audio = False
+        bg_clip = ColorClip(size=(1080, 1920), color=(0,0,0), duration=duration_seconds)
+
+    if not font_path or not os.path.exists(font_path):
+        font_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "resource", "fonts", "NanumGothic-Bold.ttf")
+    font = ImageFont.truetype(font_path, fontsize)
+
+    def make_frame(t):
+        remaining = max(0, duration_seconds - int(t))
+        mins = remaining // 60
+        secs = remaining % 60
+        text = f"{mins}:{secs:02d}"
+        img = Image.new('RGBA', (1080, 1920), (0,0,0,0))
+        draw = ImageDraw.Draw(img)
+        bbox = draw.textbbox((0, 0), text, font=font)
+        text_w = bbox[2] - bbox[0]
+        text_h = bbox[3] - bbox[1]
+        x = (1080 - text_w) // 2
+        y = (1920 - text_h) // 2
+        padding = 40
+        box_coords = (x - padding, y - padding, x + text_w + padding, y + text_h + padding)
+        draw.rectangle(box_coords, fill=(0, 0, 0, 128))
+        draw.text((x, y), text, font=font, fill="white", stroke_width=5, stroke_fill="black")
+        return np.array(img)
+
+    timer_clip = VideoClip(make_frame, duration=duration_seconds)
+    final_clip = CompositeVideoClip([bg_clip, timer_clip])
+
     if bg_music_path and os.path.exists(bg_music_path):
-        logger.info(f"Using background music: {bg_music_path}")
-        cmd.extend(["-stream_loop", "-1", "-i", bg_music_path])
-        has_audio = True
-    
-    # Filter Complex
-    filter_chains = []
-    
-    # [0:v] -> [bg]
-    # Scale/Crop to 1080x1920
-    filter_chains.append(f"[0:v]scale={width}:{height}:force_original_aspect_ratio=increase,crop={width}:{height},setsar=1[bg]")
-    
-    # Text
-    # Time expression: %{eif:(duration-t)/60:d}:%{eif:(duration-t)%60:d:2}
-    # Use textfile to avoid escaping hell
-    text_expression = f"%{{eif:({duration_seconds}-t)/60:d}}:%{{eif:({duration_seconds}-t)%60:d:2}}"
-    
-    # Use a safe filename in the same directory
-    temp_text_file = os.path.join(os.path.dirname(output_file), f"timer_text_{os.path.basename(output_file)}.txt")
-    with open(temp_text_file, "w", encoding="utf-8") as f:
-        f.write(text_expression)
-        
-    # Escape path for FFmpeg
-    text_file_filter = temp_text_file.replace("\\", "/").replace(":", "\\:")
-    
-    # Draw text
-    drawtext = (
-        f"drawtext=fontfile='{font_path_filter}':"
-        f"textfile='{text_file_filter}':"
-        f"fontcolor=white:fontsize={fontsize}:"
-        f"x=(w-text_w)/2:y=(h-text_h)/2:"
-        f"borderw=4:bordercolor=black"
+        try:
+            audio = AudioFileClip(bg_music_path)
+            if audio.duration < duration_seconds:
+                audio = audio.with_effects([afx.AudioLoop(duration=duration_seconds)])
+            else:
+                audio = audio.subclipped(0, duration_seconds)
+            final_clip = final_clip.with_audio(audio)
+        except Exception as e:
+            logger.warning(f"Failed to load or attach audio: {e}")
+
+    final_clip.write_videofile(
+        output_file,
+        fps=30,
+        codec="libx264",
+        audio_codec="aac",
+        threads=1,
+        preset="ultrafast",
+        logger=None,
+        ffmpeg_params=["-pix_fmt", "yuv420p"]
     )
+
+    close_clip(bg_clip)
+    close_clip(final_clip)
+    return output_file
     
-    filter_chains.append(f"[bg]{drawtext}[outv]")
-    
-    cmd.extend(["-filter_complex", ";".join(filter_chains)])
-    
-    # Mapping
-    cmd.extend(["-map", "[outv]"])
-    if has_audio:
-        cmd.extend(["-map", "1:a"])
-        
-    # Duration and Output
-    cmd.extend(["-t", str(duration_seconds)])
-    cmd.extend(["-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p"])
-    
-    # Check if NVIDIA GPU is available (optional optimization, risky if not present)
-    # cmd.extend(["-c:v", "h264_nvenc"]) 
-    
-    cmd.extend([output_file])
-    
-    logger.info(f"Running FFmpeg command: {' '.join(cmd)}")
-    
-    try:
-        # Run FFmpeg
-        # Capture output to log if needed, but for now just check=True
-        subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        logger.success(f"Video generated successfully: {output_file}")
-    except subprocess.CalledProcessError as e:
-        logger.error(f"FFmpeg failed: {e.stderr.decode() if e.stderr else str(e)}")
-        raise e
-    finally:
-        if os.path.exists(temp_text_file):
-            os.remove(temp_text_file)
-        
     return output_file
 
 
