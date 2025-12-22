@@ -162,14 +162,14 @@ def _generate_free_response(prompt: str) -> str:
     ]
     
     try:
-        # Reduce timeout to 30s to keep UI responsive
-        for future in concurrent.futures.as_completed(futures, timeout=30):
+        # Reduce timeout to 15s to keep UI responsive
+        for future in concurrent.futures.as_completed(futures, timeout=15):
             result = future.result()
             if result:
                 content = result
                 break
     except concurrent.futures.TimeoutError:
-        logger.warning("Race timeout (30s)")
+        logger.warning("Race timeout (15s)")
     except Exception as e:
         logger.error(f"Race error: {e}")
     finally:
@@ -274,6 +274,10 @@ def _generate_response(prompt: str) -> str:
                     except Exception as e_try:
                         last_error = e_try
                         logger.warning(f"Gemini model {m} failed: {e_try}")
+                        # If quota exceeded, no point trying other models
+                        if "429" in str(e_try) or "Quota exceeded" in str(e_try):
+                            logger.warning("Gemini Quota Exceeded. Skipping other models and falling back...")
+                            break
                         continue
                 
                 try:

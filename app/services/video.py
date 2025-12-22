@@ -40,17 +40,17 @@ from app.utils import utils
 class TaskProgressLogger(ProgressBarLogger):
     def __init__(self, callback):
         super().__init__()
-        self.callback = callback
+        self.prog_callback = callback
 
     def bars_callback(self, bar, attr, value, old_value=None):
-        if bar == 't' and self.callback:
+        if bar == 't' and self.prog_callback:
             total = self.bars[bar]['total']
             if total > 0:
                 # Map 0-100% of write process to 90-100% of total task
                 p = 90 + int((value / total) * 10)
                 # Ensure we don't exceed 99% until fully done
                 p = min(p, 99)
-                self.callback(p)
+                self.prog_callback(p)
 
     def log(self, message):
         pass
@@ -833,13 +833,19 @@ def generate_video(
     return output_file
 
 
-def generate_timer_video(duration_seconds: int, output_file: str, font_path: str = None, fontsize: int = 250, bg_video_path: str = None, bg_music_path: str = None, fast_mode: bool = False):
+def generate_timer_video(duration_seconds: int, output_file: str, font_path: str = None, fontsize: int = 250, bg_video_path: str = None, bg_music_path: str = None, fast_mode: bool = False, progress_callback=None):
     logger.info(f"Generating timer video (MoviePy): {duration_seconds}s")
     
     target_w, target_h = (720, 1280) if fast_mode else (1080, 1920)
     if bg_video_path and os.path.exists(bg_video_path):
         try:
-            bg_clip = VideoFileClip(bg_video_path)
+            # Check if it's an image
+            ext = os.path.splitext(bg_video_path)[1].lower()
+            if ext in ['.jpg', '.jpeg', '.png', '.bmp', '.webp']:
+                bg_clip = ImageClip(bg_video_path)
+            else:
+                bg_clip = VideoFileClip(bg_video_path)
+                
             ratio = bg_clip.w / bg_clip.h
             target_ratio = target_w / target_h
             if ratio > target_ratio:
@@ -849,10 +855,20 @@ def generate_timer_video(duration_seconds: int, output_file: str, font_path: str
                 bg_clip = bg_clip.resized(width=target_w)
                 bg_clip = bg_clip.cropped(y1=(bg_clip.h - target_h)/2, height=target_h)
             bg_clip = bg_clip.with_duration(duration_seconds)
-            if bg_clip.duration < duration_seconds:
-                bg_clip = vfx.loop(bg_clip, duration=duration_seconds)
+            
+            # Loop video if shorter (only for video clips)
+            if hasattr(bg_clip, 'loop') or isinstance(bg_clip, VideoFileClip): # Basic check
+                # ImageClip doesn't need looping if duration is set, but VideoFileClip does
+                # However, ImageClip handles duration set above. VideoFileClip duration is original duration.
+                # Actually bg_clip.duration is updated by with_duration for ImageClip? Yes.
+                # For VideoFileClip, with_duration just cuts or extends (but doesn't loop content).
+                # We need to check if it's a video and needs looping.
+                if ext not in ['.jpg', '.jpeg', '.png', '.bmp', '.webp']:
+                     if bg_clip.duration < duration_seconds:
+                        bg_clip = vfx.loop(bg_clip, duration=duration_seconds)
+                        
         except Exception as e:
-            logger.error(f"Failed to load BG video: {e}")
+            logger.error(f"Failed to load BG video/image: {e}")
             bg_clip = ColorClip(size=(target_w, target_h), color=(0,0,0), duration=duration_seconds)
     else:
         bg_clip = ColorClip(size=(target_w, target_h), color=(0,0,0), duration=duration_seconds)
@@ -861,12 +877,20 @@ def generate_timer_video(duration_seconds: int, output_file: str, font_path: str
         font_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "resource", "fonts", "NanumGothic-Bold.ttf")
     font = ImageFont.truetype(font_path, fontsize)
 
-    overlays = []
-    for sec in range(duration_seconds):
-        remaining = duration_seconds - sec
+    # Use make_frame with caching to optimize rendering
+    # This avoids creating thousands of ImageClips for long videos
+    memo = {}
+    
+    def make_frame(t):
+        current_sec = int(t)
+        if current_sec in memo:
+            return memo[current_sec]
+            
+        remaining = max(0, duration_seconds - current_sec)
         mins = remaining // 60
         s = remaining % 60
         text = f"{mins}:{s:02d}"
+        
         img = Image.new('RGBA', (target_w, target_h), (0,0,0,0))
         draw = ImageDraw.Draw(img)
         bbox = draw.textbbox((0, 0), text, font=font)
@@ -878,9 +902,26 @@ def generate_timer_video(duration_seconds: int, output_file: str, font_path: str
         box_coords = (x - padding, y - padding, x + text_w + padding, y + text_h + padding)
         draw.rectangle(box_coords, fill=(0, 0, 0, 128))
         draw.text((x, y), text, font=font, fill="white", stroke_width=5, stroke_fill="black")
-        overlays.append(ImageClip(np.array(img)).with_duration(1))
+        
+        # Clear cache occasionally to prevent memory leak, but keep current
+        if len(memo) > 10:
+            memo.clear()
+            
+        frame = np.array(img)
+        memo[current_sec] = frame
+        
+        # Update progress directly from frame generation
+        if progress_callback:
+            # t goes from 0 to duration_seconds
+            # Use max to avoid division by zero or negative
+            if duration_seconds > 0:
+                p = int((t / duration_seconds) * 100)
+                p = min(p, 99) # Keep 100 for final completion
+                progress_callback(p)
+                
+        return frame
 
-    timer_overlay = concatenate_videoclips(overlays, method="compose")
+    timer_overlay = VideoClip(make_frame, duration=duration_seconds)
     final_clip = CompositeVideoClip([bg_clip, timer_overlay])
 
     if bg_music_path and os.path.exists(bg_music_path):
@@ -893,15 +934,15 @@ def generate_timer_video(duration_seconds: int, output_file: str, font_path: str
             final_clip = final_clip.with_audio(audio)
         except Exception as e:
             logger.warning(f"Failed to load or attach audio: {e}")
-
+            
     final_clip.write_videofile(
         output_file,
         fps=24,
         codec="libx264",
         audio_codec="aac",
-        threads=(8 if fast_mode else 4),
+        threads=1, # Use 1 thread to ensure progress callback works
         preset="ultrafast",
-        logger=None,
+        logger=None, # Disable internal logger to avoid conflicts
         ffmpeg_params=["-pix_fmt", "yuv420p"]
     )
 
