@@ -731,6 +731,7 @@ with tab_main:
         with timer_col2:
             st.write("") # Spacing
             st.write("") # Spacing
+            fast_mode = st.checkbox("⚡ 빠른 모드", value=True, help="검은 배경/720x1280/24fps/멀티스레드로 빠르게 렌더링")
             if st.button("⏱️ 생성 시작", use_container_width=True, key="timer_generate_btn"):
                 # Generation Logic
                 timer_seconds = timer_duration * 60
@@ -755,6 +756,8 @@ with tab_main:
                     status_text.text("Pexels에서 배경 영상 검색 및 다운로드 중...")
                     bg_video_path = None
                     try:
+                        if fast_mode:
+                            raise Exception("Fast mode: skip remote download")
                         # Use generic keywords for background
                         keywords = ["nature", "landscape", "abstract", "sky", "forest", "city"]
                         keyword = random.choice(keywords)
@@ -819,7 +822,7 @@ with tab_main:
                     # Run in ThreadPoolExecutor
                     # fontsize increased to 250 for visibility
                     with concurrent.futures.ThreadPoolExecutor() as executor:
-                        future = executor.submit(video.generate_timer_video, timer_seconds, output_file, None, 250, bg_video_path, bg_music_path)
+                        future = executor.submit(video.generate_timer_video, timer_seconds, output_file, None, 250, bg_video_path, bg_music_path, fast_mode)
                         
                         while not future.done():
                             time.sleep(0.5)
