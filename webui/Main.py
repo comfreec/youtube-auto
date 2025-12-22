@@ -753,59 +753,61 @@ with tab_main:
                     from app.services import video, material
                     
                     # 1. Download Random Background from Pexels
-                    status_text.text("Pexels에서 배경 영상 검색 및 다운로드 중...")
                     bg_video_path = None
-                    try:
-                        if fast_mode:
-                            raise Exception("Fast mode: skip remote download")
-                        # Use generic keywords for background
-                        keywords = ["nature", "landscape", "abstract", "sky", "forest", "city"]
-                        keyword = random.choice(keywords)
-                        
-                        # Use material service to fetch video
-                        # material.search_videos usually returns a list of urls/objects
-                        # We need a function to download. app/services/material.py has `download_videos`.
-                        # But that is for full tasks. Let's use a simpler approach or reuse logic.
-                        
-                        # Simple Pexels Search & Download (Inline for robustness)
-                        pexels_api_keys = config.app.get("pexels_api_keys", [])
-                        if pexels_api_keys:
-                            api_key = random.choice(pexels_api_keys)
-                            import requests
+                    
+                    if not fast_mode:
+                        status_text.text("Pexels에서 배경 영상 검색 및 다운로드 중...")
+                        try:
+                            # Use generic keywords for background
+                            keywords = ["nature", "landscape", "abstract", "sky", "forest", "city"]
+                            keyword = random.choice(keywords)
                             
-                            headers = {"Authorization": api_key}
-                            url = f"https://api.pexels.com/videos/search?query={keyword}&per_page=5&orientation=portrait"
-                            r = requests.get(url, headers=headers, timeout=10)
-                            data = r.json()
+                            # Use material service to fetch video
+                            # material.search_videos usually returns a list of urls/objects
+                            # We need a function to download. app/services/material.py has `download_videos`.
+                            # But that is for full tasks. Let's use a simpler approach or reuse logic.
                             
-                            if data.get("videos"):
-                                video_info = random.choice(data["videos"])
-                                # Get best quality link
-                                video_files = video_info.get("video_files", [])
-                                # Sort by resolution width desc
-                                video_files.sort(key=lambda x: x.get("width", 0), reverse=True)
-                                # Pick one that is likely HD but not huge, or just the first one
-                                download_url = video_files[0].get("link")
+                            # Simple Pexels Search & Download (Inline for robustness)
+                            pexels_api_keys = config.app.get("pexels_api_keys", [])
+                            if pexels_api_keys:
+                                api_key = random.choice(pexels_api_keys)
+                                import requests
                                 
-                                # Download
-                                temp_dir = utils.storage_dir("temp", create=True)
-                                bg_video_path = os.path.join(temp_dir, f"timer_bg_{uuid4()}.mp4")
+                                headers = {"Authorization": api_key}
+                                url = f"https://api.pexels.com/videos/search?query={keyword}&per_page=5&orientation=portrait"
+                                r = requests.get(url, headers=headers, timeout=10)
+                                data = r.json()
                                 
-                                with requests.get(download_url, stream=True) as r:
-                                    r.raise_for_status()
-                                    with open(bg_video_path, 'wb') as f:
-                                        for chunk in r.iter_content(chunk_size=8192):
-                                            f.write(chunk)
-                                            
-                                st.success(f"배경 다운로드 완료: {keyword}")
+                                if data.get("videos"):
+                                    video_info = random.choice(data["videos"])
+                                    # Get best quality link
+                                    video_files = video_info.get("video_files", [])
+                                    # Sort by resolution width desc
+                                    video_files.sort(key=lambda x: x.get("width", 0), reverse=True)
+                                    # Pick one that is likely HD but not huge, or just the first one
+                                    download_url = video_files[0].get("link")
+                                    
+                                    # Download
+                                    temp_dir = utils.storage_dir("temp", create=True)
+                                    bg_video_path = os.path.join(temp_dir, f"timer_bg_{uuid4()}.mp4")
+                                    
+                                    with requests.get(download_url, stream=True) as r:
+                                        r.raise_for_status()
+                                        with open(bg_video_path, 'wb') as f:
+                                            for chunk in r.iter_content(chunk_size=8192):
+                                                f.write(chunk)
+                                                
+                                    st.success(f"배경 다운로드 완료: {keyword}")
+                                else:
+                                    st.warning("Pexels 검색 결과가 없습니다.")
                             else:
-                                st.warning("Pexels 검색 결과가 없습니다.")
-                        else:
-                            st.error("Pexels API 키가 없습니다. 로컬 파일이나 검은 배경을 사용합니다.")
-                            
-                    except Exception as e:
-                        st.error(f"배경 다운로드 실패: {e}")
-                        bg_video_path = None
+                                st.error("Pexels API 키가 없습니다. 로컬 파일이나 검은 배경을 사용합니다.")
+                                
+                        except Exception as e:
+                            st.error(f"배경 다운로드 실패: {e}")
+                            bg_video_path = None
+                    else:
+                        status_text.text("빠른 모드: 배경 다운로드 건너뜀")
 
                     # Fallback to local if download failed
                     if not bg_video_path or not os.path.exists(bg_video_path):
