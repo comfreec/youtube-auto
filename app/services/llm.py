@@ -1,13 +1,9 @@
 import json
 import logging
 import re
-import requests
-import time
-import random
-import concurrent.futures
+from collections import Counter
 from typing import List, Optional
 
-import g4f
 from loguru import logger
 from openai import AzureOpenAI, OpenAI
 
@@ -15,205 +11,15 @@ from app.config import config
 
 _max_retries = 3
 
-def _generate_free_response(prompt: str) -> str:
-    def try_pollinations_openai():
-        try:
-            import urllib.parse
-            encoded_prompt = urllib.parse.quote(prompt)
-            # Try openai model
-            url = f"https://text.pollinations.ai/{encoded_prompt}?seed={random.randint(100, 999999)}&model=openai"
-            response = requests.get(url, timeout=30) 
-            if response.status_code == 200 and response.text.strip():
-                logger.info("Race win: Pollinations OpenAI")
-                return response.text
-        except Exception:
-            pass
-        return None
-
-    def try_pollinations_mistral():
-        try:
-            import urllib.parse
-            encoded_prompt = urllib.parse.quote(prompt)
-            # Try mistral model
-            url = f"https://text.pollinations.ai/{encoded_prompt}?seed={random.randint(100, 999999)}&model=mistral"
-            response = requests.get(url, timeout=30) 
-            if response.status_code == 200 and response.text.strip():
-                logger.info("Race win: Pollinations Mistral")
-                return response.text
-        except Exception:
-            pass
-        return None
-        
-    def try_pollinations_llama():
-        try:
-            import urllib.parse
-            encoded_prompt = urllib.parse.quote(prompt)
-            # Try llama model
-            url = f"https://text.pollinations.ai/{encoded_prompt}?seed={random.randint(100, 999999)}&model=llama"
-            response = requests.get(url, timeout=30) 
-            if response.status_code == 200 and response.text.strip():
-                logger.info("Race win: Pollinations Llama")
-                return response.text
-        except Exception:
-            pass
-        return None
-        
-    def try_pollinations_searchgpt():
-        try:
-            import urllib.parse
-            encoded_prompt = urllib.parse.quote(prompt)
-            # Try searchgpt model
-            url = f"https://text.pollinations.ai/{encoded_prompt}?seed={random.randint(100, 999999)}&model=searchgpt"
-            response = requests.get(url, timeout=30) 
-            if response.status_code == 200 and response.text.strip():
-                logger.info("Race win: Pollinations SearchGPT")
-                return response.text
-        except Exception:
-            pass
-        return None
-
-    def try_g4f_duckduckgo():
-        try:
-            # DuckDuckGo is often stable
-            resp = g4f.ChatCompletion.create(
-                model="gpt-3.5-turbo",
-                provider=g4f.Provider.DuckDuckGo,
-                messages=[{"role": "user", "content": prompt}]
-            )
-            if resp:
-                logger.info("Race win: G4F DuckDuckGo")
-                return resp
-        except Exception:
-            pass
-        return None
-
-    def try_g4f_blackbox():
-        try:
-            # Blackbox is another good free option
-            resp = g4f.ChatCompletion.create(
-                model="gpt-4",
-                provider=g4f.Provider.Blackbox,
-                messages=[{"role": "user", "content": prompt}]
-            )
-            if resp:
-                logger.info("Race win: G4F Blackbox")
-                return resp
-        except Exception:
-            pass
-        return None
-        
-    def try_g4f_auto():
-        try:
-            # Auto selection as last resort
-            resp = g4f.ChatCompletion.create(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": prompt}]
-            )
-            if resp:
-                logger.info("Race win: G4F Auto")
-                return resp
-        except Exception:
-            pass
-        return None
-
-    def try_g4f_darkai():
-        try:
-            # DarkAI
-            resp = g4f.ChatCompletion.create(
-                model="gpt-3.5-turbo",
-                provider=g4f.Provider.DarkAI,
-                messages=[{"role": "user", "content": prompt}]
-            )
-            if resp:
-                logger.info("Race win: G4F DarkAI")
-                return resp
-        except Exception:
-            pass
-        return None
-
-    def try_g4f_airforce():
-        try:
-            # Airforce
-            resp = g4f.ChatCompletion.create(
-                model="gpt-3.5-turbo",
-                provider=g4f.Provider.Airforce,
-                messages=[{"role": "user", "content": prompt}]
-            )
-            if resp:
-                logger.info("Race win: G4F Airforce")
-                return resp
-        except Exception:
-            pass
-        return None
-
-    content = ""
-    # Increase workers to cover new providers
-    executor = concurrent.futures.ThreadPoolExecutor(max_workers=10)
-    futures = [
-        executor.submit(try_pollinations_openai),
-        executor.submit(try_pollinations_mistral),
-        executor.submit(try_pollinations_llama),
-        executor.submit(try_pollinations_searchgpt),
-        executor.submit(try_g4f_duckduckgo),
-        executor.submit(try_g4f_blackbox),
-        executor.submit(try_g4f_darkai),
-        executor.submit(try_g4f_airforce),
-        executor.submit(try_g4f_auto)
-    ]
-    
-    try:
-        # Reduce timeout to 15s to keep UI responsive
-        for future in concurrent.futures.as_completed(futures, timeout=15):
-            result = future.result()
-            if result:
-                content = result
-                break
-    except concurrent.futures.TimeoutError:
-        logger.warning("Race timeout (15s)")
-    except Exception as e:
-        logger.error(f"Race error: {e}")
-    finally:
-        # CRITICAL FIX: Do not wait for hanging threads!
-        executor.shutdown(wait=False)
-
-    return content
-
 def _generate_response(prompt: str) -> str:
-    # Force reload config to pick up changes
     config.reload()
     
     content = ""
-    llm_provider = config.app.get("llm_provider", "openai")
+    llm_provider = config.app.get("llm_provider", "gemini")
     logger.info(f"llm provider: {llm_provider}")
-
-    # Enhanced Race Strategy for Free/Unstable Providers
-    if llm_provider in ["g4f", "pollinations", "free"]:
-        content = _generate_free_response(prompt)
-
-        if not content:
-             logger.warning("All providers failed or timed out in race.")
-             
-             # Smart Fallback to Gemini if key exists
-             gemini_key = config.app.get("gemini_api_key")
-             if gemini_key:
-                 logger.info("Falling back to Gemini...")
-                 try:
-                     import google.generativeai as genai
-                     genai.configure(api_key=gemini_key)
-                     # Fallback model
-                     target_model = config.app.get("gemini_model_name", "gemini-1.5-flash")
-                     if not target_model or "3.0" in target_model: target_model = "gemini-1.5-flash"
-                     
-                     model = genai.GenerativeModel(target_model)
-                     response = model.generate_content(prompt)
-                     if response.text:
-                         return response.text
-                 except Exception as e_gemini:
-                     logger.error(f"Gemini fallback failed: {e_gemini}")
-             
-             raise Exception("All free providers failed (Race Timeout) and Fallback failed")
-        
-        return content
+    # Remove the redirect to gemini for g4f
+    if llm_provider in ["pollinations", "free"]:
+        llm_provider = "gemini"
 
     # Standard Providers
     try:
@@ -274,9 +80,8 @@ def _generate_response(prompt: str) -> str:
                     except Exception as e_try:
                         last_error = e_try
                         logger.warning(f"Gemini model {m} failed: {e_try}")
-                        # If quota exceeded, no point trying other models
                         if "429" in str(e_try) or "Quota exceeded" in str(e_try):
-                            logger.warning("Gemini Quota Exceeded. Skipping other models and falling back...")
+                            logger.warning("Gemini Quota Exceeded. Skipping other models.")
                             break
                         continue
                 
@@ -293,8 +98,8 @@ def _generate_response(prompt: str) -> str:
                 if last_error:
                     raise last_error
             except Exception as e:
-                logger.warning(f"Gemini failed ({e}), falling back to free providers...")
-                return _generate_free_response(prompt)
+                logger.warning(f"Gemini failed ({e})")
+                raise e
 
         # Add other providers as needed (DeepSeek, Qwen, etc usually generic OpenAI)
         elif llm_provider in ["deepseek", "qwen", "ollama", "oneapi", "cloudflare", "ernie", "modelscope"]:
@@ -308,6 +113,44 @@ def _generate_response(prompt: str) -> str:
                 messages=[{"role": "user", "content": prompt}]
             )
              return response.choices[0].message.content
+             
+        elif llm_provider == "g4f":
+            try:
+                import g4f
+                logger.info("Using G4F provider")
+                
+                # Try multiple providers in order of reliability
+                providers_to_try = [
+                    g4f.Provider.DuckDuckGo,
+                    g4f.Provider.Blackbox,
+                    g4f.Provider.Airforce,
+                    g4f.Provider.DarkAI,
+                ]
+                
+                for provider in providers_to_try:
+                    try:
+                        logger.info(f"Trying G4F provider: {provider.__name__}")
+                        response = g4f.ChatCompletion.create(
+                            model="gpt-3.5-turbo",
+                            provider=provider,
+                            messages=[{"role": "user", "content": prompt}]
+                        )
+                        if response and response.strip():
+                            logger.info(f"G4F success with {provider.__name__}")
+                            return response.strip()
+                    except Exception as e:
+                        logger.warning(f"G4F provider {provider.__name__} failed: {e}")
+                        continue
+                
+                # If all providers fail, raise the last error
+                raise Exception("All G4F providers failed")
+                
+            except ImportError:
+                logger.error("G4F not installed. Install with: pip install g4f")
+                raise Exception("G4F not installed")
+            except Exception as e:
+                logger.error(f"G4F error: {e}")
+                raise e
 
     except Exception as e:
         logger.error(f"LLM {llm_provider} error: {e}")
@@ -376,33 +219,73 @@ def generate_terms(video_subject: str, video_script: str, amount: int = 5) -> Li
     except Exception as e:
         logger.error(f"failed to generate terms: {e}")
     
-    # IMPROVED FALLBACK: Use Subject and Script words (Translated to English)
-    logger.warning("LLM failed to generate relevant terms. Using translated fallback.")
-    
-    # 1. Start with the subject
-    subject_eng = translate_to_english(video_subject) if video_subject else ""
-    fallback = [subject_eng] if subject_eng else []
-    
-    # 2. Extract some potential keywords from the script
-    words = re.findall(r'\w+', video_script)
-    # Filter Korean words and translate them
-    ko_words = [w for w in words if re.search('[가-힣]', w)][:3]
-    for w in ko_words:
-        eng_w = translate_to_english(w)
-        if eng_w and eng_w != w:
-            fallback.append(eng_w)
-    
-    # 3. Add quality terms
-    fallback.extend(["cinematic", "realistic", "4k background"])
-    
-    # Clean up fallback (unique and English only)
-    unique_fallback = []
-    for f in fallback:
-        # Simple check for English characters
-        if f and not re.search('[가-힣]', f) and f not in unique_fallback:
-            unique_fallback.append(f)
-            
-    return unique_fallback[:amount]
+    logger.warning("LLM failed to generate relevant terms. Using script-based fallback.")
+    script_text = video_script or ""
+    has_korean = bool(re.search("[가-힣]", script_text))
+    tokens_en = []
+    if has_korean:
+        try:
+            translated = translate_to_english(script_text) or script_text
+            if translated and not re.search("[가-힣]", translated):
+                script_text = translated
+        except Exception:
+            pass
+    tokens_en = re.findall(r"[A-Za-z][A-Za-z'-]{2,}", script_text)
+    stop = {
+        "the","a","an","and","to","of","in","on","with","for","as","by","is","are","was","were","be","being","been",
+        "have","has","had","do","does","did","from","that","this","it","they","them","he","she","we","you","i","not",
+        "but","or","so","if","then","at","into","out","over","under","up","down","about","than","too","very","can",
+        "may","might","should","would","could","will","shall"
+    }
+    if tokens_en:
+        filtered = [t.lower() for t in tokens_en if t.lower() not in stop]
+        bigrams = [" ".join([filtered[i], filtered[i+1]]) for i in range(len(filtered)-1)]
+        tri = [" ".join([filtered[i], filtered[i+1], filtered[i+2]]) for i in range(len(filtered)-2)]
+        counts_big = Counter(bigrams)
+        counts_tri = Counter(tri)
+        counts_uni = Counter(filtered)
+        ordered = []
+        for phrase, _ in counts_tri.most_common():
+            ordered.append(phrase)
+        for phrase, _ in counts_big.most_common():
+            ordered.append(phrase)
+        for word, _ in counts_uni.most_common():
+            ordered.append(word)
+        dedup = []
+        for t in ordered:
+            if t and t not in dedup and len(t.split()) <= 5:
+                dedup.append(t)
+            if len(dedup) >= amount:
+                break
+        if len(dedup) < amount:
+            subj = translate_to_english(video_subject) if video_subject else ""
+            if subj and subj not in dedup:
+                dedup.append(subj)
+        return dedup[:amount]
+    tokens_ko = re.findall(r"[가-힣]{2,}", video_script or "")
+    if tokens_ko:
+        phrases_ko = []
+        for i in range(len(tokens_ko)-2):
+            phrases_ko.append(" ".join([tokens_ko[i], tokens_ko[i+1], tokens_ko[i+2]]))
+        for i in range(len(tokens_ko)-1):
+            phrases_ko.append(" ".join([tokens_ko[i], tokens_ko[i+1]]))
+        phrases_ko.extend(tokens_ko)
+        seen = set()
+        dedup_ko = []
+        for t in phrases_ko:
+            if t and t not in seen:
+                seen.add(t)
+                dedup_ko.append(t)
+            if len(dedup_ko) >= amount:
+                break
+        try:
+            translated_terms = translate_terms_to_english(dedup_ko)
+            if translated_terms:
+                return translated_terms[:amount]
+        except Exception:
+            pass
+    subj = translate_to_english(video_subject) if video_subject else ""
+    return [subj][:amount] if subj else []
 
 def translate_to_english(text: str) -> str:
     if not text:
@@ -418,3 +301,49 @@ def translate_to_english(text: str) -> str:
     
     logger.warning("Translation failed, returning original text.")
     return text
+
+def translate_to_korean(text: str) -> str:
+    if not text:
+        return ""
+    prompt = f"Translate the following English text into natural Korean. Return ONLY the translated text without any quotes, notes, or explanations:\n\n{text}"
+    try:
+        response = _generate_response(prompt)
+        if response:
+            return response.strip()
+    except Exception as e:
+        logger.error(f"Translation failed: {e}")
+    return text
+
+def translate_terms_to_korean(terms: List[str]) -> List[str]:
+    if not terms:
+        return []
+    joined = ", ".join([t.strip() for t in terms if t])
+    if not joined:
+        return []
+    prompt = f"Translate the following English keywords into Korean. Return ONLY a comma-separated list with no extra words:\n\n{joined}"
+    try:
+        response = _generate_response(prompt)
+        if response:
+            cleaned = response.replace("\n", ",").strip()
+            out = [t.strip() for t in cleaned.split(",") if t.strip()]
+            return out
+    except Exception as e:
+        logger.error(f"Translation failed: {e}")
+    return terms
+
+def translate_terms_to_english(terms: List[str]) -> List[str]:
+    if not terms:
+        return []
+    joined = ", ".join([t.strip() for t in terms if t])
+    if not joined:
+        return []
+    prompt = f"Translate the following keywords into natural English. Return ONLY a comma-separated list with no extra words:\n\n{joined}"
+    try:
+        response = _generate_response(prompt)
+        if response:
+            cleaned = response.replace("\n", ",").strip()
+            out = [t.strip() for t in cleaned.split(",") if t.strip()]
+            return out
+    except Exception as e:
+        logger.error(f"Translation failed: {e}")
+    return terms
