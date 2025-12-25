@@ -90,7 +90,7 @@ class VideoParams(BaseModel):
     voice_rate: Optional[float] = 1.0
     bgm_type: Optional[str] = "random"
     bgm_file: Optional[str] = ""
-    bgm_volume: Optional[float] = 0.2
+    bgm_volume: Optional[float] = 0.05
 
     subtitle_enabled: Optional[bool] = True
     subtitle_position: Optional[str] = "bottom"  # top, bottom, center
@@ -114,7 +114,7 @@ class SubtitleRequest(BaseModel):
     voice_rate: Optional[float] = 1.2
     bgm_type: Optional[str] = "random"
     bgm_file: Optional[str] = ""
-    bgm_volume: Optional[float] = 0.2
+    bgm_volume: Optional[float] = 0.05
     subtitle_position: Optional[str] = "bottom"
     font_name: Optional[str] = "STHeitiMedium.ttc"
     text_fore_color: Optional[str] = "#FFFFFF"
@@ -134,7 +134,7 @@ class AudioRequest(BaseModel):
     voice_rate: Optional[float] = 1.2
     bgm_type: Optional[str] = "random"
     bgm_file: Optional[str] = ""
-    bgm_volume: Optional[float] = 0.2
+    bgm_volume: Optional[float] = 0.05
     video_source: Optional[str] = "local"
 
 

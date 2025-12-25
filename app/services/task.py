@@ -304,22 +304,14 @@ def start(task_id, params: VideoParams, stop_at: str = "video"):
     video_terms = ""
     if params.video_source != "local":
         sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=12, message="영상 키워드 생성 중...")
-        # Use simple wrapper or call llm directly? 
-        # The imported generate_terms signature is different in llm.py vs local wrapper?
-        # Let's check imports.
-        # Wait, the code calls `generate_terms(task_id, params, video_script)` but llm.py has `generate_terms(subject, script, amount)`
-        # There must be a wrapper in this file or I need to fix the call.
-        # Let's fix the call to match llm.py signature.
         try:
-            video_terms = llm.generate_terms(params.video_subject, video_script, amount=5)
+            video_terms = generate_terms(task_id, params, video_script)
         except Exception as e:
-            logger.error(f"Failed to generate terms via LLM: {e}")
+            logger.error(f"Failed to generate terms: {e}")
             video_terms = []
-            
         if not video_terms:
             logger.warning("Keywords generation failed, using subject as fallback.")
             video_terms = [params.video_subject]
-            
         sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=15, message=f"키워드: {', '.join(video_terms[:3])}...")
     else:
         video_terms = [] # Local source doesn't need search terms

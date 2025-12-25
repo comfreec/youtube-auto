@@ -75,6 +75,18 @@ audio_codec = "aac"
 video_codec = "libx264"
 fps = 30
 
+# Enhanced video encoding settings for better compatibility
+video_encoding_params = [
+    "-pix_fmt", "yuv420p",  # Ensure compatibility with all players
+    "-movflags", "+faststart",  # Enable progressive download
+    "-profile:v", "baseline",  # Use baseline profile for maximum compatibility
+    "-level", "3.0",  # H.264 level for mobile compatibility
+    "-r", "30",  # Force frame rate
+    "-g", "60",  # GOP size (2 seconds at 30fps)
+    "-keyint_min", "30",  # Minimum keyframe interval
+    "-sc_threshold", "0",  # Disable scene change detection
+]
+
 def parse_srt(file_path):
     subtitles = []
     with open(file_path, 'r', encoding='utf-8') as f:
@@ -363,10 +375,10 @@ def combine_videos(
                 logger=None,
                 fps=fps,
                 codec=video_codec,
-                preset="ultrafast",
-                threads=2, # Reduced threads to avoid deadlocks during clip generation
+                preset="medium",  # Changed from ultrafast for better quality
+                threads=2,
                 audio=False,
-                ffmpeg_params=["-pix_fmt", "yuv420p"]
+                ffmpeg_params=video_encoding_params
             )
             
             close_clip(clip)
@@ -404,10 +416,12 @@ def combine_videos(
     # But to ensure best compatibility with effects, we can use concatenate_videoclips.
     # Given the user reported "not applied", we switch to MoviePy composition for transition modes.
     
+    # CHANGED: Default to ffmpeg for better stability, only use MoviePy if absolutely necessary
     use_moviepy_concat = False
     if video_transition_mode and video_transition_mode.value != VideoTransitionMode.none.value:
-        use_moviepy_concat = True
-        logger.info(f"Transition mode {video_transition_mode} active, using MoviePy concatenate_videoclips")
+        # Try ffmpeg first, fallback to MoviePy only if needed
+        logger.info(f"Transition mode {video_transition_mode} active, but trying ffmpeg first for stability")
+        use_moviepy_concat = False  # Start with ffmpeg
 
     if use_moviepy_concat:
         try:
@@ -415,9 +429,6 @@ def combine_videos(
             for clip_data in processed_clips:
                 if os.path.exists(clip_data.file_path) and os.path.getsize(clip_data.file_path) > 0:
                     # Load clip from temp file
-                    # We must use VideoFileClip to load the encoded temp file with effects baked in?
-                    # Wait, if we used write_videofile previously, the effects are in the file.
-                    # So loading it is fine.
                     clip = VideoFileClip(clip_data.file_path)
                     clips_to_concat.append(clip)
             
@@ -425,28 +436,51 @@ def combine_videos(
                  logger.error("no valid clips to merge")
                  return combined_video_path
 
+            logger.info(f"Concatenating {len(clips_to_concat)} clips with MoviePy")
+            
             # Use method='compose' to handle any alpha/transparency or effects better
-            final_clip = concatenate_videoclips(clips_to_concat, method="compose")
-            
-            # Setup logger if callback is provided
-            write_logger = None
-            if progress_callback:
-                write_logger = TaskProgressLogger(progress_callback)
+            # Add timeout and memory management
+            try:
+                final_clip = concatenate_videoclips(clips_to_concat, method="compose")
+                
+                # Setup logger if callback is provided
+                write_logger = None
+                if progress_callback:
+                    write_logger = TaskProgressLogger(progress_callback)
 
-            final_clip.write_videofile(
-                combined_video_path,
-                logger=write_logger,
-                fps=30, # Default fps
-                codec="libx264",
-                preset="ultrafast",
-                threads=threads,
-                audio_codec="aac"
-            )
-            
-            # Close clips
-            for clip in clips_to_concat:
-                close_clip(clip)
-            close_clip(final_clip)
+                logger.info("Starting final video write...")
+                final_clip.write_videofile(
+                    combined_video_path,
+                    logger=write_logger,
+                    fps=fps,
+                    codec=video_codec,
+                    preset="medium",
+                    threads=min(2, threads),  # Limit threads to prevent deadlock
+                    audio_codec=audio_codec,
+                    ffmpeg_params=video_encoding_params,
+                    temp_audiofile=None,  # Let MoviePy handle temp files
+                    remove_temp=True
+                )
+                
+                logger.info("MoviePy video write completed")
+                
+            except Exception as write_error:
+                logger.error(f"MoviePy write failed: {write_error}")
+                raise write_error
+            finally:
+                # Always close clips to free memory
+                for clip in clips_to_concat:
+                    try:
+                        close_clip(clip)
+                    except:
+                        pass
+                try:
+                    close_clip(final_clip)
+                except:
+                    pass
+                # Force garbage collection
+                import gc
+                gc.collect()
             
             logger.info("MoviePy concatenation completed")
             
@@ -456,8 +490,8 @@ def combine_videos(
                  
         except Exception as e:
             logger.error(f"MoviePy concatenation failed: {e}")
-            # Fallback to ffmpeg concat if MoviePy fails?
-            logger.info("Falling back to ffmpeg concat")
+            # Fallback to ffmpeg concat if MoviePy fails
+            logger.info("Falling back to ffmpeg concat due to MoviePy failure")
             use_moviepy_concat = False
 
     if not use_moviepy_concat:
@@ -484,39 +518,70 @@ def combine_videos(
             ffmpeg_exe = get_ffmpeg_exe()
             cmd = [
                 ffmpeg_exe,
-                "-y",
+                "-y",  # Overwrite output file
                 "-f", "concat",
                 "-safe", "0",
                 "-i", concat_list_path,
-                "-c:v", "libx264",
-                "-pix_fmt", "yuv420p",
-                "-preset", "ultrafast",
+                "-c:v", video_codec,
+                "-preset", "medium",
                 "-crf", "23",
-                "-c:a", "aac",
+                "-c:a", audio_codec,
                 "-b:a", "128k",
-                combined_video_path
-            ]
+                "-r", str(fps),
+                "-avoid_negative_ts", "make_zero",  # Handle timestamp issues
+                "-fflags", "+genpts",  # Generate presentation timestamps
+            ] + video_encoding_params + [combined_video_path]
             
-            # Run ffmpeg
+            # Run ffmpeg with timeout
             logger.info(f"running ffmpeg command: {' '.join(cmd)}")
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                encoding='utf-8',
-                errors='replace'
-            )
+            
+            import subprocess
+            import signal
+            
+            def timeout_handler(signum, frame):
+                raise TimeoutError("FFmpeg process timed out")
+            
+            try:
+                # Set timeout for ffmpeg process (10 minutes max)
+                if hasattr(signal, 'SIGALRM'):  # Unix systems
+                    signal.signal(signal.SIGALRM, timeout_handler)
+                    signal.alarm(600)  # 10 minutes timeout
+                
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    encoding='utf-8',
+                    errors='replace',
+                    timeout=600  # 10 minutes timeout
+                )
+                
+                if hasattr(signal, 'SIGALRM'):
+                    signal.alarm(0)  # Cancel alarm
+                
+            except (subprocess.TimeoutExpired, TimeoutError) as e:
+                logger.error(f"ffmpeg process timed out: {e}")
+                raise Exception("Video processing timed out - try reducing video length or complexity")
+            except Exception as e:
+                logger.error(f"ffmpeg process failed: {e}")
+                raise e
             
             if result.returncode != 0:
                 logger.error(f"ffmpeg concatenation failed: {result.stderr}")
-                raise Exception(f"ffmpeg concatenation failed: {result.stderr}")
+                # Try to provide more helpful error message
+                if "Invalid data found" in result.stderr:
+                    raise Exception("Video file corruption detected - try regenerating with different settings")
+                elif "No space left" in result.stderr:
+                    raise Exception("Insufficient disk space for video processing")
+                else:
+                    raise Exception(f"Video processing failed: {result.stderr}")
                 
-            logger.info("ffmpeg concatenation completed")
+            logger.info("ffmpeg concatenation completed successfully")
             
             # Verify output
             if not os.path.exists(combined_video_path) or os.path.getsize(combined_video_path) == 0:
                  logger.error("ffmpeg produced empty or missing file")
-                 raise Exception("ffmpeg produced empty or missing file")
+                 raise Exception("Video processing produced empty file - check available disk space")
 
         except Exception as e:
             logger.error(f"failed to merge clips: {str(e)}")
@@ -542,29 +607,77 @@ def wrap_text(text, max_width, font="Arial", fontsize=60):
     if width <= max_width:
         return text, height
 
+    # Enhanced text wrapping for better readability
     processed = True
-
     _wrapped_lines_ = []
     words = text.split(" ")
     _txt_ = ""
+    
+    # Try to keep lines balanced and avoid very short last lines
     for word in words:
         _before = _txt_
         _txt_ += f"{word} "
         _width, _height = get_text_size(_txt_)
+        
         if _width <= max_width:
             continue
         else:
             if _txt_.strip() == word.strip():
+                # Single word is too long, need character-level wrapping
                 processed = False
                 break
-            _wrapped_lines_.append(_before)
+            
+            # Check if we should break here or try to balance lines
+            remaining_words = words[words.index(word):]
+            remaining_text = " ".join(remaining_words)
+            remaining_width, _ = get_text_size(remaining_text)
+            
+            # If remaining text is much shorter than current line, try to balance
+            if len(_wrapped_lines_) == 0 and remaining_width < max_width * 0.6:
+                # Try to move one word to next line for better balance
+                words_in_current = _before.strip().split()
+                if len(words_in_current) > 2:  # Only if we have enough words
+                    last_word = words_in_current[-1]
+                    balanced_line = " ".join(words_in_current[:-1])
+                    _wrapped_lines_.append(balanced_line)
+                    _txt_ = f"{last_word} {word} "
+                    continue
+            
+            _wrapped_lines_.append(_before.strip())
             _txt_ = f"{word} "
-    _wrapped_lines_.append(_txt_)
+    
+    if _txt_.strip():
+        _wrapped_lines_.append(_txt_.strip())
+    
     if processed:
-        _wrapped_lines_ = [line.strip() for line in _wrapped_lines_]
+        _wrapped_lines_ = [line.strip() for line in _wrapped_lines_ if line.strip()]
         result = "\n".join(_wrapped_lines_).strip()
-        height = len(_wrapped_lines_) * height
-        return result, height
+        
+        # Calculate total height with line spacing
+        line_height = height
+        total_height = len(_wrapped_lines_) * line_height + (len(_wrapped_lines_) - 1) * 15  # 15px spacing
+        return result, total_height
+
+    # Fallback to character-level wrapping for very long words
+    _wrapped_lines_ = []
+    chars = list(text)
+    _txt_ = ""
+    for char in chars:
+        _txt_ += char
+        _width, _height = get_text_size(_txt_)
+        if _width <= max_width:
+            continue
+        else:
+            _wrapped_lines_.append(_txt_[:-1])  # Don't include the character that made it too wide
+            _txt_ = char
+    
+    if _txt_:
+        _wrapped_lines_.append(_txt_)
+    
+    result = "\n".join(_wrapped_lines_).strip()
+    line_height = height
+    total_height = len(_wrapped_lines_) * line_height + (len(_wrapped_lines_) - 1) * 15
+    return result, total_height
 
     _wrapped_lines_ = []
     chars = list(text)
@@ -672,26 +785,60 @@ def generate_video(
         _clip = _clip.with_start(subtitle_item[0][0])
         _clip = _clip.with_end(subtitle_item[0][1])
         _clip = _clip.with_duration(duration)
+        
+        # Dynamic subtitle positioning based on text height and language
+        subtitle_height = _clip.h
+        
         if params.subtitle_position == "bottom":
             # Adjust for Shorts style (higher up to avoid UI)
             if aspect == VideoAspect.portrait:
-                 _clip = _clip.with_position(("center", video_height * 0.75))
+                # For portrait videos, ensure subtitle doesn't go too high
+                # Reserve top 25% for title, bottom 25% for UI
+                max_y_position = video_height * 0.75 - subtitle_height
+                min_y_position = video_height * 0.25  # Don't go above 25% from top
+                
+                # Default position for single line
+                default_y = video_height * 0.75
+                
+                # If subtitle is too tall, move it down but not above the minimum
+                if subtitle_height > video_height * 0.15:  # If subtitle is more than 15% of screen height
+                    adjusted_y = max(min_y_position, default_y - (subtitle_height - video_height * 0.1))
+                else:
+                    adjusted_y = default_y
+                    
+                _clip = _clip.with_position(("center", adjusted_y))
             else:
-                 _clip = _clip.with_position(("center", video_height * 0.92 - _clip.h))
+                _clip = _clip.with_position(("center", video_height * 0.92 - subtitle_height))
         elif params.subtitle_position == "top":
-            _clip = _clip.with_position(("center", video_height * 0.05))
+            # For top position, ensure it doesn't overlap with title
+            if aspect == VideoAspect.portrait:
+                # Start after title area (top 15% reserved for title)
+                min_top_y = video_height * 0.15
+                _clip = _clip.with_position(("center", min_top_y))
+            else:
+                _clip = _clip.with_position(("center", video_height * 0.05))
         elif params.subtitle_position == "custom":
             # Ensure the subtitle is fully within the screen bounds
             margin = 10  # Additional margin, in pixels
-            max_y = video_height - _clip.h - margin
+            max_y = video_height - subtitle_height - margin
             min_y = margin
-            custom_y = (video_height - _clip.h) * (params.custom_position / 100)
-            custom_y = max(
-                min_y, min(custom_y, max_y)
-            )  # Constrain the y value within the valid range
+            
+            # For portrait, respect title area
+            if aspect == VideoAspect.portrait:
+                min_y = max(min_y, video_height * 0.15)  # Don't overlap with title
+                
+            custom_y = (video_height - subtitle_height) * (params.custom_position / 100)
+            custom_y = max(min_y, min(custom_y, max_y))
             _clip = _clip.with_position(("center", custom_y))
         else:  # center
-            _clip = _clip.with_position(("center", "center"))
+            # For center position in portrait, avoid title area
+            if aspect == VideoAspect.portrait:
+                # Center in the middle area (between title and bottom UI)
+                available_height = video_height * 0.6  # 60% of screen (15% top + 25% bottom reserved)
+                center_y = video_height * 0.15 + (available_height - subtitle_height) / 2
+                _clip = _clip.with_position(("center", center_y))
+            else:
+                _clip = _clip.with_position(("center", "center"))
         return _clip
 
     bgm_file = get_bgm_file(bgm_type=params.bgm_type, bgm_file=params.bgm_file)
@@ -712,7 +859,7 @@ def generate_video(
                 font_path_title = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "resource", "fonts", "NanumGothic-Bold.ttf")
                 
                 # Wrap text manually
-                font_size = 80 # Big title
+                font_size = 96
                 font = ImageFont.truetype(font_path_title, font_size)
                 max_width = video_width * 0.85 # 15% margin
                 
@@ -785,7 +932,8 @@ def generate_video(
         has_subtitles = params.subtitle_enabled and os.path.exists(subtitle_path)
         if has_subtitles:
             sub_path_escaped = subtitle_path.replace("\\", "/").replace(":", "\\:")
-            style = "Fontname=Malgun Gothic,FontSize=16,PrimaryColour=&HFFFFFF,OutlineColour=&H000000,BorderStyle=1,Outline=1,Shadow=0,MarginV=25,Alignment=2"
+            margin_v = 40 if aspect != VideoAspect.portrait else 120
+            style = f"Fontname=Malgun Gothic,FontSize=16,PrimaryColour=&HFFFFFF,OutlineColour=&H000000,BorderStyle=1,Outline=1,Shadow=0,MarginV={margin_v},Alignment=2"
             # Use current_v as input for subtitles
             filter_complex.append(f"[{current_v}]subtitles='{sub_path_escaped}':force_style='{style}'[v_out]")
             current_v = "v_out"
@@ -937,13 +1085,13 @@ def generate_timer_video(duration_seconds: int, output_file: str, font_path: str
             
     final_clip.write_videofile(
         output_file,
-        fps=24,
-        codec="libx264",
-        audio_codec="aac",
-        threads=1, # Use 1 thread to ensure progress callback works
-        preset="ultrafast",
-        logger=None, # Disable internal logger to avoid conflicts
-        ffmpeg_params=["-pix_fmt", "yuv420p"]
+        fps=fps,  # Use consistent fps
+        codec=video_codec,
+        audio_codec=audio_codec,
+        threads=1,  # Use 1 thread to ensure progress callback works
+        preset="medium",  # Better quality than ultrafast
+        logger=None,  # Disable internal logger to avoid conflicts
+        ffmpeg_params=video_encoding_params
     )
 
     close_clip(bg_clip)

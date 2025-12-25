@@ -1049,46 +1049,8 @@ with tab_main:
                     
                     # Translate terms to English for better search results
                     if terms:
-                        status_text.text("🌐 키워드를 영어로 번역 중...")
-                        progress_bar.progress(95)
-                        
-                        try:
-                            # Simple translation mapping for common Korean terms
-                            translation_map = {
-                                "성공": "success", "동기부여": "motivation", "습관": "habit", "건강": "health",
-                                "돈": "money", "투자": "investment", "다이어트": "diet", "운동": "exercise",
-                                "독서": "reading", "공부": "study", "시간관리": "time management", "자신감": "confidence",
-                                "인간관계": "relationship", "스트레스": "stress", "행복": "happiness", "라이프스타일": "lifestyle",
-                                "팁": "tips", "방법": "method", "비법": "secret", "가이드": "guide",
-                                "루틴": "routine", "관리": "management", "기술": "skill", "전략": "strategy"
-                            }
-                            
-                            english_terms = []
-                            for term in terms:
-                                # Check if term is already in English
-                                if term.isascii():
-                                    english_terms.append(term)
-                                else:
-                                    # Try to find translation
-                                    translated = translation_map.get(term.lower(), term)
-                                    if translated != term:
-                                        english_terms.append(translated)
-                                    else:
-                                        # Use LLM to translate if not in mapping
-                                        try:
-                                            translated_term = llm.generate_script(
-                                                video_subject=f"Translate this Korean word to English: {term}",
-                                                language="en-US",
-                                                paragraph_number=1
-                                            ).strip().split()[0].lower()
-                                            english_terms.append(translated_term)
-                                        except:
-                                            english_terms.append(term)  # Fallback to original
-                            
-                            terms = english_terms
-                        except Exception as e:
-                            logger.warning(f"Translation failed: {e}")
-                            # Keep original terms if translation fails
+                        logger.info(f"Generated terms: {terms}")
+                        # Terms are already in English from the improved generate_terms function
                     
                     if not terms:
                         terms = []
@@ -1235,6 +1197,7 @@ with tab_main:
                 auto_upload = st.checkbox(
                     "📺 자동 업로드", 
                     value=False,
+                    key="yt_auto_upload",
                     help="영상 생성 완료 후 자동으로 YouTube에 업로드합니다."
                 )
             
@@ -1407,6 +1370,43 @@ with tab_main:
                         status_text.success(f"✅ {timer_duration}분 타이머 영상 생성 완료!")
                         progress_bar.progress(1.0)
                         
+                        # Auto-upload timer video if enabled
+                        if st.session_state.get("timer_auto_upload"):
+                            status_text.info("📤 YouTube 자동 업로드 중...")
+                            timer_token_file = os.path.join(root_dir, "token_timer.pickle")
+                            client_secrets_file = os.path.join(root_dir, "client_secrets.json")
+                            
+                            if os.path.exists(timer_token_file) and os.path.exists(client_secrets_file):
+                                try:
+                                    from app.services.youtube import upload_video
+                                    
+                                    # Generate title for timer video
+                                    title_prefix = st.session_state.get("yt_title_prefix", "#Shorts")
+                                    video_title = f"{title_prefix} {timer_duration}분 타이머 - 명상/집중/운동용"
+                                    
+                                    upload_result = upload_video(
+                                        video_file=result_file,
+                                        title=video_title,
+                                        description=f"{timer_duration}분 타이머 영상입니다. 명상, 집중, 운동 등에 활용하세요.",
+                                        tags=["타이머", "명상", "집중", "운동", "timer", "meditation"],
+                                        privacy_status=st.session_state.get("yt_privacy", "private"),
+                                        category_id=st.session_state.get("yt_category", "22"),
+                                        client_secrets_file=client_secrets_file,
+                                        token_file=timer_token_file
+                                    )
+                                    
+                                    if upload_result and upload_result.get("success"):
+                                        video_url = f"https://youtube.com/watch?v={upload_result['video_id']}"
+                                        status_text.success(f"✅ YouTube 업로드 완료! [영상 보기]({video_url})")
+                                    else:
+                                        status_text.error("❌ YouTube 업로드 실패")
+                                        
+                                except Exception as e:
+                                    logger.error(f"Timer video upload failed: {e}")
+                                    status_text.error(f"❌ 업로드 실패: {str(e)}")
+                            else:
+                                status_text.error("❌ YouTube 인증이 필요합니다 (타이머 채널 인증 버튼 클릭)")
+                        
                         # Add to session state
                         if "generated_video_files" not in st.session_state:
                             st.session_state["generated_video_files"] = []
@@ -1421,17 +1421,8 @@ with tab_main:
                         status_text.error(f"❌ 생성 실패: {str(e)}")
                         progress_bar.empty()
 
-    # START GENERATION BUTTON (Moved Up)
-    st.write("")
-    
-    col_btn_start, col_chk_eng = st.columns([0.6, 0.4])
-    with col_btn_start:
-        start_button = st.button("🚀 영상 생성 시작", use_container_width=True, type="primary")
-    with col_chk_eng:
-        generate_english_version = st.checkbox("🇺🇸 영어 버전 추가 생성", value=False, help="체크하면 한국어 영상 생성 후, 영어 자막/성우가 적용된 글로벌 버전을 추가로 생성합니다.")
-
     # Container for progress bar (placed immediately after the button)
-    generation_status_container = st.empty()
+    # generation_status_container is already defined above after the main button
 
     # Premium Video Results Section
     if "generated_video_files" in st.session_state and st.session_state["generated_video_files"]:
@@ -2426,11 +2417,11 @@ with tab_settings:
             st.markdown("#### ⚙️ 업로드 설정")
             
             # Upload settings
-            auto_upload = st.checkbox(
-                "🚀 영상 생성 후 자동 업로드", 
+            timer_auto_upload = st.checkbox(
+                "🚀 타이머 영상 생성 후 자동 업로드", 
                 value=False, 
-                key="yt_auto_upload",
-                help="체크하면 영상 생성 완료 즉시 YouTube에 자동 업로드됩니다"
+                key="timer_auto_upload",
+                help="체크하면 타이머 영상 생성 완료 즉시 YouTube에 자동 업로드됩니다"
             )
             
             yt_title_prefix = st.text_input(
@@ -2642,8 +2633,12 @@ if start_button:
                             
                             # Auto-upload if enabled
                             if st.session_state.get("yt_auto_upload"):
+                                st.info("🔍 자동 업로드가 활성화되어 있습니다.")
                                 token_file = os.path.join(root_dir, "token.pickle")
                                 client_secrets_file = os.path.join(root_dir, "client_secrets.json")
+                                
+                                st.info(f"📁 토큰 파일 확인: {os.path.exists(token_file)}")
+                                st.info(f"📁 클라이언트 시크릿 파일 확인: {os.path.exists(client_secrets_file)}")
                                 
                                 if os.path.exists(token_file) and os.path.exists(client_secrets_file):
                                     for video_path in generated_videos:
@@ -2656,7 +2651,24 @@ if start_button:
                                                 description = f"Generated by MoneyPrinterTurbo AI\n\nSubject: {title_subject}"
                                                 
                                                 terms = llm.generate_terms(task_params.video_subject, task_params.video_script or "", amount=12) or []
-                                                keywords = ", ".join(terms + [str(title_subject).strip(), "shorts"])
+                                                
+                                                # Generate language-specific tags
+                                                if task_params.video_language == "en-US":
+                                                    # English version - use English tags
+                                                    base_tags = ["shorts", "ai generated", "video", "content", "viral"]
+                                                    keywords = ", ".join(terms + [str(title_subject).strip()] + base_tags)
+                                                else:
+                                                    # Korean version - generate Korean tags
+                                                    try:
+                                                        korean_terms = llm.generate_korean_terms(task_params.video_subject, task_params.video_script or "", amount=8) or []
+                                                        base_tags = ["쇼츠", "영상", "콘텐츠", "AI생성", "바이럴"]
+                                                        keywords = ", ".join(korean_terms + [str(title_subject).strip()] + base_tags)
+                                                    except:
+                                                        # Fallback to basic Korean tags
+                                                        keywords = f"{title_subject}, 쇼츠, 영상, 콘텐츠, AI생성, 바이럴"
+                                                
+                                                st.info(f"📝 업로드 제목: {title}")
+                                                st.info(f"🏷️ 키워드: {keywords}")
                                                 
                                                 vid_id = upload_video(
                                                     youtube, 
@@ -2669,13 +2681,18 @@ if start_button:
                                                 )
                                                 
                                                 if vid_id:
-                                                    status_text.success(f"🎉 업로드 성공! Video ID: {vid_id}")
+                                                    video_url = f"https://youtube.com/watch?v={vid_id}"
+                                                    status_text.success(f"🎉 업로드 성공! [영상 보기]({video_url})")
                                                 else:
                                                     status_text.error("❌ 업로드 실패")
                                             except Exception as e:
+                                                logger.error(f"Upload error: {e}")
                                                 status_text.error(f"❌ 업로드 오류: {e}")
                                 else:
                                     status_text.warning("⚠️ 자동 업로드가 활성화되어 있지만 YouTube 인증이 필요합니다")
+                                    st.info("💡 '고급 설정' → 'YouTube 업로드 설정'에서 '🔐 메인 채널 인증' 버튼을 클릭하세요")
+                            else:
+                                st.info("ℹ️ 자동 업로드가 비활성화되어 있습니다.")
                         else:
                             status_text.error(f"❌ {task_label} 생성 실패")
                             
