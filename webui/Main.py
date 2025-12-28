@@ -17,6 +17,16 @@ root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 if root_dir not in sys.path:
     sys.path.append(root_dir)
 
+# Import mobile optimization
+try:
+    from webui.mobile_optimization import (
+        add_mobile_styles, add_mobile_connection_monitor, show_mobile_generation_tips,
+        show_mobile_progress_tracker, check_mobile_compatibility, add_mobile_error_recovery
+    )
+    MOBILE_OPTIMIZATION_AVAILABLE = True
+except ImportError:
+    MOBILE_OPTIMIZATION_AVAILABLE = False
+
 
 st.set_page_config(
     page_title="AI 영상 생성 스튜디오 | MoneyPrinterTurbo",
@@ -29,6 +39,12 @@ st.set_page_config(
         "About": "# AI 영상 생성 스튜디오\n\n차세대 AI 기반 자동 영상 생성 플랫폼입니다.",
     },
 )
+
+# Apply mobile optimizations
+if MOBILE_OPTIMIZATION_AVAILABLE:
+    add_mobile_styles()
+    add_mobile_connection_monitor()
+    add_mobile_error_recovery()
 
 
 streamlit_style = """
@@ -927,6 +943,10 @@ with tab_main:
         <p style="font-size: 1.1rem; color: #a0a0a0;">주제만 입력하면 AI가 대본, 음성, 영상, 자막을 자동으로 생성합니다</p>
     </div>
     """, unsafe_allow_html=True)
+    
+    # Mobile optimization tips
+    if MOBILE_OPTIMIZATION_AVAILABLE:
+        show_mobile_generation_tips()
     # --- PREMIUM CONTENT PLANNING SECTION ---
     with st.container(border=True):
         st.markdown("### 📝 **콘텐츠 기획**")
@@ -2464,12 +2484,116 @@ with tab_settings:
 
 # Premium Generation Logic
 if start_button:
+    # Mobile optimization: Set generation state and add keep-alive
+    st.session_state["generation_in_progress"] = True
+    st.session_state["generation_start_time"] = time.time()
+    
     task_id = str(uuid4())
+    
+    # Mobile optimization: Add connection keep-alive and progress tracking
+    if MOBILE_OPTIMIZATION_AVAILABLE:
+        st.markdown("""
+        <script>
+        // Enhanced mobile optimization for background operation
+        let keepAliveInterval;
+        let progressCheckInterval;
+        let backgroundMode = false;
+        
+        function startMobileOptimization() {
+            // Aggressive keep connection alive (every 15 seconds)
+            keepAliveInterval = setInterval(() => {
+                fetch(window.location.href, {method: 'HEAD'}).catch(() => {
+                    console.log('Keep-alive request failed, retrying...');
+                });
+            }, 15000); // Every 15 seconds for better reliability
+            
+            // Prevent screen sleep on mobile
+            if ('wakeLock' in navigator) {
+                navigator.wakeLock.request('screen').catch(() => {
+                    console.log('Wake lock not available, using alternative methods');
+                });
+            }
+            
+            // Enhanced page visibility monitoring
+            document.addEventListener('visibilitychange', function() {
+                if (document.hidden) {
+                    backgroundMode = true;
+                    console.log('Page went to background - enabling background mode');
+                    
+                    // More aggressive keep-alive in background
+                    if (keepAliveInterval) {
+                        clearInterval(keepAliveInterval);
+                    }
+                    keepAliveInterval = setInterval(() => {
+                        fetch(window.location.href, {method: 'HEAD'}).catch(() => {});
+                        // Also ping a simple endpoint to keep session alive
+                        fetch(window.location.origin + '/health', {method: 'HEAD'}).catch(() => {});
+                    }, 10000); // Every 10 seconds in background
+                    
+                } else {
+                    backgroundMode = false;
+                    console.log('Page came to foreground - resuming normal mode');
+                    
+                    // Resume normal keep-alive interval
+                    if (keepAliveInterval) {
+                        clearInterval(keepAliveInterval);
+                    }
+                    keepAliveInterval = setInterval(() => {
+                        fetch(window.location.href, {method: 'HEAD'}).catch(() => {});
+                    }, 15000);
+                    
+                    // Refresh page to get latest status
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                }
+            });
+            
+            // Service Worker for background processing (if supported)
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                    console.log('Service Worker registered for background processing');
+                }).catch(function(error) {
+                    console.log('Service Worker registration failed:', error);
+                });
+            }
+            
+            // Beforeunload warning for mobile users
+            window.addEventListener('beforeunload', function(e) {
+                if (!backgroundMode) {
+                    e.preventDefault();
+                    e.returnValue = '영상 생성이 진행 중입니다. 페이지를 닫으시겠습니까?';
+                    return e.returnValue;
+                }
+            });
+        }
+        
+        function stopMobileOptimization() {
+            if (keepAliveInterval) {
+                clearInterval(keepAliveInterval);
+            }
+            if (progressCheckInterval) {
+                clearInterval(progressCheckInterval);
+            }
+            backgroundMode = false;
+        }
+        
+        // Start optimization
+        startMobileOptimization();
+        
+        // Auto cleanup after 45 minutes (extended for longer videos)
+        setTimeout(stopMobileOptimization, 45 * 60 * 1000);
+        
+        // Global functions for cleanup
+        window.stopMobileOptimization = stopMobileOptimization;
+        </script>
+        """, unsafe_allow_html=True)
     
     # Validation with premium error messages
     if not params.video_subject and not params.video_script:
         st.error("❌ **영상 주제 또는 대본이 필요합니다**")
         st.info("💡 위의 '영상 주제' 입력란에 내용을 입력하거나 '✨ 자동 생성' 버튼을 클릭하세요")
+        st.session_state["generation_in_progress"] = False
         st.stop()
 
     # BGM Validation with premium styling
@@ -2543,37 +2667,139 @@ if start_button:
     if generate_english_version:
         with st.spinner("🌍 글로벌 버전 준비 중... (대본 번역)"):
             try:
+                # 1단계: 대본 번역 시도
                 english_script = llm.translate_to_english(params.video_script)
-                if english_script and english_script != params.video_script and "Error" not in english_script:
+                
+                # 번역 성공 여부 확인 (한글이 없고, 원본과 다르면 성공)
+                import re
+                translation_success = (
+                    english_script and 
+                    english_script != params.video_script and 
+                    "Error" not in english_script and
+                    not re.search(r'[가-힣]', english_script)
+                )
+                
+                if not translation_success:
+                    st.warning("⚠️ 대본 번역에 실패했습니다. 영어 키워드로 새 대본을 생성합니다...")
+                    
+                    # 백업 방법 1: 영어 키워드로 새 대본 생성
+                    try:
+                        # 주제를 영어로 번역 시도
+                        eng_subject = llm.translate_to_english(params.video_subject)
+                        if not eng_subject or eng_subject == params.video_subject or re.search(r'[가-힣]', str(eng_subject)):
+                            # 번역 실패 시 키워드 기반 영어 주제 생성
+                            terms_en = llm.generate_terms(video_subject=params.video_subject, video_script=params.video_script, amount=5) or []
+                            if terms_en:
+                                eng_subject = " · ".join([t for t in terms_en[:3] if t and not re.search(r'[가-힣]', t)])
+                            else:
+                                # 최후 백업: 기본 영어 주제들
+                                fallback_subjects = [
+                                    "Success Tips and Life Hacks",
+                                    "Motivation and Personal Growth", 
+                                    "Lifestyle and Wellness Guide",
+                                    "Productivity and Time Management",
+                                    "Health and Fitness Tips"
+                                ]
+                                import random
+                                eng_subject = random.choice(fallback_subjects)
+                        
+                        # 영어 주제로 새 대본 생성
+                        st.info(f"🔄 영어 주제로 새 대본 생성 중: {eng_subject}")
+                        english_script = llm.generate_english_script(
+                            video_subject=eng_subject,
+                            paragraph_number=4
+                        )
+                        
+                        if english_script and "Error" not in english_script:
+                            translation_success = True
+                            st.success("✅ 영어 대본 생성 완료!")
+                        else:
+                            st.warning("⚠️ 영어 대본 생성도 실패했습니다.")
+                            
+                    except Exception as e:
+                        st.warning(f"⚠️ 영어 대본 생성 실패: {e}")
+                
+                # 번역/생성이 성공했으면 영어 버전 태스크 추가
+                if translation_success:
                     eng_params = params.copy()
                     eng_params.video_script = english_script
-                    eng_subject = llm.translate_to_english(params.video_subject)
-                    if not eng_subject or eng_subject == params.video_subject or re.search("[가-힣]", str(eng_subject)):
-                        try:
-                            terms_en = llm.generate_terms(video_subject=params.video_subject, video_script=english_script, amount=5) or []
-                            if terms_en:
-                                eng_subject = " · ".join([t for t in terms_en[:3] if t])
-                        except Exception:
-                            pass
-                    eng_params.video_subject = eng_subject or params.video_subject
-                    eng_params.voice_name = "en-US-AndrewNeural"
+                    
+                    # 영어 주제 설정
+                    if 'eng_subject' in locals() and eng_subject:
+                        eng_params.video_subject = eng_subject
+                    else:
+                        eng_subject = llm.translate_to_english(params.video_subject)
+                        if not eng_subject or eng_subject == params.video_subject or re.search(r'[가-힣]', str(eng_subject)):
+                            # 키워드 기반 영어 주제 생성
+                            try:
+                                terms_en = llm.generate_terms(video_subject=params.video_subject, video_script=english_script, amount=5) or []
+                                if terms_en:
+                                    eng_subject = " · ".join([t for t in terms_en[:3] if t and not re.search(r'[가-힣]', t)])
+                                else:
+                                    eng_subject = "Motivational Content"
+                            except Exception:
+                                eng_subject = "Motivational Content"
+                        eng_params.video_subject = eng_subject
+                    
+                    # 영어 음성 설정 - 더 다양한 옵션 제공
+                    english_voices = [
+                        "en-US-AndrewNeural",      # 남성, 자연스러운 목소리
+                        "en-US-BrianNeural",       # 남성, 깊은 목소리  
+                        "en-US-ChristopherNeural", # 남성, 전문적인 목소리
+                        "en-US-AriaNeural",        # 여성, 친근한 목소리
+                        "en-US-JennyNeural",       # 여성, 명확한 목소리
+                        "en-US-MichelleNeural"     # 여성, 따뜻한 목소리
+                    ]
+                    
+                    # 랜덤하게 영어 음성 선택 (다양성 제공)
+                    import random
+                    selected_voice = random.choice(english_voices)
+                    eng_params.voice_name = selected_voice
                     eng_params.video_language = "en-US"
+                    
+                    # 영어 키워드 생성 (영상 소재 검색용)
+                    try:
+                        eng_terms = llm.generate_terms(video_subject=eng_subject, video_script=english_script, amount=8) or []
+                        if eng_terms:
+                            # 영어 키워드만 필터링
+                            filtered_terms = [t for t in eng_terms if t and not re.search(r'[가-힣]', t)]
+                            if filtered_terms:
+                                eng_params.video_terms = ", ".join(filtered_terms)
+                            else:
+                                # 기본 영어 키워드
+                                eng_params.video_terms = "motivation, success, lifestyle, tips, guide, inspiration"
+                        else:
+                            eng_params.video_terms = "motivation, success, lifestyle, tips, guide, inspiration"
+                    except Exception:
+                        eng_params.video_terms = "motivation, success, lifestyle, tips, guide, inspiration"
                     
                     tasks_to_run.append({
                         "label": "🌍 글로벌 버전",
                         "params": eng_params,
                         "icon": "🌎"
                     })
+                    
+                    st.success(f"✅ 글로벌 버전 준비 완료!")
+                    st.info(f"📝 영어 주제: {eng_subject}")
+                    st.info(f"🎵 영어 음성: {selected_voice.replace('Neural', '').replace('en-US-', '')}")
+                    st.info(f"🏷️ 영어 키워드: {eng_params.video_terms[:50]}{'...' if len(eng_params.video_terms) > 50 else ''}")
                 else:
-                    st.warning("⚠️ 영어 대본 번역에 실패하여 글로벌 버전 생성을 건너뜁니다")
+                    st.warning("⚠️ 모든 영어 버전 생성 방법이 실패하여 글로벌 버전 생성을 건너뜁니다")
+                    
             except Exception as e:
                 st.error(f"❌ 글로벌 버전 준비 실패: {e}")
+                logger.error(f"English version preparation failed: {e}")
 
     final_video_files = []
 
     # Premium Generation UI
     with generation_status_container:
         st.markdown("### 🚀 **AI 영상 생성 진행중**")
+        
+        # Mobile optimization: Show mobile-friendly progress
+        if MOBILE_OPTIMIZATION_AVAILABLE:
+            elapsed_time = time.time() - st.session_state.get("generation_start_time", time.time())
+            show_mobile_progress_tracker(0.0, "영상 생성 준비 중...", elapsed_time)
         
         for i, task in enumerate(tasks_to_run):
             task_label = task["label"]
@@ -2613,6 +2839,12 @@ if start_button:
                             
                             progress_normalized = min(int(progress) / 100, 1.0)
                             progress_bar.progress(progress_normalized)
+                            
+                            # Mobile optimization: Update mobile progress tracker
+                            if MOBILE_OPTIMIZATION_AVAILABLE:
+                                elapsed_time = time.time() - st.session_state.get("generation_start_time", time.time())
+                                current_status = f"{task_msg} ({int(progress)}%)" if task_msg else f"처리 중... {int(progress)}%"
+                                show_mobile_progress_tracker(progress_normalized, current_status, elapsed_time)
                             
                             if state == const.TASK_STATE_PROCESSING:
                                 status_text.info(f"🎬 {task_msg} ({int(progress)}%)" if task_msg else f"처리 중... {int(progress)}%")
@@ -2704,8 +2936,27 @@ if start_button:
     if final_video_files:
         st.session_state["generated_video_files"] = final_video_files
         
+        # Mobile optimization: Reset generation state
+        st.session_state["generation_in_progress"] = False
+        if MOBILE_OPTIMIZATION_AVAILABLE:
+            st.markdown("""
+            <script>
+            // Mobile optimization: Stop keep-alive and cleanup
+            if (typeof stopMobileOptimization === 'function') {
+                stopMobileOptimization();
+            }
+            
+            // Re-enable screen sleep
+            if ('wakeLock' in navigator && navigator.wakeLock.release) {
+                navigator.wakeLock.release();
+            }
+            
+            console.log('Mobile optimization cleanup completed');
+            </script>
+            """, unsafe_allow_html=True)
+        
         # Success celebration
-        st.markdown("""
+        st.markdown(f"""
         <div style="
             background: linear-gradient(135deg, #00c851 0%, #007e33 100%);
             padding: 2rem;
@@ -2725,6 +2976,19 @@ if start_button:
         time.sleep(1)
         st.rerun()
     else:
+        # Mobile optimization: Reset generation state on failure
+        st.session_state["generation_in_progress"] = False
+        if MOBILE_OPTIMIZATION_AVAILABLE:
+            st.markdown("""
+            <script>
+            // Mobile optimization: Stop keep-alive and cleanup on failure
+            if (typeof stopMobileOptimization === 'function') {
+                stopMobileOptimization();
+            }
+            console.log('Mobile optimization cleanup completed (failure)');
+            </script>
+            """, unsafe_allow_html=True)
+        
         st.error("❌ **영상 생성에 실패했습니다**")
         st.info("💡 설정을 확인하고 다시 시도해주세요. 문제가 지속되면 로그를 확인하세요.")
 

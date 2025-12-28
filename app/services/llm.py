@@ -17,6 +17,60 @@ def _generate_response(prompt: str) -> str:
     content = ""
     llm_provider = config.app.get("llm_provider", "gemini")
     logger.info(f"llm provider: {llm_provider}")
+    
+    # Multi-API key rotation for better quota management
+    if llm_provider == "gemini":
+        gemini_keys = [
+            config.app.get("gemini_api_key"),
+            config.app.get("gemini_api_key_2"),
+            config.app.get("gemini_api_key_3"),
+        ]
+        gemini_keys = [k for k in gemini_keys if k]  # Remove None values
+        
+        if not gemini_keys:
+            logger.error("No Gemini API keys configured")
+            raise Exception("No Gemini API keys available")
+        
+        # Try each key until one works
+        for i, api_key in enumerate(gemini_keys):
+            try:
+                logger.info(f"Trying Gemini API key {i+1}/{len(gemini_keys)}")
+                import google.generativeai as genai
+                genai.configure(api_key=api_key)
+                
+                model_name = config.app.get("gemini_model_name", "gemini-2.5-flash")
+                target_model = model_name.strip()
+                models_to_try = [
+                    target_model,
+                    "gemini-2.5-flash",
+                    "gemini-flash-latest",
+                    "gemini-2.0-flash",
+                    "gemini-2.0-flash-exp",
+                ]
+                
+                for m in models_to_try:
+                    try:
+                        logger.info(f"Using Gemini model: {m}")
+                        model = genai.GenerativeModel(m)
+                        response = model.generate_content(prompt)
+                        if response and getattr(response, "text", None):
+                            logger.info(f"Success with API key {i+1} and model {m}")
+                            return response.text
+                    except Exception as e_try:
+                        logger.warning(f"Gemini model {m} failed: {e_try}")
+                        if "429" in str(e_try) or "Quota exceeded" in str(e_try):
+                            logger.warning(f"API key {i+1} quota exceeded, trying next key...")
+                            break
+                        continue
+                        
+            except Exception as e:
+                logger.warning(f"Gemini API key {i+1} failed: {e}")
+                continue
+        
+        # If all Gemini keys fail, fall back to DeepSeek
+        logger.warning("All Gemini keys failed, falling back to DeepSeek")
+        llm_provider = "deepseek"
+    
     # Remove the redirect to gemini for g4f
     if llm_provider in ["pollinations", "free"]:
         llm_provider = "gemini"
@@ -186,6 +240,8 @@ def generate_script(video_subject: str, language: str = "auto", paragraph_number
     return final_script
 
 def generate_terms(video_subject: str, video_script: str, amount: int = 5) -> List[str]:
+    logger.info(f"Starting keyword generation for subject: {video_subject}")
+    
     # Enhanced prompt for better English keyword generation
     prompt = f"""
     You are a professional video editor creating stock footage search keywords.
@@ -211,7 +267,10 @@ def generate_terms(video_subject: str, video_script: str, amount: int = 5) -> Li
     """
     
     try:
+        logger.info("Attempting to generate keywords using LLM...")
         response = _generate_response(prompt)
+        logger.info(f"LLM response: {response}")
+        
         if response:
             # Clean up the response more aggressively
             cleaned = response.strip()
@@ -226,9 +285,11 @@ def generate_terms(video_subject: str, video_script: str, amount: int = 5) -> Li
             
             # Clean formatting
             cleaned = cleaned.replace("\n", ",").replace("- ", "").replace("* ", "").replace('"', '').strip()
+            logger.info(f"Cleaned response: {cleaned}")
             
             # Extract terms
             terms = [t.strip() for t in cleaned.split(",") if t.strip()]
+            logger.info(f"Extracted terms: {terms}")
             
             # Filter and validate terms
             valid_terms = []
@@ -240,6 +301,8 @@ def generate_terms(video_subject: str, video_script: str, amount: int = 5) -> Li
                     if not any(stop_word in term for stop_word in ["the", "and", "or", "but", "with", "for"]):
                         valid_terms.append(term)
             
+            logger.info(f"Valid terms after filtering: {valid_terms}")
+            
             if len(valid_terms) >= 2:
                 logger.info(f"Generated English keywords: {valid_terms[:amount]}")
                 return valid_terms[:amount]
@@ -249,59 +312,250 @@ def generate_terms(video_subject: str, video_script: str, amount: int = 5) -> Li
     
     # Enhanced fallback with better English keyword extraction
     logger.warning("LLM failed to generate terms. Using enhanced fallback.")
+    return _generate_fallback_keywords(video_subject, video_script, amount)
+
+def _generate_fallback_keywords(video_subject: str, video_script: str, amount: int = 5) -> List[str]:
+    """Generate fallback keywords when LLM fails"""
+    logger.info(f"Generating fallback keywords for subject: '{video_subject}' and script length: {len(video_script)}")
     
-    # Try to extract meaningful English keywords from subject and script
     fallback_keywords = []
     
     # Subject-based keywords
     subject_lower = video_subject.lower()
+    script_lower = video_script.lower()
+    
+    # Enhanced Korean to English keyword mapping
     subject_keywords = {
-        "성공": ["success", "achievement", "business"],
-        "건강": ["health", "fitness", "wellness"],
-        "돈": ["money", "finance", "wealth"],
-        "투자": ["investment", "trading", "finance"],
-        "다이어트": ["diet", "weight loss", "fitness"],
-        "운동": ["exercise", "workout", "fitness"],
-        "독서": ["reading", "books", "education"],
-        "공부": ["study", "learning", "education"],
-        "음식": ["food", "cooking", "nutrition"],
-        "여행": ["travel", "vacation", "adventure"],
-        "사랑": ["love", "relationship", "romance"],
-        "가족": ["family", "home", "togetherness"],
-        "일": ["work", "office", "career"],
-        "스트레스": ["stress", "relaxation", "meditation"],
-        "행복": ["happiness", "joy", "celebration"],
-        "시간": ["time", "clock", "schedule"],
-        "자연": ["nature", "landscape", "outdoor"],
-        "기술": ["technology", "innovation", "digital"]
+        "성공": ["success", "achievement", "business", "winner", "celebration"],
+        "건강": ["health", "fitness", "wellness", "exercise", "nutrition"],
+        "돈": ["money", "finance", "wealth", "investment", "cash"],
+        "투자": ["investment", "trading", "finance", "stock market", "business"],
+        "다이어트": ["diet", "weight loss", "fitness", "healthy eating", "workout"],
+        "운동": ["exercise", "workout", "fitness", "gym", "sports"],
+        "독서": ["reading", "books", "education", "learning", "study"],
+        "공부": ["study", "learning", "education", "school", "knowledge"],
+        "음식": ["food", "cooking", "nutrition", "kitchen", "meal"],
+        "여행": ["travel", "vacation", "adventure", "tourism", "journey"],
+        "사랑": ["love", "relationship", "romance", "couple", "heart"],
+        "가족": ["family", "home", "togetherness", "children", "parents"],
+        "일": ["work", "office", "career", "job", "business"],
+        "스트레스": ["stress", "relaxation", "meditation", "calm", "peace"],
+        "행복": ["happiness", "joy", "celebration", "smile", "positive"],
+        "시간": ["time", "clock", "schedule", "planning", "productivity"],
+        "자연": ["nature", "landscape", "outdoor", "forest", "mountains"],
+        "기술": ["technology", "innovation", "digital", "computer", "modern"],
+        "음악": ["music", "sound", "audio", "instruments", "melody"],
+        "영화": ["movie", "cinema", "entertainment", "film", "video"],
+        "게임": ["gaming", "play", "entertainment", "fun", "competition"],
+        "요리": ["cooking", "kitchen", "food", "chef", "recipe"],
+        "패션": ["fashion", "style", "clothing", "design", "trendy"],
+        "뷰티": ["beauty", "skincare", "cosmetics", "makeup", "care"],
+        "교육": ["education", "learning", "teaching", "school", "knowledge"],
+        "창업": ["startup", "business", "entrepreneur", "innovation", "success"],
+        "부동산": ["real estate", "property", "investment", "house", "building"],
+        "자동차": ["car", "automotive", "driving", "vehicle", "transportation"],
+        "반려동물": ["pet", "animal", "dog", "cat", "care"],
+        "육아": ["parenting", "children", "family", "baby", "care"],
+        "결혼": ["wedding", "marriage", "couple", "love", "ceremony"],
+        "취업": ["job", "career", "employment", "work", "interview"]
     }
     
-    # Find matching keywords
+    # Find matching keywords from subject
     for korean, english_list in subject_keywords.items():
         if korean in subject_lower:
-            fallback_keywords.extend(english_list)
+            fallback_keywords.extend(english_list[:3])  # Take first 3 from each match
+            logger.info(f"Found subject keyword '{korean}' -> {english_list[:3]}")
     
-    # Add generic visual keywords
+    # Find matching keywords from script
+    for korean, english_list in subject_keywords.items():
+        if korean in script_lower and korean not in subject_lower:  # Avoid duplicates
+            fallback_keywords.extend(english_list[:2])  # Take fewer from script
+            logger.info(f"Found script keyword '{korean}' -> {english_list[:2]}")
+    
+    # Add generic visual keywords based on common themes
     if not fallback_keywords:
+        logger.info("No specific keywords found, using generic keywords")
         fallback_keywords = ["lifestyle", "people", "modern", "business", "success"]
     
+    # Add some universal keywords that work well for stock footage
+    universal_keywords = ["lifestyle", "modern", "people", "business", "professional"]
+    for keyword in universal_keywords:
+        if keyword not in fallback_keywords:
+            fallback_keywords.append(keyword)
+    
     # Remove duplicates and limit
-    unique_keywords = list(dict.fromkeys(fallback_keywords))[:amount]
-    logger.info(f"Using fallback English keywords: {unique_keywords}")
+    unique_keywords = []
+    seen = set()
+    for keyword in fallback_keywords:
+        if keyword.lower() not in seen:
+            unique_keywords.append(keyword.lower())
+            seen.add(keyword.lower())
+    
+    # Ensure we have enough keywords
+    if len(unique_keywords) < amount:
+        additional_keywords = ["creative", "inspiration", "motivation", "growth", "innovation"]
+        for keyword in additional_keywords:
+            if keyword not in seen and len(unique_keywords) < amount:
+                unique_keywords.append(keyword)
+                seen.add(keyword)
+    
+    result = unique_keywords[:amount]
+    logger.info(f"Final fallback keywords: {result}")
+    return result
+
+def generate_english_script(video_subject: str, paragraph_number: int = 4) -> str:
+    """Generate English script directly (for when translation fails)"""
+    logger.info(f"Generating English script for subject: {video_subject}")
+    
+    prompt = f"""
+    Create an engaging English script for a short video (60-90 seconds) about: {video_subject}
+
+    REQUIREMENTS:
+    1. Write {paragraph_number} paragraphs
+    2. Each paragraph should be 2-3 sentences
+    3. Use simple, clear English suitable for global audience
+    4. Make it engaging and motivational
+    5. Focus on practical tips or insights
+    6. Use active voice and conversational tone
+    7. No special formatting, just plain text
+
+    STYLE: Motivational, educational, accessible to international viewers
+    
+    Subject: {video_subject}
+    
+    Write the script now:
+    """
+    
+    try:
+        response = _generate_response(prompt)
+        if response and len(response.strip()) > 50:
+            # Clean up the response
+            script = response.strip()
+            
+            # Remove common prefixes
+            prefixes = ["Here's", "Here is", "Script:", "The script", "Sure", "Certainly"]
+            for prefix in prefixes:
+                if script.startswith(prefix):
+                    script = script[len(prefix):].strip()
+                    if script.startswith(":"):
+                        script = script[1:].strip()
+            
+            logger.info(f"Generated English script: {script[:100]}...")
+            return script
+            
+    except Exception as e:
+        logger.error(f"Failed to generate English script: {e}")
+    
+    # Fallback English script template
+    logger.warning("Using fallback English script template")
+    fallback_script = f"""
+    Today we're exploring {video_subject}. This topic can transform your daily life in meaningful ways.
+
+    Many successful people have discovered the power of focusing on what truly matters. Small changes in your routine can lead to remarkable results over time.
+
+    The key is to start with simple, actionable steps. Don't try to change everything at once. Instead, pick one area and commit to consistent improvement.
+
+    Remember, every expert was once a beginner. Your journey toward {video_subject} starts with a single decision to take action today.
+    """
+    
+    return fallback_script.strip()
     
 def translate_to_english(text: str) -> str:
     if not text:
         return ""
+    
+    # 이미 영어인지 확인 (한글이 없으면 영어로 간주)
+    import re
+    if not re.search(r'[가-힣]', text):
+        return text
+    
     prompt = f"Translate the following Korean text into natural English. Return ONLY the translated text without any quotes, notes, or explanations:\n\n{text}"
     
     try:
+        # 1차 시도: 메인 LLM 사용
         response = _generate_response(prompt)
-        if response:
+        if response and response.strip() != text and not re.search(r'[가-힣]', response):
+            logger.info(f"Successfully translated using main LLM: '{text}' -> '{response.strip()}'")
             return response.strip()
     except Exception as e:
-        logger.error(f"Translation failed: {e}")
+        logger.warning(f"Main LLM failed for translation: {e}")
     
-    logger.warning("Translation failed, returning original text.")
+    logger.info("Main LLM failed for translation, trying free provider fallback...")
+    
+    try:
+        # 2차 시도: 무료 제공자 사용
+        response = _generate_free_response(prompt)
+        if response and response.strip() != text and not re.search(r'[가-힣]', response):
+            logger.info(f"Successfully translated using free provider: '{text}' -> '{response.strip()}'")
+            return response.strip()
+    except Exception as e:
+        logger.warning(f"Free provider also failed: {e}")
+    
+    # 3차 시도: 간단한 키워드 매핑 (백업용)
+    try:
+        simple_translations = {
+            "성공": "success",
+            "습관": "habits", 
+            "방법": "methods",
+            "비법": "secrets",
+            "팁": "tips",
+            "가이드": "guide",
+            "라이프": "life",
+            "스타일": "style",
+            "건강": "health",
+            "다이어트": "diet",
+            "운동": "exercise",
+            "명상": "meditation",
+            "집중": "focus",
+            "시간": "time",
+            "관리": "management",
+            "돈": "money",
+            "투자": "investment",
+            "부자": "rich",
+            "행복": "happiness",
+            "사랑": "love",
+            "인간관계": "relationships",
+            "자신감": "confidence",
+            "동기부여": "motivation",
+            "영감": "inspiration",
+            "창업": "startup",
+            "비즈니스": "business",
+            "마케팅": "marketing",
+            "브랜딩": "branding",
+            "소셜미디어": "social media",
+            "유튜브": "youtube",
+            "콘텐츠": "content",
+            "크리에이터": "creator"
+        }
+        
+        # 키워드 기반 번역 시도
+        words = text.split()
+        translated_words = []
+        for word in words:
+            # 특수문자 제거하고 매핑 확인
+            clean_word = re.sub(r'[^\w가-힣]', '', word)
+            if clean_word in simple_translations:
+                translated_words.append(simple_translations[clean_word])
+            else:
+                # 부분 매칭 시도
+                found = False
+                for ko, en in simple_translations.items():
+                    if ko in clean_word:
+                        translated_words.append(en)
+                        found = True
+                        break
+                if not found:
+                    translated_words.append(word)
+        
+        if translated_words and len(translated_words) > 0:
+            fallback_result = " ".join(translated_words)
+            if fallback_result != text:
+                logger.info(f"Using fallback translation: '{text}' -> '{fallback_result}'")
+                return fallback_result
+    except Exception as e:
+        logger.warning(f"Fallback translation failed: {e}")
+    
+    logger.warning("Translation failed or API error, returning original text.")
     return text
 
 def translate_to_korean(text: str) -> str:

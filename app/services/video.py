@@ -792,17 +792,13 @@ def generate_video(
         if params.subtitle_position == "bottom":
             # Adjust for Shorts style (higher up to avoid UI)
             if aspect == VideoAspect.portrait:
-                # For portrait videos, ensure subtitle doesn't go too high
-                # Reserve top 25% for title, bottom 25% for UI
-                max_y_position = video_height * 0.75 - subtitle_height
-                min_y_position = video_height * 0.25  # Don't go above 25% from top
-                
-                # Default position for single line
+                # For portrait videos, place at 75% to avoid YouTube UI overlay
+                # This is optimal for YouTube Shorts
                 default_y = video_height * 0.75
                 
-                # If subtitle is too tall, move it down but not above the minimum
+                # If subtitle is too tall, adjust position but keep it reasonable
                 if subtitle_height > video_height * 0.15:  # If subtitle is more than 15% of screen height
-                    adjusted_y = max(min_y_position, default_y - (subtitle_height - video_height * 0.1))
+                    adjusted_y = max(video_height * 0.6, default_y - (subtitle_height - video_height * 0.1))
                 else:
                     adjusted_y = default_y
                     
@@ -984,121 +980,203 @@ def generate_video(
 def generate_timer_video(duration_seconds: int, output_file: str, font_path: str = None, fontsize: int = 250, bg_video_path: str = None, bg_music_path: str = None, fast_mode: bool = False, progress_callback=None):
     logger.info(f"Generating timer video (MoviePy): {duration_seconds}s")
     
-    target_w, target_h = (720, 1280) if fast_mode else (1080, 1920)
-    if bg_video_path and os.path.exists(bg_video_path):
-        try:
-            # Check if it's an image
-            ext = os.path.splitext(bg_video_path)[1].lower()
-            if ext in ['.jpg', '.jpeg', '.png', '.bmp', '.webp']:
-                bg_clip = ImageClip(bg_video_path)
-            else:
-                bg_clip = VideoFileClip(bg_video_path)
+    try:
+        target_w, target_h = (720, 1280) if fast_mode else (1080, 1920)
+        
+        # Background setup
+        if bg_video_path and os.path.exists(bg_video_path):
+            try:
+                # Check if it's an image
+                ext = os.path.splitext(bg_video_path)[1].lower()
+                if ext in ['.jpg', '.jpeg', '.png', '.bmp', '.webp']:
+                    bg_clip = ImageClip(bg_video_path)
+                else:
+                    bg_clip = VideoFileClip(bg_video_path)
+                    
+                ratio = bg_clip.w / bg_clip.h
+                target_ratio = target_w / target_h
+                if ratio > target_ratio:
+                    bg_clip = bg_clip.resized(height=target_h)
+                    bg_clip = bg_clip.cropped(x1=(bg_clip.w - target_w)/2, width=target_w)
+                else:
+                    bg_clip = bg_clip.resized(width=target_w)
+                    bg_clip = bg_clip.cropped(y1=(bg_clip.h - target_h)/2, height=target_h)
+                bg_clip = bg_clip.with_duration(duration_seconds)
                 
-            ratio = bg_clip.w / bg_clip.h
-            target_ratio = target_w / target_h
-            if ratio > target_ratio:
-                bg_clip = bg_clip.resized(height=target_h)
-                bg_clip = bg_clip.cropped(x1=(bg_clip.w - target_w)/2, width=target_w)
-            else:
-                bg_clip = bg_clip.resized(width=target_w)
-                bg_clip = bg_clip.cropped(y1=(bg_clip.h - target_h)/2, height=target_h)
-            bg_clip = bg_clip.with_duration(duration_seconds)
-            
-            # Loop video if shorter (only for video clips)
-            if hasattr(bg_clip, 'loop') or isinstance(bg_clip, VideoFileClip): # Basic check
-                # ImageClip doesn't need looping if duration is set, but VideoFileClip does
-                # However, ImageClip handles duration set above. VideoFileClip duration is original duration.
-                # Actually bg_clip.duration is updated by with_duration for ImageClip? Yes.
-                # For VideoFileClip, with_duration just cuts or extends (but doesn't loop content).
-                # We need to check if it's a video and needs looping.
+                # Loop video if shorter (only for video clips)
                 if ext not in ['.jpg', '.jpeg', '.png', '.bmp', '.webp']:
-                     if bg_clip.duration < duration_seconds:
+                     if hasattr(bg_clip, 'duration') and bg_clip.duration < duration_seconds:
                         bg_clip = vfx.loop(bg_clip, duration=duration_seconds)
                         
-        except Exception as e:
-            logger.error(f"Failed to load BG video/image: {e}")
-            bg_clip = ColorClip(size=(target_w, target_h), color=(0,0,0), duration=duration_seconds)
-    else:
-        bg_clip = ColorClip(size=(target_w, target_h), color=(0,0,0), duration=duration_seconds)
+            except Exception as e:
+                logger.error(f"Failed to load BG video/image: {e}")
+                logger.info("Creating gradient background as fallback instead of black")
+                # Create a gradient background instead of pure black
+                gradient = np.zeros((target_h, target_w, 3), dtype=np.uint8)
+                for i in range(target_h):
+                    # Create a vertical gradient from dark blue to dark purple
+                    ratio = i / target_h
+                    gradient[i, :, 0] = int(20 + ratio * 30)  # Red: 20-50
+                    gradient[i, :, 1] = int(10 + ratio * 20)  # Green: 10-30  
+                    gradient[i, :, 2] = int(40 + ratio * 60)  # Blue: 40-100
+                bg_clip = ImageClip(gradient, duration=duration_seconds)
+        else:
+            logger.info("No background video specified, creating gradient background")
+            # Create a gradient background instead of pure black
+            gradient = np.zeros((target_h, target_w, 3), dtype=np.uint8)
+            for i in range(target_h):
+                # Create a vertical gradient from dark blue to dark purple
+                ratio = i / target_h
+                gradient[i, :, 0] = int(20 + ratio * 30)  # Red: 20-50
+                gradient[i, :, 1] = int(10 + ratio * 20)  # Green: 10-30  
+                gradient[i, :, 2] = int(40 + ratio * 60)  # Blue: 40-100
+            bg_clip = ImageClip(gradient, duration=duration_seconds)
 
-    if not font_path or not os.path.exists(font_path):
-        font_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "resource", "fonts", "NanumGothic-Bold.ttf")
-    font = ImageFont.truetype(font_path, fontsize)
-
-    # Use make_frame with caching to optimize rendering
-    # This avoids creating thousands of ImageClips for long videos
-    memo = {}
-    
-    def make_frame(t):
-        current_sec = int(t)
-        if current_sec in memo:
-            return memo[current_sec]
+        # Font setup with fallback
+        if not font_path or not os.path.exists(font_path):
+            # Try multiple font paths
+            possible_fonts = [
+                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "resource", "fonts", "NanumGothic-Bold.ttf"),
+                "C:/Windows/Fonts/malgun.ttf",  # Windows Korean font
+                "C:/Windows/Fonts/arial.ttf",   # Windows fallback
+                "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",  # Linux
+            ]
             
-        remaining = max(0, duration_seconds - current_sec)
-        mins = remaining // 60
-        s = remaining % 60
-        text = f"{mins}:{s:02d}"
-        
-        img = Image.new('RGBA', (target_w, target_h), (0,0,0,0))
-        draw = ImageDraw.Draw(img)
-        bbox = draw.textbbox((0, 0), text, font=font)
-        text_w = bbox[2] - bbox[0]
-        text_h = bbox[3] - bbox[1]
-        x = (target_w - text_w) // 2
-        y = (target_h - text_h) // 2
-        padding = 40
-        box_coords = (x - padding, y - padding, x + text_w + padding, y + text_h + padding)
-        draw.rectangle(box_coords, fill=(0, 0, 0, 128))
-        draw.text((x, y), text, font=font, fill="white", stroke_width=5, stroke_fill="black")
-        
-        # Clear cache occasionally to prevent memory leak, but keep current
-        if len(memo) > 10:
-            memo.clear()
+            font_path = None
+            for path in possible_fonts:
+                if os.path.exists(path):
+                    font_path = path
+                    break
             
-        frame = np.array(img)
-        memo[current_sec] = frame
+            if not font_path:
+                raise Exception("No suitable font found for timer video")
         
-        # Update progress directly from frame generation
-        if progress_callback:
-            # t goes from 0 to duration_seconds
-            # Use max to avoid division by zero or negative
-            if duration_seconds > 0:
-                p = int((t / duration_seconds) * 100)
-                p = min(p, 99) # Keep 100 for final completion
-                progress_callback(p)
-                
-        return frame
-
-    timer_overlay = VideoClip(make_frame, duration=duration_seconds)
-    final_clip = CompositeVideoClip([bg_clip, timer_overlay])
-
-    if bg_music_path and os.path.exists(bg_music_path):
         try:
-            audio = AudioFileClip(bg_music_path)
-            if audio.duration < duration_seconds:
-                audio = audio.with_effects([afx.AudioLoop(duration=duration_seconds)])
-            else:
-                audio = audio.subclipped(0, duration_seconds)
-            final_clip = final_clip.with_audio(audio)
+            font = ImageFont.truetype(font_path, fontsize)
         except Exception as e:
-            logger.warning(f"Failed to load or attach audio: {e}")
-            
-    final_clip.write_videofile(
-        output_file,
-        fps=fps,  # Use consistent fps
-        codec=video_codec,
-        audio_codec=audio_codec,
-        threads=1,  # Use 1 thread to ensure progress callback works
-        preset="medium",  # Better quality than ultrafast
-        logger=None,  # Disable internal logger to avoid conflicts
-        ffmpeg_params=video_encoding_params
-    )
+            logger.error(f"Failed to load font {font_path}: {e}")
+            # Use default font as last resort
+            font = ImageFont.load_default()
 
-    close_clip(bg_clip)
-    close_clip(final_clip)
-    return output_file
-    
-    return output_file
+        # Use make_frame with caching to optimize rendering
+        memo = {}
+        
+        def make_frame(t):
+            # Calculate remaining time more precisely
+            # We want to show the countdown from duration_seconds down to 0
+            remaining_time = duration_seconds - t
+            
+            # Round down to get the current second to display
+            remaining = max(0, int(remaining_time))
+            
+            # Use remaining as cache key
+            if remaining in memo:
+                return memo[remaining]
+                
+            mins = remaining // 60
+            s = remaining % 60
+            text = f"{mins}:{s:02d}"
+            
+            img = Image.new('RGBA', (target_w, target_h), (0,0,0,0))
+            draw = ImageDraw.Draw(img)
+            
+            try:
+                bbox = draw.textbbox((0, 0), text, font=font)
+                text_w = bbox[2] - bbox[0]
+                text_h = bbox[3] - bbox[1]
+            except:
+                # Fallback for older PIL versions
+                text_w, text_h = draw.textsize(text, font=font)
+            
+            x = (target_w - text_w) // 2
+            y = (target_h - text_h) // 2
+            padding = 40
+            box_coords = (x - padding, y - padding, x + text_w + padding, y + text_h + padding)
+            draw.rectangle(box_coords, fill=(0, 0, 0, 128))
+            
+            try:
+                draw.text((x, y), text, font=font, fill="white", stroke_width=5, stroke_fill="black")
+            except:
+                # Fallback without stroke
+                draw.text((x, y), text, font=font, fill="white")
+            
+            # Clear cache occasionally to prevent memory leak
+            if len(memo) > 10:
+                memo.clear()
+                
+            frame = np.array(img)
+            memo[remaining] = frame
+            
+            # Update progress directly from frame generation
+            if progress_callback:
+                if duration_seconds > 0:
+                    p = int((t / duration_seconds) * 100)
+                    p = min(p, 99)
+                    progress_callback(p)
+                    
+            return frame
+
+        timer_overlay = VideoClip(make_frame, duration=duration_seconds)
+        final_clip = CompositeVideoClip([bg_clip, timer_overlay])
+
+        # Audio setup
+        if bg_music_path and os.path.exists(bg_music_path):
+            try:
+                logger.info(f"Loading background music: {bg_music_path}")
+                audio = AudioFileClip(bg_music_path)
+                logger.info(f"Audio duration: {audio.duration}s, needed: {duration_seconds}s")
+                
+                if audio.duration < duration_seconds:
+                    logger.info("Looping audio to match video duration")
+                    audio = audio.with_effects([afx.AudioLoop(duration=duration_seconds)])
+                else:
+                    logger.info("Trimming audio to match video duration")
+                    audio = audio.subclipped(0, duration_seconds)
+                
+                # Set audio volume (reduce to 30% for background music)
+                audio = audio.with_volume_scaled(0.3)
+                final_clip = final_clip.with_audio(audio)
+                logger.info("Background music successfully added to timer video")
+                
+            except Exception as e:
+                logger.error(f"Failed to load or attach audio: {e}")
+                logger.warning("Continuing without background music")
+        else:
+            if bg_music_path:
+                logger.warning(f"Background music file not found: {bg_music_path}")
+            else:
+                logger.info("No background music specified")
+                
+        # Write video file
+        final_clip.write_videofile(
+            output_file,
+            fps=fps,
+            codec=video_codec,
+            audio_codec=audio_codec,
+            threads=1,
+            preset="medium",
+            logger=None,
+            ffmpeg_params=video_encoding_params
+        )
+
+        # Cleanup
+        try:
+            close_clip(bg_clip)
+            close_clip(timer_overlay)
+            close_clip(final_clip)
+        except:
+            pass
+        
+        # Final progress update
+        if progress_callback:
+            progress_callback(100)
+            
+        logger.info(f"Timer video generated successfully: {output_file}")
+        return output_file
+        
+    except Exception as e:
+        logger.error(f"Timer video generation failed: {e}")
+        raise e
 
 
 def preprocess_video(materials: List[MaterialInfo], clip_duration=4):
