@@ -213,12 +213,53 @@ def _generate_response(prompt: str) -> str:
     return ""
 
 def generate_script(video_subject: str, language: str = "auto", paragraph_number: int = 1) -> str:
-    prompt = f"""
-    Write a video script about '{video_subject}'.
-    Language: {language}
-    Format: Plain text, {paragraph_number} paragraphs.
-    Do not include title, scene descriptions, or camera instructions. Just the narration text.
-    """
+    # 언어별 프롬프트 설정
+    if language == "ko-KR" or language == "auto":
+        prompt = f"""
+        주제 '{video_subject}'에 대한 유튜브 쇼츠용 대본을 작성해주세요.
+
+        요구사항:
+        1. {paragraph_number}개의 문단으로 구성
+        2. 각 문단은 2-3문장으로 작성
+        3. 총 길이는 60-90초 분량 (약 150-200자)
+        4. 인사말(안녕하세요, 여러분, 시청자 여러분 등) 사용 금지
+        5. 바로 본론으로 시작
+        6. 구체적이고 실용적인 내용
+        7. 감정적이고 매력적인 표현 사용
+        8. 시청자의 관심을 끌 수 있는 내용
+        9. 마크다운 형식(**, ##, - 등) 사용 금지
+        10. 장면 설명([장면 1] 등) 사용 금지
+        11. 순수한 텍스트만 작성
+
+        스타일: 직접적이고 임팩트 있게, 인사말 없이 바로 핵심 내용으로 시작
+
+        주제: {video_subject}
+
+        대본을 작성해주세요:
+        """
+    else:
+        prompt = f"""
+        Write a YouTube Shorts script about '{video_subject}'.
+
+        Requirements:
+        1. {paragraph_number} paragraphs
+        2. Each paragraph: 2-3 sentences
+        3. Total length: 60-90 seconds (about 150-200 words)
+        4. NO greetings (Hello, Hi everyone, Welcome, etc.)
+        5. Start directly with the main content
+        6. Specific and practical information
+        7. Engaging and emotional language
+        8. Content that captures viewer attention
+        9. NO markdown formatting (**, ##, - etc.)
+        10. NO scene descriptions ([Scene 1] etc.)
+        11. Plain text only
+
+        Style: Direct and impactful, start immediately with core content
+
+        Subject: {video_subject}
+
+        Write the script:
+        """
     
     # Check if subject is empty
     if not video_subject:
@@ -229,7 +270,15 @@ def generate_script(video_subject: str, language: str = "auto", paragraph_number
         try:
             response = _generate_response(prompt)
             if response:
-                final_script = response.strip()
+                script = response.strip()
+                
+                # 인사말 제거 로직
+                script = _remove_greetings(script, language)
+                
+                # 마크다운 형식 제거
+                script = _clean_markdown_formatting(script)
+                
+                final_script = script
                 break
         except Exception as e:
             logger.error(f"failed to generate script: {e}")
@@ -702,3 +751,115 @@ def generate_korean_terms(video_subject: str, video_script: str, amount: int = 5
     logger.info(f"Using fallback Korean tags: {unique_keywords}")
     
     return unique_keywords
+
+def _remove_greetings(script: str, language: str = "auto") -> str:
+    """대본에서 인사말 제거"""
+    if not script:
+        return script
+    
+    lines = script.split('\n')
+    cleaned_lines = []
+    
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+            
+        # 한국어 인사말 패턴
+        korean_greetings = [
+            "안녕하세요", "안녕", "여러분", "시청자 여러분", "구독자 여러분",
+            "오늘은", "오늘 영상에서는", "이번 영상에서는", "반갑습니다",
+            "환영합니다", "다시 만나뵙습니다", "채널에 오신 것을 환영합니다",
+            "오늘도", "다시 한번"
+        ]
+        
+        # 영어 인사말 패턴
+        english_greetings = [
+            "hello", "hi everyone", "hi there", "welcome", "welcome back",
+            "good morning", "good afternoon", "good evening", "hey guys",
+            "what's up", "greetings", "welcome to", "hey there", "hi folks",
+            "today we", "in today's video", "today i", "today's topic"
+        ]
+        
+        # 인사말로 시작하는 문장 제거
+        should_skip = False
+        line_lower = line.lower()
+        
+        if language == "ko-KR" or language == "auto":
+            for greeting in korean_greetings:
+                if line.startswith(greeting) or greeting in line[:30]:
+                    should_skip = True
+                    break
+        
+        if language == "en-US" or not should_skip:
+            for greeting in english_greetings:
+                if (line_lower.startswith(greeting + " ") or 
+                    line_lower.startswith(greeting + ",") or
+                    line_lower.startswith(greeting + ".") or
+                    line_lower == greeting):
+                    should_skip = True
+                    break
+        
+        # 인사말이 아닌 문장만 추가
+        if not should_skip:
+            cleaned_lines.append(line)
+    
+    # 결과 조합
+    result = '\n'.join(cleaned_lines).strip()
+    
+    # 빈 결과인 경우 원본 반환 (모든 문장이 인사말인 경우 방지)
+    if not result or len(result) < 20:
+        # 첫 번째 문장만 제거하고 나머지 반환
+        original_lines = script.split('\n')
+        if len(original_lines) > 1:
+            return '\n'.join(original_lines[1:]).strip()
+        else:
+            return script
+    
+    return result
+def _clean_markdown_formatting(script: str) -> str:
+    """마크다운 형식 제거"""
+    if not script:
+        return script
+    
+    import re
+    
+    # 마크다운 형식 제거
+    # ** 볼드 제거
+    script = re.sub(r'\*\*(.*?)\*\*', r'\1', script)
+    
+    # * 이탤릭 제거
+    script = re.sub(r'\*(.*?)\*', r'\1', script)
+    
+    # ## 헤더 제거
+    script = re.sub(r'^#{1,6}\s*', '', script, flags=re.MULTILINE)
+    
+    # - 리스트 제거
+    script = re.sub(r'^-\s*', '', script, flags=re.MULTILINE)
+    
+    # 1. 숫자 리스트 제거
+    script = re.sub(r'^\d+\.\s*', '', script, flags=re.MULTILINE)
+    
+    # [링크](url) 형식 제거
+    script = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', script)
+    
+    # ``` 코드 블록 제거
+    script = re.sub(r'```.*?```', '', script, flags=re.DOTALL)
+    
+    # ` 인라인 코드 제거
+    script = re.sub(r'`([^`]+)`', r'\1', script)
+    
+    # > 인용문 제거
+    script = re.sub(r'^>\s*', '', script, flags=re.MULTILINE)
+    
+    # [장면 1], [장면 2] 등 장면 설명 제거
+    script = re.sub(r'\[장면\s*\d+\]', '', script)
+    script = re.sub(r'\[Scene\s*\d+\]', '', script)
+    
+    # 연속된 공백 정리
+    script = re.sub(r'\s+', ' ', script)
+    
+    # 연속된 줄바꿈 정리
+    script = re.sub(r'\n\s*\n', '\n\n', script)
+    
+    return script.strip()
