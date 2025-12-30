@@ -2625,14 +2625,14 @@ if not st.session_state.get("show_setup", False):
                                             base_terms = llm.generate_terms(title_subject, task_script or (params.video_script or ""), amount=12) or []
                                             keywords = ", ".join(base_terms + [str(title_subject).strip(), "shorts", "ai generated", "video", "content"])
                                         else:
-                                            # Korean version - generate Korean tags
+                                            # Korean version - generate Korean tags based on script content
                                             try:
-                                                korean_terms = llm.generate_korean_terms(title_subject, task_script or (params.video_script or ""), amount=8) or []
-                                                base_tags = ["쇼츠", "영상", "콘텐츠", "AI생성"]
-                                                keywords = ", ".join(korean_terms + [str(title_subject).strip()] + base_tags)
+                                                korean_terms = llm.generate_korean_terms(title_subject, task_script or (params.video_script or ""), amount=15) or []
+                                                # Only use script-based keywords, no generic tags
+                                                keywords = ", ".join(korean_terms + [str(title_subject).strip()])
                                             except:
-                                                # Fallback to basic Korean tags
-                                                keywords = f"{title_subject}, 쇼츠, 영상, 콘텐츠, AI생성"
+                                                # Fallback to subject-based tags only
+                                                keywords = str(title_subject).strip()
                                         
                                         vid_id = upload_video(
                                             youtube, 

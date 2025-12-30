@@ -289,34 +289,38 @@ def generate_script(video_subject: str, language: str = "auto", paragraph_number
     return final_script
 
 def generate_terms(video_subject: str, video_script: str, amount: int = 5) -> List[str]:
-    logger.info(f"Starting keyword generation for subject: {video_subject}")
+    logger.info(f"Starting enhanced English keyword generation for subject: {video_subject}")
     
-    # Enhanced prompt for better English keyword generation
+    # 대본 내용 분석 기반 영어 키워드 생성 프롬프트
     prompt = f"""
-    You are a professional video editor creating stock footage search keywords.
-    
-    TASK: Extract {amount} highly relevant ENGLISH keywords for stock video search.
-    
-    REQUIREMENTS:
-    1. Keywords MUST be in English only
-    2. Use concrete, visual terms (not abstract concepts)
-    3. Focus on scenes, objects, actions that can be filmed
-    4. Each keyword should be 1-3 words maximum
-    5. Think about what stock footage would match this script
-    
-    EXAMPLES:
-    - If script mentions "성공" → use "business success", "achievement", "celebration"
-    - If script mentions "건강" → use "healthy lifestyle", "exercise", "nutrition"
-    - If script mentions "돈" → use "money", "finance", "investment"
-    
-    VIDEO SUBJECT: {video_subject}
-    SCRIPT: {video_script[:800]}
-    
-    Return ONLY a comma-separated list of English keywords:
+    You are a professional video editor. Analyze the following script content to generate English keywords optimized for stock video search.
+
+    Script Analysis & Keyword Generation Requirements:
+    1. Convert specific actions, objects, and scenes mentioned in the script into English keywords
+    2. Focus on visually filmable elements
+    3. Each keyword should be 1-3 words
+    4. Prioritize keywords directly related to the script's core message
+    5. Use common terms easily found in stock footage
+    6. DO NOT use generic terms like "AI generated", "viral", "content", "shorts", "video"
+    7. Focus on script-mentioned actions, emotions, results, and methods
+
+    Script Content Analysis:
+    Subject: {video_subject}
+    Script: {video_script[:1000]}
+
+    Visual elements extractable from script:
+    - Mentioned actions or movements
+    - Objects or tools that appear
+    - Described places or environments
+    - Expressed emotions or states
+    - Presented results or effects
+
+    Based on the script content above, generate {amount} English keywords.
+    List only the keywords separated by commas:
     """
     
     try:
-        logger.info("Attempting to generate keywords using LLM...")
+        logger.info("Attempting to generate script-based English keywords using LLM...")
         response = _generate_response(prompt)
         logger.info(f"LLM response: {response}")
         
@@ -325,7 +329,7 @@ def generate_terms(video_subject: str, video_script: str, amount: int = 5) -> Li
             cleaned = response.strip()
             
             # Remove common prefixes
-            prefixes = ["Here are", "Keywords:", "keywords:", "Sure", "The keywords", "Based on", "For this"]
+            prefixes = ["keywords:", "Keywords:", "Sure", "The keywords", "Based on", "For this", "Here are"]
             for p in prefixes:
                 if cleaned.lower().startswith(p.lower()):
                     cleaned = cleaned[len(p):].strip()
@@ -345,23 +349,25 @@ def generate_terms(video_subject: str, video_script: str, amount: int = 5) -> Li
             for term in terms:
                 term = term.strip().lower()
                 # Skip if too long or contains non-English characters
-                if len(term.split()) <= 3 and term.isascii() and len(term) > 2:
+                if (len(term.split()) <= 3 and term.isascii() and len(term) > 2 and
+                    # Exclude generic terms
+                    not any(generic in term for generic in ["ai generated", "viral", "content", "shorts", "video", "youtube"])):
                     # Skip common stop words
                     if not any(stop_word in term for stop_word in ["the", "and", "or", "but", "with", "for"]):
                         valid_terms.append(term)
             
             logger.info(f"Valid terms after filtering: {valid_terms}")
             
-            if len(valid_terms) >= 2:
-                logger.info(f"Generated English keywords: {valid_terms[:amount]}")
+            if len(valid_terms) >= 3:
+                logger.info(f"Generated script-based English keywords: {valid_terms[:amount]}")
                 return valid_terms[:amount]
                 
     except Exception as e:
-        logger.error(f"failed to generate terms: {e}")
+        logger.error(f"failed to generate script-based English terms: {e}")
     
-    # Enhanced fallback with better English keyword extraction
-    logger.warning("LLM failed to generate terms. Using enhanced fallback.")
-    return _generate_fallback_keywords(video_subject, video_script, amount)
+    # Enhanced fallback with script content analysis
+    logger.warning("LLM failed to generate English terms. Using enhanced script analysis fallback.")
+    return _generate_script_based_keywords(video_subject, video_script, amount)
 
 def _generate_fallback_keywords(video_subject: str, video_script: str, amount: int = 5) -> List[str]:
     """Generate fallback keywords when LLM fails"""
@@ -653,27 +659,32 @@ def translate_terms_to_english(terms: List[str]) -> List[str]:
         logger.error(f"Translation failed: {e}")
     return terms
 def generate_korean_terms(video_subject: str, video_script: str, amount: int = 5) -> List[str]:
-    # Korean keyword generation for YouTube tags
+    # Korean keyword generation for YouTube tags based on script content
     prompt = f"""
     당신은 전문 유튜브 크리에이터입니다.
     
-    작업: 다음 영상에 대한 {amount}개의 한국어 YouTube 태그를 생성하세요.
+    작업: 다음 영상 대본을 분석하여 {amount}개의 한국어 YouTube 태그를 생성하세요.
     
     요구사항:
-    1. 태그는 한국어로만 작성
-    2. YouTube 검색에 효과적인 키워드 사용
+    1. 대본에서 실제로 언급된 내용만 키워드로 사용
+    2. 구체적이고 검색 가능한 한국어 용어
     3. 각 태그는 1-3단어로 구성
-    4. 구체적이고 검색 가능한 용어 사용
-    5. 영상 내용과 직접 관련된 키워드
+    4. 대본의 핵심 메시지와 직접 관련된 키워드
+    5. "AI생성", "바이럴", "콘텐츠", "쇼츠" 같은 일반적 태그 사용 금지
+    6. 대본에서 언급된 행동, 방법, 결과, 감정에 집중
     
-    예시:
-    - 주제가 "성공 습관"이면 → "성공법", "좋은습관", "자기계발", "성공마인드"
-    - 주제가 "건강 다이어트"이면 → "다이어트", "건강관리", "체중감량", "운동법"
+    분석할 내용:
+    주제: {video_subject}
+    대본: {video_script[:1000]}
     
-    영상 주제: {video_subject}
-    영상 대본: {video_script[:800]}
+    대본에서 추출 가능한 키워드 예시:
+    - 언급된 구체적인 행동이나 방법
+    - 제시된 결과나 효과
+    - 나타나는 감정이나 상태
+    - 설명된 상황이나 문제
+    - 제안된 해결책이나 팁
     
-    쉼표로 구분된 한국어 태그만 반환하세요:
+    대본 내용을 바탕으로 한 {amount}개의 한국어 키워드만 쉼표로 구분하여 나열하세요:
     """
     
     try:
@@ -683,7 +694,7 @@ def generate_korean_terms(video_subject: str, video_script: str, amount: int = 5
             cleaned = response.strip()
             
             # Remove common prefixes
-            prefixes = ["태그:", "키워드:", "다음과 같습니다", "생성된 태그"]
+            prefixes = ["태그:", "키워드:", "다음과 같습니다", "생성된 태그", "분석 결과"]
             for p in prefixes:
                 if cleaned.startswith(p):
                     cleaned = cleaned[len(p):].strip()
@@ -701,56 +712,155 @@ def generate_korean_terms(video_subject: str, video_script: str, amount: int = 5
             for term in terms:
                 term = term.strip()
                 # Check if contains Korean characters and is reasonable length
-                if len(term.split()) <= 3 and len(term) > 1 and re.search("[가-힣]", term):
+                if (len(term.split()) <= 3 and len(term) > 1 and 
+                    re.search("[가-힣]", term) and 
+                    # Exclude generic terms
+                    not any(generic in term for generic in ["AI생성", "바이럴", "콘텐츠", "쇼츠", "영상", "유튜브"])):
                     valid_terms.append(term)
             
-            if len(valid_terms) >= 2:
-                logger.info(f"Generated Korean tags: {valid_terms[:amount]}")
+            if len(valid_terms) >= 3:
+                logger.info(f"Generated script-based Korean tags: {valid_terms[:amount]}")
                 return valid_terms[:amount]
                 
     except Exception as e:
         logger.error(f"failed to generate Korean terms: {e}")
     
-    # Enhanced fallback with Korean keywords
-    logger.warning("LLM failed to generate Korean terms. Using enhanced fallback.")
+    # Enhanced fallback with script content analysis
+    logger.warning("LLM failed to generate Korean terms. Using script analysis fallback.")
+    return _generate_script_based_korean_keywords(video_subject, video_script, amount)
+
+def _generate_script_based_korean_keywords(video_subject: str, video_script: str, amount: int = 5) -> List[str]:
+    """대본 내용 분석 기반 한국어 키워드 생성"""
+    logger.info(f"Analyzing Korean script content for keyword generation: '{video_subject}'")
     
-    # Subject-based Korean keywords
+    import re
+    
+    # 대본에서 키워드 추출을 위한 패턴 분석
+    script_lower = video_script.lower()
     subject_lower = video_subject.lower()
-    korean_keywords = {
-        "성공": ["성공법", "성공마인드", "자기계발", "성공습관"],
-        "건강": ["건강관리", "건강법", "웰빙", "건강정보"],
-        "돈": ["돈버는법", "재테크", "투자", "부자되기"],
-        "투자": ["투자법", "재테크", "투자정보", "주식"],
-        "다이어트": ["다이어트", "체중감량", "살빼기", "운동법"],
-        "운동": ["운동법", "헬스", "피트니스", "건강운동"],
-        "독서": ["독서법", "책추천", "독서습관", "책읽기"],
-        "공부": ["공부법", "학습법", "공부습관", "효율적공부"],
-        "음식": ["요리", "레시피", "맛집", "음식정보"],
-        "여행": ["여행정보", "여행팁", "관광", "여행지"],
-        "사랑": ["연애", "사랑", "관계", "연애팁"],
-        "가족": ["가족", "육아", "부모", "가정"],
-        "일": ["직장", "업무", "커리어", "취업"],
-        "스트레스": ["스트레스해소", "힐링", "명상", "휴식"],
-        "행복": ["행복", "긍정", "마음", "감정"],
-        "시간": ["시간관리", "효율성", "생산성", "일정관리"],
-        "자연": ["자연", "힐링", "풍경", "환경"],
-        "기술": ["기술", "IT", "디지털", "혁신"]
+    
+    # 대본 내용 기반 한국어 키워드 매핑 (구체적이고 실용적)
+    content_keywords = {
+        # 행동/방법 관련
+        "물마시기": ["물마시기", "수분섭취", "건강습관"],
+        "스트레칭": ["스트레칭", "몸풀기", "유연성"],
+        "명상": ["명상", "마음챙김", "정신건강"],
+        "호흡": ["호흡법", "심호흡", "마음안정"],
+        "걷기": ["걷기운동", "산책", "유산소"],
+        "운동": ["운동법", "헬스", "체력관리"],
+        "요리": ["요리법", "음식만들기", "건강식"],
+        "독서": ["독서법", "책읽기", "지식습득"],
+        "기록": ["기록하기", "일기쓰기", "계획세우기"],
+        
+        # 결과/효과 관련
+        "집중력": ["집중력향상", "몰입", "생산성"],
+        "효율": ["효율성", "시간관리", "생산성"],
+        "변화": ["변화", "개선", "성장"],
+        "성과": ["성과", "결과", "달성"],
+        "건강": ["건강관리", "웰빙", "체력"],
+        
+        # 감정/상태 관련
+        "스트레스": ["스트레스관리", "스트레스해소", "마음관리"],
+        "행복": ["행복", "긍정", "만족"],
+        "자신감": ["자신감", "자존감", "마인드"],
+        "평온": ["평온", "안정", "휴식"],
+        
+        # 시간/루틴 관련
+        "아침": ["아침루틴", "모닝", "하루시작"],
+        "저녁": ["저녁루틴", "하루마무리", "휴식"],
+        "하루": ["일상", "루틴", "생활패턴"],
+        "습관": ["좋은습관", "습관만들기", "라이프스타일"],
+        
+        # 구체적 방법/팁
+        "방법": ["방법", "노하우", "팁"],
+        "비법": ["비법", "꿀팁", "노하우"],
+        "단계": ["단계별", "순서", "과정"],
+        "원칙": ["원칙", "법칙", "기준"]
     }
     
-    fallback_keywords = []
-    for korean, keyword_list in korean_keywords.items():
+    # 대본에서 언급된 키워드 찾기
+    found_keywords = []
+    
+    # 1. 직접 매칭
+    for korean_word, korean_keywords_list in content_keywords.items():
+        if korean_word in script_lower or korean_word in subject_lower:
+            found_keywords.extend(korean_keywords_list[:2])  # 각 카테고리에서 2개씩
+            logger.info(f"Found Korean keyword '{korean_word}' -> {korean_keywords_list[:2]}")
+    
+    # 2. 문맥 기반 키워드 추가
+    context_keywords = []
+    
+    # 건강 관련 문맥
+    if any(word in script_lower for word in ["건강", "몸", "체력", "운동", "다이어트"]):
+        context_keywords.extend(["건강관리", "웰빙", "체력향상"])
+    
+    # 성공/자기계발 문맥
+    if any(word in script_lower for word in ["성공", "목표", "달성", "습관", "계발"]):
+        context_keywords.extend(["자기계발", "성공법", "목표달성"])
+    
+    # 일상/라이프스타일 문맥
+    if any(word in script_lower for word in ["일상", "하루", "루틴", "생활", "시간"]):
+        context_keywords.extend(["일상루틴", "라이프스타일", "시간관리"])
+    
+    # 마음/정신 건강 문맥
+    if any(word in script_lower for word in ["마음", "정신", "감정", "스트레스", "행복"]):
+        context_keywords.extend(["마음관리", "정신건강", "감정조절"])
+    
+    # 3. 키워드 조합 및 정리
+    all_keywords = found_keywords + context_keywords
+    
+    # 중복 제거 및 정리
+    unique_keywords = []
+    seen = set()
+    
+    for keyword in all_keywords:
+        keyword_clean = keyword.strip()
+        if (keyword_clean not in seen and len(keyword_clean) > 1 and
+            # 일반적인 태그 제외
+            not any(generic in keyword_clean for generic in ["AI생성", "바이럴", "콘텐츠", "쇼츠", "영상"])):
+            unique_keywords.append(keyword_clean)
+            seen.add(keyword_clean)
+    
+    # 4. 부족한 경우 주제 기반 키워드 추가
+    if len(unique_keywords) < amount:
+        subject_based = _get_korean_subject_keywords(video_subject)
+        for keyword in subject_based:
+            if keyword not in seen and len(unique_keywords) < amount:
+                unique_keywords.append(keyword)
+                seen.add(keyword)
+    
+    result = unique_keywords[:amount]
+    logger.info(f"Final script-based Korean keywords: {result}")
+    return result
+
+def _get_korean_subject_keywords(video_subject: str) -> List[str]:
+    """주제 기반 한국어 키워드 생성"""
+    subject_lower = video_subject.lower()
+    
+    subject_mapping = {
+        "아침": ["아침루틴", "모닝", "하루시작", "기상"],
+        "루틴": ["일상루틴", "생활패턴", "습관", "라이프스타일"],
+        "습관": ["좋은습관", "습관만들기", "자기관리", "라이프스타일"],
+        "건강": ["건강관리", "웰빙", "체력", "건강법"],
+        "운동": ["운동법", "헬스", "체력관리", "피트니스"],
+        "다이어트": ["다이어트", "체중관리", "건강식", "운동법"],
+        "돈": ["재테크", "돈관리", "경제", "투자"],
+        "투자": ["투자법", "재테크", "경제", "자산관리"],
+        "성공": ["성공법", "자기계발", "목표달성", "성장"],
+        "스트레스": ["스트레스관리", "마음관리", "힐링", "휴식"],
+        "시간": ["시간관리", "효율성", "생산성", "계획"],
+        "관리": ["자기관리", "생활관리", "효율성", "조절"],
+        "방법": ["노하우", "팁", "비법", "해결책"],
+        "마음": ["마음관리", "정신건강", "감정", "심리"]
+    }
+    
+    keywords = []
+    for korean, korean_list in subject_mapping.items():
         if korean in subject_lower:
-            fallback_keywords.extend(keyword_list)
+            keywords.extend(korean_list)
     
-    # Add generic Korean tags
-    if not fallback_keywords:
-        fallback_keywords = ["정보", "팁", "노하우", "라이프스타일", "일상"]
-    
-    # Remove duplicates and limit
-    unique_keywords = list(dict.fromkeys(fallback_keywords))[:amount]
-    logger.info(f"Using fallback Korean tags: {unique_keywords}")
-    
-    return unique_keywords
+    return keywords[:8] if keywords else ["정보", "팁", "노하우", "일상"]
+
 
 def _remove_greetings(script: str, language: str = "auto") -> str:
     """대본에서 인사말 제거"""
@@ -863,3 +973,169 @@ def _clean_markdown_formatting(script: str) -> str:
     script = re.sub(r'\n\s*\n', '\n\n', script)
     
     return script.strip()
+def _generate_script_based_keywords(video_subject: str, video_script: str, amount: int = 5) -> List[str]:
+    """대본 내용 분석 기반 키워드 생성"""
+    logger.info(f"Analyzing script content for keyword generation: '{video_subject}'")
+    
+    import re
+    
+    # 대본에서 키워드 추출을 위한 패턴 분석
+    script_lower = video_script.lower()
+    subject_lower = video_subject.lower()
+    
+    # 대본 내용 기반 키워드 매핑 (더 구체적이고 시각적)
+    content_keywords = {
+        # 행동/동작 관련
+        "물": ["water", "drinking", "hydration"],
+        "스트레칭": ["stretching", "exercise", "flexibility"],
+        "명상": ["meditation", "mindfulness", "relaxation"],
+        "호흡": ["breathing", "meditation", "calm"],
+        "걷기": ["walking", "outdoor", "exercise"],
+        "운동": ["workout", "fitness", "gym"],
+        "요리": ["cooking", "kitchen", "food preparation"],
+        "독서": ["reading", "books", "learning"],
+        "쓰기": ["writing", "notebook", "planning"],
+        "기록": ["writing", "journal", "planning"],
+        
+        # 물건/도구 관련
+        "커피": ["coffee", "morning", "cafe"],
+        "책": ["books", "reading", "education"],
+        "노트": ["notebook", "writing", "planning"],
+        "스마트폰": ["smartphone", "technology", "digital"],
+        "컴퓨터": ["computer", "technology", "work"],
+        "돈": ["money", "finance", "cash"],
+        "통장": ["banking", "finance", "savings"],
+        "카드": ["credit card", "payment", "finance"],
+        
+        # 장소/환경 관련
+        "집": ["home", "house", "indoor"],
+        "사무실": ["office", "workplace", "business"],
+        "카페": ["cafe", "coffee shop", "social"],
+        "공원": ["park", "outdoor", "nature"],
+        "헬스장": ["gym", "fitness", "workout"],
+        "부엌": ["kitchen", "cooking", "home"],
+        
+        # 감정/상태 관련
+        "스트레스": ["stress", "pressure", "tension"],
+        "행복": ["happiness", "joy", "positive"],
+        "피곤": ["tired", "fatigue", "rest"],
+        "집중": ["focus", "concentration", "productivity"],
+        "성공": ["success", "achievement", "goal"],
+        "실패": ["failure", "challenge", "learning"],
+        
+        # 시간 관련
+        "아침": ["morning", "sunrise", "early"],
+        "저녁": ["evening", "sunset", "night"],
+        "하루": ["daily", "routine", "lifestyle"],
+        "주말": ["weekend", "leisure", "relaxation"],
+        
+        # 결과/효과 관련
+        "변화": ["change", "transformation", "improvement"],
+        "성장": ["growth", "development", "progress"],
+        "효과": ["results", "benefits", "improvement"],
+        "건강": ["health", "wellness", "vitality"]
+    }
+    
+    # 대본에서 언급된 키워드 찾기
+    found_keywords = []
+    
+    # 1. 직접 매칭
+    for korean_word, english_keywords in content_keywords.items():
+        if korean_word in script_lower or korean_word in subject_lower:
+            found_keywords.extend(english_keywords[:2])  # 각 카테고리에서 2개씩
+            logger.info(f"Found keyword '{korean_word}' -> {english_keywords[:2]}")
+    
+    # 2. 문맥 기반 키워드 추가
+    context_keywords = []
+    
+    # 건강 관련 문맥
+    if any(word in script_lower for word in ["건강", "몸", "체력", "운동", "다이어트"]):
+        context_keywords.extend(["healthy lifestyle", "wellness", "fitness"])
+    
+    # 성공/자기계발 문맥
+    if any(word in script_lower for word in ["성공", "목표", "달성", "습관", "계발"]):
+        context_keywords.extend(["success", "achievement", "personal growth"])
+    
+    # 돈/재정 문맥
+    if any(word in script_lower for word in ["돈", "투자", "저축", "재테크", "경제"]):
+        context_keywords.extend(["money", "finance", "investment"])
+    
+    # 일상/라이프스타일 문맥
+    if any(word in script_lower for word in ["일상", "하루", "루틴", "생활", "시간"]):
+        context_keywords.extend(["daily routine", "lifestyle", "time management"])
+    
+    # 3. 대본에서 구체적인 행동 추출
+    action_patterns = [
+        (r"(\w+)을?\s*마시", "drinking"),
+        (r"(\w+)을?\s*먹", "eating"),
+        (r"(\w+)을?\s*하", "doing"),
+        (r"(\w+)을?\s*보", "watching"),
+        (r"(\w+)을?\s*쓰", "writing"),
+        (r"(\w+)을?\s*읽", "reading"),
+    ]
+    
+    for pattern, action in action_patterns:
+        matches = re.findall(pattern, script_lower)
+        if matches:
+            context_keywords.append(action)
+    
+    # 4. 키워드 조합 및 정리
+    all_keywords = found_keywords + context_keywords
+    
+    # 중복 제거 및 정리
+    unique_keywords = []
+    seen = set()
+    
+    for keyword in all_keywords:
+        keyword_clean = keyword.lower().strip()
+        if keyword_clean not in seen and len(keyword_clean) > 2:
+            unique_keywords.append(keyword_clean)
+            seen.add(keyword_clean)
+    
+    # 5. 부족한 경우 주제 기반 키워드 추가
+    if len(unique_keywords) < amount:
+        subject_based = _get_subject_based_keywords(video_subject)
+        for keyword in subject_based:
+            if keyword.lower() not in seen and len(unique_keywords) < amount:
+                unique_keywords.append(keyword.lower())
+                seen.add(keyword.lower())
+    
+    # 6. 여전히 부족한 경우 일반 키워드 추가
+    if len(unique_keywords) < amount:
+        general_keywords = ["lifestyle", "people", "modern", "daily", "routine"]
+        for keyword in general_keywords:
+            if keyword not in seen and len(unique_keywords) < amount:
+                unique_keywords.append(keyword)
+                seen.add(keyword)
+    
+    result = unique_keywords[:amount]
+    logger.info(f"Final script-based keywords: {result}")
+    return result
+
+def _get_subject_based_keywords(video_subject: str) -> List[str]:
+    """주제 기반 키워드 생성"""
+    subject_lower = video_subject.lower()
+    
+    subject_mapping = {
+        "아침": ["morning", "sunrise", "breakfast", "routine"],
+        "루틴": ["routine", "daily", "habit", "lifestyle"],
+        "습관": ["habit", "routine", "lifestyle", "daily"],
+        "건강": ["health", "wellness", "fitness", "nutrition"],
+        "운동": ["exercise", "workout", "fitness", "gym"],
+        "다이어트": ["diet", "weight loss", "healthy eating", "nutrition"],
+        "돈": ["money", "finance", "cash", "wealth"],
+        "투자": ["investment", "finance", "money", "trading"],
+        "성공": ["success", "achievement", "goal", "winner"],
+        "스트레스": ["stress", "relaxation", "calm", "meditation"],
+        "시간": ["time", "clock", "schedule", "planning"],
+        "관리": ["management", "organization", "planning", "control"],
+        "방법": ["method", "way", "technique", "approach"],
+        "비법": ["secret", "tip", "technique", "method"]
+    }
+    
+    keywords = []
+    for korean, english_list in subject_mapping.items():
+        if korean in subject_lower:
+            keywords.extend(english_list)
+    
+    return keywords[:8] if keywords else ["lifestyle", "people", "modern", "daily"]
