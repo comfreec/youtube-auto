@@ -1342,11 +1342,34 @@ with tab_main:
                         # Background selection based on style
                         if "자연" in timer_style and not fast_mode:
                             status_text.info("🌿 자연 배경 영상 검색 중...")
-                            # Pexels search logic for nature backgrounds
-                            # (existing Pexels search code)
+                            try:
+                                from app.services import material
+                                # Search for nature background videos
+                                search_terms = ["nature", "forest", "ocean", "mountain", "landscape"]
+                                search_term = random.choice(search_terms)
+                                materials = material.search_videos(search_term, 1, VideoAspect.portrait)
+                                if materials:
+                                    bg_video_path = materials[0].url
+                                    status_text.info(f"🌿 자연 배경 영상 다운로드 중: {search_term}")
+                                    bg_video_path = material.download_video(materials[0])
+                            except Exception as e:
+                                logger.warning(f"자연 배경 검색 실패: {e}")
+                                status_text.warning("자연 배경 검색 실패, 미니멀 배경으로 대체")
                         elif "추상" in timer_style and not fast_mode:
                             status_text.info("🎨 추상 배경 영상 검색 중...")
-                            # Abstract background search
+                            try:
+                                from app.services import material
+                                # Search for abstract background videos
+                                search_terms = ["abstract", "geometric", "gradient", "particles", "motion graphics"]
+                                search_term = random.choice(search_terms)
+                                materials = material.search_videos(search_term, 1, VideoAspect.portrait)
+                                if materials:
+                                    bg_video_path = materials[0].url
+                                    status_text.info(f"🎨 추상 배경 영상 다운로드 중: {search_term}")
+                                    bg_video_path = material.download_video(materials[0])
+                            except Exception as e:
+                                logger.warning(f"추상 배경 검색 실패: {e}")
+                                status_text.warning("추상 배경 검색 실패, 미니멀 배경으로 대체")
                         else:
                             status_text.info("⚫ 미니멀 배경으로 설정...")
                         
@@ -1375,6 +1398,7 @@ with tab_main:
                                 bg_video_path, 
                                 bg_music_path, 
                                 fast_mode, 
+                                timer_style,
                                 update_progress
                             )
                             

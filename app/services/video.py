@@ -977,7 +977,7 @@ def generate_video(
     return output_file
 
 
-def generate_timer_video(duration_seconds: int, output_file: str, font_path: str = None, fontsize: int = 250, bg_video_path: str = None, bg_music_path: str = None, fast_mode: bool = False, progress_callback=None):
+def generate_timer_video(duration_seconds: int, output_file: str, font_path: str = None, fontsize: int = 250, bg_video_path: str = None, bg_music_path: str = None, fast_mode: bool = False, timer_style: str = "minimal", progress_callback=None):
     logger.info(f"Generating timer video (MoviePy): {duration_seconds}s")
     
     try:
@@ -1021,15 +1021,32 @@ def generate_timer_video(duration_seconds: int, output_file: str, font_path: str
                     gradient[i, :, 2] = int(40 + ratio * 60)  # Blue: 40-100
                 bg_clip = ImageClip(gradient, duration=duration_seconds)
         else:
-            logger.info("No background video specified, creating gradient background")
-            # Create a gradient background instead of pure black
+            logger.info(f"No background video specified, creating {timer_style} style background")
+            # Create background based on timer style
             gradient = np.zeros((target_h, target_w, 3), dtype=np.uint8)
-            for i in range(target_h):
-                # Create a vertical gradient from dark blue to dark purple
-                ratio = i / target_h
-                gradient[i, :, 0] = int(20 + ratio * 30)  # Red: 20-50
-                gradient[i, :, 1] = int(10 + ratio * 20)  # Green: 10-30  
-                gradient[i, :, 2] = int(40 + ratio * 60)  # Blue: 40-100
+            
+            if "자연" in timer_style or "nature" in timer_style.lower():
+                # Nature-inspired gradient (green to blue)
+                for i in range(target_h):
+                    ratio = i / target_h
+                    gradient[i, :, 0] = int(10 + ratio * 20)   # Red: 10-30
+                    gradient[i, :, 1] = int(60 + ratio * 40)   # Green: 60-100
+                    gradient[i, :, 2] = int(30 + ratio * 50)   # Blue: 30-80
+            elif "추상" in timer_style or "abstract" in timer_style.lower():
+                # Abstract gradient (purple to pink)
+                for i in range(target_h):
+                    ratio = i / target_h
+                    gradient[i, :, 0] = int(80 + ratio * 60)   # Red: 80-140
+                    gradient[i, :, 1] = int(20 + ratio * 40)   # Green: 20-60
+                    gradient[i, :, 2] = int(100 + ratio * 50)  # Blue: 100-150
+            else:
+                # Minimal style (dark gradient)
+                for i in range(target_h):
+                    ratio = i / target_h
+                    gradient[i, :, 0] = int(20 + ratio * 30)   # Red: 20-50
+                    gradient[i, :, 1] = int(10 + ratio * 20)   # Green: 10-30  
+                    gradient[i, :, 2] = int(40 + ratio * 60)   # Blue: 40-100
+            
             bg_clip = ImageClip(gradient, duration=duration_seconds)
 
         # Font setup with fallback
@@ -1091,14 +1108,32 @@ def generate_timer_video(duration_seconds: int, output_file: str, font_path: str
             x = (target_w - text_w) // 2
             y = (target_h - text_h) // 2
             padding = 40
-            box_coords = (x - padding, y - padding, x + text_w + padding, y + text_h + padding)
-            draw.rectangle(box_coords, fill=(0, 0, 0, 128))
+            
+            # Style-based text appearance
+            if "자연" in timer_style or "nature" in timer_style.lower():
+                # Nature style: Green-tinted background with white text
+                box_coords = (x - padding, y - padding, x + text_w + padding, y + text_h + padding)
+                draw.rectangle(box_coords, fill=(20, 60, 30, 180))  # Semi-transparent green
+                text_color = "white"
+                stroke_color = "darkgreen"
+            elif "추상" in timer_style or "abstract" in timer_style.lower():
+                # Abstract style: Colorful background with white text
+                box_coords = (x - padding, y - padding, x + text_w + padding, y + text_h + padding)
+                draw.rectangle(box_coords, fill=(80, 20, 100, 180))  # Semi-transparent purple
+                text_color = "white"
+                stroke_color = "purple"
+            else:
+                # Minimal style: Simple dark background
+                box_coords = (x - padding, y - padding, x + text_w + padding, y + text_h + padding)
+                draw.rectangle(box_coords, fill=(0, 0, 0, 128))  # Semi-transparent black
+                text_color = "white"
+                stroke_color = "black"
             
             try:
-                draw.text((x, y), text, font=font, fill="white", stroke_width=5, stroke_fill="black")
+                draw.text((x, y), text, font=font, fill=text_color, stroke_width=5, stroke_fill=stroke_color)
             except:
                 # Fallback without stroke
-                draw.text((x, y), text, font=font, fill="white")
+                draw.text((x, y), text, font=font, fill=text_color)
             
             # Clear cache occasionally to prevent memory leak
             if len(memo) > 10:
