@@ -20,21 +20,26 @@ def _generate_response(prompt: str) -> str:
     
     # Multi-API key rotation for better quota management
     if llm_provider == "gemini":
-        gemini_keys = [
-            config.app.get("gemini_api_key"),
-            config.app.get("gemini_api_key_2"),
-            config.app.get("gemini_api_key_3"),
-        ]
-        gemini_keys = [k for k in gemini_keys if k]  # Remove None values
+        # Collect all available Gemini API keys (up to 5 keys)
+        gemini_keys = []
+        for i in range(1, 6):  # gemini_api_key, gemini_api_key_2, ..., gemini_api_key_5
+            if i == 1:
+                key = config.app.get("gemini_api_key")
+            else:
+                key = config.app.get(f"gemini_api_key_{i}")
+            if key:
+                gemini_keys.append((i, key))
         
         if not gemini_keys:
             logger.error("No Gemini API keys configured")
             raise Exception("No Gemini API keys available")
         
+        logger.info(f"Found {len(gemini_keys)} Gemini API keys for rotation")
+        
         # Try each key until one works
-        for i, api_key in enumerate(gemini_keys):
+        for key_num, api_key in gemini_keys:
             try:
-                logger.info(f"Trying Gemini API key {i+1}/{len(gemini_keys)}")
+                logger.info(f"Trying Gemini API key #{key_num} ({len(gemini_keys)} total)")
                 import google.generativeai as genai
                 genai.configure(api_key=api_key)
                 
@@ -50,25 +55,27 @@ def _generate_response(prompt: str) -> str:
                 
                 for m in models_to_try:
                     try:
-                        logger.info(f"Using Gemini model: {m}")
+                        logger.info(f"Using Gemini model: {m} with API key #{key_num}")
                         model = genai.GenerativeModel(m)
                         response = model.generate_content(prompt)
                         if response and getattr(response, "text", None):
-                            logger.info(f"Success with API key {i+1} and model {m}")
+                            logger.success(f"✅ Success with API key #{key_num} and model {m}")
                             return response.text
                     except Exception as e_try:
-                        logger.warning(f"Gemini model {m} failed: {e_try}")
-                        if "429" in str(e_try) or "Quota exceeded" in str(e_try):
-                            logger.warning(f"API key {i+1} quota exceeded, trying next key...")
+                        logger.warning(f"Gemini model {m} failed with key #{key_num}: {e_try}")
+                        if "429" in str(e_try) or "Quota exceeded" in str(e_try) or "Resource has been exhausted" in str(e_try) or "RESOURCE_EXHAUSTED" in str(e_try):
+                            logger.warning(f"🚫 API key #{key_num} quota exceeded, trying next key...")
                             break
                         continue
                         
             except Exception as e:
-                logger.warning(f"Gemini API key {i+1} failed: {e}")
+                logger.warning(f"❌ Gemini API key #{key_num} failed: {e}")
+                if "429" in str(e) or "Quota exceeded" in str(e) or "Resource has been exhausted" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+                    logger.warning(f"🚫 API key #{key_num} quota exceeded")
                 continue
         
         # If all Gemini keys fail, fall back to DeepSeek
-        logger.warning("All Gemini keys failed, falling back to DeepSeek")
+        logger.error("❌ All Gemini API keys failed or quota exceeded, falling back to DeepSeek")
         llm_provider = "deepseek"
     
     # Remove the redirect to gemini for g4f

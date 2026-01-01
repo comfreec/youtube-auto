@@ -2273,6 +2273,86 @@ with tab_settings:
         if st_llm_api_key: 
             config.app[f"{llm_provider}_api_key"] = st_llm_api_key
         
+        # Additional API keys for quota management (Gemini only)
+        if llm_provider == "gemini":
+            st.markdown("---")
+            st.markdown("**🔄 추가 Gemini API 키 (할당량 관리)**")
+            st.info("💡 여러 API 키를 설정하면 할당량 초과 시 자동으로 다른 키로 전환됩니다")
+            
+            # Show current additional keys
+            gemini_keys = []
+            for i in range(2, 6):  # Support up to 5 total keys (key_2 to key_5)
+                key_name = f"gemini_api_key_{i}"
+                current_key = config.app.get(key_name, "")
+                if current_key:
+                    gemini_keys.append((i, current_key))
+            
+            if gemini_keys:
+                st.markdown("**📋 저장된 추가 API 키:**")
+                keys_to_remove = []
+                for i, (key_num, key_value) in enumerate(gemini_keys):
+                    col_key, col_del = st.columns([0.8, 0.2])
+                    with col_key:
+                        masked_key = f"{key_value[:8]}...{key_value[-4:]}" if len(key_value) > 12 else key_value
+                        st.text(f"🔑 API 키 #{key_num}: {masked_key}")
+                    with col_del:
+                        if st.button("🗑️", key=f"del_gemini_{key_num}", help="삭제"):
+                            keys_to_remove.append(f"gemini_api_key_{key_num}")
+                
+                if keys_to_remove:
+                    for key_name in keys_to_remove:
+                        if key_name in config.app:
+                            del config.app[key_name]
+                    config.save_config()
+                    st.success("✅ API 키가 삭제되었습니다!")
+                    time.sleep(1)
+                    st.rerun()
+            
+            # Add new API key
+            st.markdown("**➕ 새 API 키 추가:**")
+            col_new_key, col_add_btn = st.columns([0.7, 0.3])
+            
+            with col_new_key:
+                new_gemini_key = st.text_input(
+                    "새 Gemini API 키", 
+                    key="new_gemini_key", 
+                    type="password",
+                    placeholder="AIza...",
+                    help="추가할 Gemini API 키를 입력하세요"
+                )
+            
+            with col_add_btn:
+                st.markdown("<br>", unsafe_allow_html=True)  # Add spacing
+                if st.button("➕ 키 추가", key="add_gemini", use_container_width=True, type="primary"):
+                    if new_gemini_key:
+                        # Find next available slot
+                        next_slot = None
+                        for i in range(2, 6):  # Support up to 5 total keys
+                            key_name = f"gemini_api_key_{i}"
+                            if not config.app.get(key_name):
+                                next_slot = i
+                                break
+                        
+                        if next_slot:
+                            config.app[f"gemini_api_key_{next_slot}"] = new_gemini_key
+                            config.save_config()
+                            st.success(f"✅ API 키 #{next_slot}이 추가되었습니다!")
+                            time.sleep(1)
+                            st.rerun()
+                        else:
+                            st.error("❌ 최대 5개의 API 키만 저장할 수 있습니다")
+                    else:
+                        st.error("API 키를 입력해주세요")
+            
+            # Show total count
+            total_keys = 1 if st_llm_api_key else 0
+            total_keys += len(gemini_keys)
+            if total_keys > 1:
+                st.success(f"🎯 총 {total_keys}개의 Gemini API 키가 설정되어 있습니다")
+            elif total_keys == 1:
+                st.info("💡 추가 API 키를 등록하면 할당량 초과 시 자동으로 전환됩니다")
+        
+        
         # API Key status
         if st_llm_api_key:
             masked_key = f"{st_llm_api_key[:8]}...{st_llm_api_key[-4:]}" if len(st_llm_api_key) > 12 else "설정됨"
