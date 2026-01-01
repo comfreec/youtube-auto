@@ -3459,7 +3459,7 @@ with tab_settings:
                     padding: 1rem; border-radius: 12px; margin-bottom: 1rem;">
             <p style="margin: 0; color: #a0a0a0;">
                 📋 <strong>준비사항:</strong> Google Cloud Platform에서 발급받은 
-                <strong style="color: #ffffff; background: #333; padding: 2px 6px; border-radius: 4px;">client_secrets.json</strong> 파일이 필요합니다.
+                <strong style="color: #000000; background: #f0f0f0; padding: 2px 6px; border-radius: 4px;">client_secrets.json</strong> 파일이 필요합니다.
             </p>
         </div>
         """, unsafe_allow_html=True)

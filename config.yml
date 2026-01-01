@@ -1,0 +1,7 @@
+tunnel: 0a2c371c-522c-40e9-9239-c94973d8d17a
+credentials-file: C:\Users\용크컴퓨터\.cloudflared\0a2c371c-522c-40e9-9239-c94973d8d17a.json
+
+ingress:
+  - hostname: youtube-jadong.duckdns.org
+    service: http://localhost:8501
+  - service: http_status:404

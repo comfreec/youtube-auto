@@ -77,17 +77,17 @@ streamlit_style = """
         line-height: 1.6;
     }
     
-    /* Premium Typography */
+    /* Premium Typography - COMPACT VERSION */
     h1 { 
         font-family: 'Inter', sans-serif;
         font-weight: 900;
-        font-size: 2.5rem !important;
+        font-size: 2rem !important;  /* Reduced from 2.5rem */
         background: var(--primary-gradient);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
         text-align: center;
-        margin: 2rem 0 3rem 0 !important;
+        margin: 1rem 0 1.5rem 0 !important;  /* Reduced margins */
         letter-spacing: -0.02em;
         position: relative;
     }
@@ -95,11 +95,11 @@ streamlit_style = """
     h1::after {
         content: '';
         position: absolute;
-        bottom: -10px;
+        bottom: -8px;  /* Reduced from -10px */
         left: 50%;
         transform: translateX(-50%);
-        width: 100px;
-        height: 3px;
+        width: 80px;  /* Reduced from 100px */
+        height: 2px;  /* Reduced from 3px */
         background: var(--accent-gradient);
         border-radius: 2px;
     }
@@ -108,7 +108,8 @@ streamlit_style = """
         color: var(--text-primary) !important; 
         font-weight: 700; 
         letter-spacing: -0.01em;
-        margin-top: 2rem !important;
+        margin-top: 1rem !important;  /* Reduced from 2rem */
+        margin-bottom: 0.5rem !important;  /* Added for better spacing */
     }
     
     /* Premium Text Styling */
@@ -198,14 +199,14 @@ streamlit_style = """
         color: white !important;
     }
     
-    /* Premium Cards & Containers */
+    /* Premium Cards & Containers - COMPACT VERSION */
     div[data-testid="stVerticalBlockBorderWrapper"] { 
         background: var(--surface-card);
-        border-radius: 20px;
-        padding: 2rem;
+        border-radius: 12px;
+        padding: 1rem;  /* Reduced from 2rem */
         border: 1px solid var(--border-subtle);
         box-shadow: var(--shadow-soft);
-        margin-bottom: 2rem;
+        margin-bottom: 1rem;  /* Reduced from 2rem */
         backdrop-filter: blur(10px);
         position: relative;
         overflow: hidden;
@@ -222,15 +223,15 @@ streamlit_style = """
         opacity: 0.6;
     }
     
-    /* Premium Input Fields */
+    /* Premium Input Fields - COMPACT VERSION */
     .stTextInput input, .stTextArea textarea { 
         background: rgba(255, 255, 255, 0.95) !important;
         color: #000000 !important;
         border: 2px solid var(--border-subtle) !important;
-        border-radius: 12px !important;
+        border-radius: 8px !important;  /* Reduced from 12px */
         font-weight: 500 !important;
-        font-size: 1rem !important;
-        padding: 1rem !important;
+        font-size: 0.9rem !important;  /* Reduced from 1rem */
+        padding: 0.75rem !important;  /* Reduced from 1rem */
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         backdrop-filter: blur(10px);
     }
@@ -468,18 +469,18 @@ streamlit_style = """
         color: white !important;
     }
     
-    /* Premium Buttons */
+    /* Premium Buttons - COMPACT VERSION */
     .stButton > button, .stDownloadButton > button {
         background: var(--surface-elevated) !important;
         border: 2px solid var(--border-subtle) !important;
         color: var(--text-primary) !important;
         font-weight: 600 !important;
-        font-size: 0.95rem !important;
-        padding: 0.875rem 1.5rem !important;
-        border-radius: 12px !important;
+        font-size: 0.85rem !important;  /* Reduced from 0.95rem */
+        padding: 0.6rem 1.2rem !important;  /* Reduced from 0.875rem 1.5rem */
+        border-radius: 8px !important;  /* Reduced from 12px */
         box-shadow: var(--shadow-soft) !important;
         width: 100% !important;
-        margin-bottom: 0.75rem !important;
+        margin-bottom: 0.5rem !important;  /* Reduced from 0.75rem */
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         backdrop-filter: blur(10px);
     }
@@ -490,14 +491,14 @@ streamlit_style = """
         border-color: #667eea !important;
     }
     
-    /* Primary Buttons (Special Gradient) */
+    /* Primary Buttons (Special Gradient) - COMPACT VERSION */
     .stButton button[kind="primary"] { 
         background: var(--primary-gradient) !important;
         border: none !important;
         color: white !important;
         font-weight: 700 !important;
-        font-size: 1.1rem !important;
-        padding: 1.25rem 2rem !important;
+        font-size: 1rem !important;  /* Reduced from 1.1rem */
+        padding: 1rem 1.5rem !important;  /* Reduced from 1.25rem 2rem */
         box-shadow: var(--shadow-glow) !important;
         text-transform: uppercase;
         letter-spacing: 0.05em;
@@ -568,17 +569,17 @@ streamlit_style = """
         box-shadow: var(--shadow-glow);
     }
     
-    /* Premium Layout & Spacing */
+    /* Premium Layout & Spacing - COMPACT VERSION */
     .block-container {
-        padding-top: 2rem !important;
-        padding-bottom: 2rem !important;
+        padding-top: 1rem !important;  /* Reduced from 2rem */
+        padding-bottom: 1rem !important;  /* Reduced from 2rem */
         max-width: 1200px !important;
-        padding-left: 2rem !important;
-        padding-right: 2rem !important;
+        padding-left: 1.5rem !important;  /* Reduced from 2rem */
+        padding-right: 1.5rem !important;  /* Reduced from 2rem */
     }
     
     div[data-testid="column"] {
-        gap: 1.5rem;
+        gap: 1rem;  /* Reduced from 1.5rem */
     }
     
     /* Premium Success/Error Messages */
@@ -666,28 +667,28 @@ streamlit_style = """
         display: none;
     }
     
-    /* Premium Mobile Responsiveness */
+    /* Premium Mobile Responsiveness - COMPACT VERSION */
     @media (max-width: 768px) {
         .block-container {
-            padding: 1rem !important;
+            padding: 0.5rem !important;  /* Reduced from 1rem */
         }
         
         h1 {
-            font-size: 2rem !important;
+            font-size: 1.5rem !important;  /* Reduced from 2rem */
         }
         
         div[data-testid="stVerticalBlockBorderWrapper"] {
-            padding: 1.5rem !important;
-            margin-bottom: 1.5rem !important;
+            padding: 0.75rem !important;  /* Reduced from 1.5rem */
+            margin-bottom: 0.75rem !important;  /* Reduced from 1.5rem */
         }
         
         .stButton > button {
-            min-height: 50px !important;
-            font-size: 1rem !important;
+            min-height: 40px !important;  /* Reduced from 50px */
+            font-size: 0.85rem !important;  /* Reduced from 1rem */
         }
         
         div[data-testid="column"] {
-            gap: 1rem !important;
+            gap: 0.5rem !important;  /* Reduced from 1rem */
         }
     }
     
@@ -755,6 +756,101 @@ streamlit_style = """
     li[data-baseweb="option"][aria-selected="true"] * {
         color: white !important;
         background-color: transparent !important;
+    }
+    
+    /* File Uploader Styling - BLACK TEXT */
+    .stFileUploader > div > div {
+        color: #000000 !important;
+    }
+    
+    .stFileUploader label {
+        color: #ffffff !important;
+    }
+    
+    /* File uploader drag and drop area */
+    .stFileUploader > div > div > div {
+        color: #000000 !important;
+    }
+    
+    /* File uploader text elements */
+    .stFileUploader span,
+    .stFileUploader p,
+    .stFileUploader div {
+        color: #000000 !important;
+    }
+    
+    /* Specific targeting for file uploader content */
+    [data-testid="stFileUploader"] * {
+        color: #000000 !important;
+    }
+    
+    /* File uploader drag area styling */
+    [data-testid="stFileUploader"] > div > div {
+        background: rgba(255, 255, 255, 0.95) !important;
+        border: 2px dashed #cccccc !important;
+        border-radius: 12px !important;
+        color: #000000 !important;
+    }
+    
+    /* File uploader hover state */
+    [data-testid="stFileUploader"] > div > div:hover {
+        border-color: #667eea !important;
+        background: rgba(255, 255, 255, 0.98) !important;
+    }
+    
+    /* Force all text in file uploader to be black */
+    [data-testid="stFileUploader"] span,
+    [data-testid="stFileUploader"] p,
+    [data-testid="stFileUploader"] div,
+    [data-testid="stFileUploader"] small {
+        color: #000000 !important;
+    }
+    
+    /* NUCLEAR OPTION - Force all file uploader text to black */
+    .stFileUploader * {
+        color: #000000 !important;
+    }
+    
+    /* Target specific file uploader elements */
+    .stFileUploader [data-baseweb="file-uploader"] * {
+        color: #000000 !important;
+    }
+    
+    /* Override any Streamlit default colors for file uploader */
+    section[data-testid="stFileUploader"] * {
+        color: #000000 !important;
+    }
+    
+    /* File uploader inner content */
+    .stFileUploader > div * {
+        color: #000000 !important;
+    }
+    
+    /* Drag and drop text specifically */
+    .stFileUploader [role="button"] * {
+        color: #000000 !important;
+    }
+    
+    /* File uploader label text - force black */
+    .stFileUploader label * {
+        color: #000000 !important;
+    }
+    
+    /* Additional targeting for file uploader labels */
+    [data-testid="stFileUploader"] label {
+        color: #ffffff !important;
+    }
+    
+    [data-testid="stFileUploader"] label * {
+        color: #000000 !important;
+    }
+    
+    /* Code elements styling - ensure black text */
+    code {
+        color: #000000 !important;
+        background: #f0f0f0 !important;
+        padding: 2px 6px !important;
+        border-radius: 4px !important;
     }
 </style>
 """
@@ -936,11 +1032,11 @@ tab_main, tab_settings, tab_analytics = st.tabs([
 
 # --- TAB 1: MAIN (Generate) ---
 with tab_main:
-    # Hero Section
+    # Hero Section - COMPACT VERSION
     st.markdown("""
-    <div style="text-align: center; padding: 2rem 0; margin-bottom: 2rem;">
-        <h2 style="color: #667eea; margin-bottom: 1rem;">🚀 몇 초 만에 전문가급 영상을 생성하세요</h2>
-        <p style="font-size: 1.1rem; color: #a0a0a0;">주제만 입력하면 AI가 대본, 음성, 영상, 자막을 자동으로 생성합니다</p>
+    <div style="text-align: center; padding: 1rem 0; margin-bottom: 1rem;">
+        <h2 style="color: #667eea; margin-bottom: 0.5rem;">🚀 몇 초 만에 전문가급 영상을 생성하세요</h2>
+        <p style="font-size: 1rem; color: #a0a0a0;">주제만 입력하면 AI가 대본, 음성, 영상, 자막을 자동으로 생성합니다</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -2186,45 +2282,8 @@ with tab_settings:
                     help="2-3 정도가 적당합니다"
                 )
         
-        # Font preview
-        if params.subtitle_enabled:
-            st.markdown("#### 👀 자막 미리보기")
-            preview_text = params.video_subject if params.video_subject else "이것은 자막 미리보기입니다"
-            
-            preview_style = f"""
-            <div style="
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                padding: 2rem;
-                border-radius: 16px;
-                text-align: center;
-                position: relative;
-                overflow: hidden;
-            ">
-                <div style="
-                    color: {params.text_fore_color};
-                    font-size: {params.font_size * 0.5}px;
-                    font-weight: bold;
-                    text-shadow: {params.stroke_width}px {params.stroke_width}px 0px {params.stroke_color},
-                                -{params.stroke_width}px -{params.stroke_width}px 0px {params.stroke_color},
-                                {params.stroke_width}px -{params.stroke_width}px 0px {params.stroke_color},
-                                -{params.stroke_width}px {params.stroke_width}px 0px {params.stroke_color};
-                    line-height: 1.2;
-                ">
-                    {preview_text}
-                </div>
-                <div style="
-                    position: absolute;
-                    bottom: 10px;
-                    right: 15px;
-                    color: rgba(255,255,255,0.7);
-                    font-size: 12px;
-                ">
-                    미리보기
-                </div>
-            </div>
-            """
-            st.markdown(preview_style, unsafe_allow_html=True)
-
+        # Font preview removed - no longer needed
+        
     with st.expander("⚙️ **시스템 및 API 설정**", expanded=False):
         st.markdown("#### 🤖 AI 언어 모델 설정")
         
@@ -2456,7 +2515,7 @@ with tab_settings:
                     padding: 1rem; border-radius: 12px; margin-bottom: 1rem;">
             <p style="margin: 0; color: #a0a0a0;">
                 📋 <strong>준비사항:</strong> Google Cloud Platform에서 발급받은 
-                <code>client_secrets.json</code> 파일이 필요합니다.
+                <code style="color: #000000; background: #f0f0f0; padding: 2px 6px; border-radius: 4px;">client_secrets.json</code> 파일이 필요합니다.
             </p>
         </div>
         """, unsafe_allow_html=True)
