@@ -14,6 +14,11 @@
 __pycache__
 logs/
 
+# Token files (contain sensitive OAuth tokens)
+token.pickle
+token_timer.pickle
+client_secrets.json
+
 node_modules
 # VuePress 默认临时文件目录
 /sites/docs/.vuepress/.temp
