@@ -920,8 +920,8 @@ def generate_video(
         if title_image_path and os.path.exists(title_image_path):
             inputs.extend(["-i", title_image_path])
             # Overlay title image on video
-            # (W-w)/2:120 centers horizontally and puts it 120px from top
-            filter_complex.append(f"[{current_v}][2:v]overlay=(W-w)/2:120[v_titled]")
+            # (W-w)/2:160 centers horizontally and puts it 160px from top (moved down by 40px)
+            filter_complex.append(f"[{current_v}][2:v]overlay=(W-w)/2:160[v_titled]")
             current_v = "v_titled"
             
         # Add Subtitles
