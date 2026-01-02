@@ -1015,11 +1015,39 @@ def generate_timer_video(duration_seconds: int, output_file: str, font_path: str
                     bg_clip = bg_clip.cropped(y1=(bg_clip.h - target_h)/2, height=target_h)
                 bg_clip = bg_clip.with_duration(duration_seconds)
                 
-                # Loop video if shorter (only for video clips)
+                # Loop video if shorter (only for video clips) - FIXED LOOP ISSUE
                 if ext not in ['.jpg', '.jpeg', '.png', '.bmp', '.webp']:
-                     if hasattr(bg_clip, 'duration') and bg_clip.duration < duration_seconds:
-                        logger.info("Looping background video to match timer duration")
-                        bg_clip = vfx.loop(bg_clip, duration=duration_seconds)
+                    if hasattr(bg_clip, 'duration') and bg_clip.duration < duration_seconds:
+                        logger.info(f"Background video duration ({bg_clip.duration}s) shorter than timer ({duration_seconds}s), creating seamless loop")
+                        # Calculate how many loops we need
+                        loops_needed = int(duration_seconds / bg_clip.duration) + 1
+                        logger.info(f"Creating {loops_needed} loops of background video")
+                        
+                        # Create multiple copies and concatenate them
+                        clips_to_loop = []
+                        for i in range(loops_needed):
+                            clips_to_loop.append(bg_clip.copy())
+                        
+                        # Concatenate all clips
+                        from moviepy import concatenate_videoclips
+                        looped_clip = concatenate_videoclips(clips_to_loop)
+                        
+                        # Trim to exact duration needed
+                        bg_clip = looped_clip.subclipped(0, duration_seconds)
+                        
+                        # Clean up temporary clips
+                        for clip in clips_to_loop:
+                            try:
+                                close_clip(clip)
+                            except:
+                                pass
+                        try:
+                            close_clip(looped_clip)
+                        except:
+                            pass
+                    else:
+                        # Just set duration if video is long enough
+                        bg_clip = bg_clip.with_duration(duration_seconds)
                         
             except Exception as e:
                 logger.error(f"Failed to load BG video/image: {e}")

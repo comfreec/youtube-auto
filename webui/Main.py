@@ -1698,17 +1698,20 @@ with tab_main:
                         status_text.success(f"✅ {timer_duration}분 타이머 영상 생성 완료!")
                         progress_bar.progress(1.0)
                         
-                        # Auto-upload timer video if enabled
-                        if timer_auto_upload_main or st.session_state.get("timer_auto_upload"):
+                        # Auto-upload timer video if enabled - FIXED LOGIC
+                        if timer_auto_upload_main:
                             status_text.info("📤 YouTube 자동 업로드 중...")
                             timer_token_file = os.path.join(root_dir, "token_timer.pickle")
                             client_secrets_file = os.path.join(root_dir, "client_secrets.json")
                             
                             if os.path.exists(timer_token_file) and os.path.exists(client_secrets_file):
                                 try:
-                                    from app.services.youtube import upload_video
+                                    from app.utils.youtube import get_authenticated_service, upload_video
                                     
-                                    # Generate title and tags for timer video
+                                    # Get authenticated YouTube service
+                                    youtube = get_authenticated_service(client_secrets_file, timer_token_file)
+                                    
+                                    # Generate title and tags for timer video - ENHANCED TAGS
                                     title_prefix = st.session_state.get("yt_title_prefix", "#Shorts")
                                     
                                     # Style-based title and tags
@@ -1724,7 +1727,7 @@ with tab_main:
                                     
                                     video_title = f"{title_prefix} {timer_duration}분 {style_text} 타이머 - 명상/집중/운동용"
                                     
-                                    # Comprehensive tags (Korean + English)
+                                    # Comprehensive tags (Korean + English) - FIXED TAG SYSTEM
                                     base_tags = [
                                         "타이머", "timer", 
                                         f"{timer_duration}분", f"{timer_duration}min",
@@ -1752,31 +1755,36 @@ with tab_main:
                                     
                                     all_tags.extend(time_tags)
                                     
-                                    # YouTube allows max 500 characters for tags, limit to reasonable number
-                                    final_tags = all_tags[:20]  # Increased to 20 tags
+                                    # Format tags as comma-separated string for YouTube API
+                                    keywords = ", ".join(all_tags[:25])  # Limit to 25 tags
                                     
-                                    upload_result = upload_video(
-                                        video_file=result_file,
+                                    logger.info(f"Generated timer video title: {video_title}")
+                                    logger.info(f"Generated timer video tags: {keywords}")
+                                    
+                                    video_id = upload_video(
+                                        youtube=youtube,
+                                        file_path=result_file,
                                         title=video_title,
-                                        description=f"{timer_duration}분 {style_text} 타이머 영상입니다.\n\n🎯 용도: 명상, 집중, 운동, 공부, 휴식\n🎨 스타일: {style_text}\n⏰ 시간: {timer_duration}분\n\n#타이머 #명상 #집중 #운동 #공부 #힐링 #timer #meditation #focus #study",
-                                        tags=final_tags,
+                                        description=f"{timer_duration}분 {style_text} 타이머 영상입니다.\n\n🎯 용도: 명상, 집중, 운동, 공부, 휴식\n🎨 스타일: {style_text}\n⏰ 시간: {timer_duration}분\n\nGenerated youtube-auto AI\n\n#타이머 #명상 #집중 #운동 #공부 #힐링 #timer #meditation #focus #study",
+                                        keywords=keywords,
                                         privacy_status=st.session_state.get("yt_privacy", "private"),
-                                        category_id=st.session_state.get("yt_category", "22"),
-                                        client_secrets_file=client_secrets_file,
-                                        token_file=timer_token_file
+                                        category=st.session_state.get("yt_category", "22")
                                     )
                                     
-                                    if upload_result and upload_result.get("success"):
-                                        video_url = f"https://youtube.com/watch?v={upload_result['video_id']}"
+                                    if video_id:
+                                        video_url = f"https://youtube.com/watch?v={video_id}"
                                         status_text.success(f"✅ YouTube 업로드 완료! [영상 보기]({video_url})")
+                                        logger.info(f"Timer video uploaded successfully: {video_url}")
                                     else:
                                         status_text.error("❌ YouTube 업로드 실패")
+                                        logger.error("Timer video upload failed: no video ID returned")
                                         
                                 except Exception as e:
                                     logger.error(f"Timer video upload failed: {e}")
                                     status_text.error(f"❌ 업로드 실패: {str(e)}")
                             else:
                                 status_text.error("❌ YouTube 인증이 필요합니다 (타이머 채널 인증 버튼 클릭)")
+                                logger.warning("Timer upload failed: missing authentication files")
                         
                         # Add to session state
                         if "generated_video_files" not in st.session_state:
@@ -2834,13 +2842,7 @@ with tab_settings:
         with col_upload_settings:
             st.markdown("#### ⚙️ 업로드 설정")
             
-            # Upload settings
-            timer_auto_upload = st.checkbox(
-                "🚀 타이머 영상 생성 후 자동 업로드", 
-                value=False, 
-                key="timer_auto_upload",
-                help="체크하면 타이머 영상 생성 완료 즉시 YouTube에 자동 업로드됩니다"
-            )
+            # 중복 제거: 타이머 자동 업로드는 메인 타이머 생성 섹션에서만 관리
             
             yt_title_prefix = st.text_input(
                 "📝 제목 접두사", 
