@@ -32,6 +32,253 @@ def get_api_key(cfg_key: str):
     return api_keys[requested_count % len(api_keys)]
 
 
+def get_youtube_audio_library_music():
+    """
+    Get curated list of YouTube Audio Library style free music
+    These are royalty-free music that can be used safely
+    """
+    # Curated list of royalty-free music from various sources
+    free_music_library = {
+        "ambient": [
+            {
+                "name": "Peaceful Ambient",
+                "url": "https://www.bensound.com/bensound-music/bensound-relaxing.mp3",
+                "duration": 180
+            },
+            {
+                "name": "Calm Meditation", 
+                "url": "https://www.bensound.com/bensound-music/bensound-slowmotion.mp3",
+                "duration": 210
+            }
+        ],
+        "nature": [
+            {
+                "name": "Forest Sounds",
+                "url": "https://www.bensound.com/bensound-music/bensound-sunny.mp3", 
+                "duration": 195
+            },
+            {
+                "name": "Ocean Waves",
+                "url": "https://www.bensound.com/bensound-music/bensound-memories.mp3",
+                "duration": 225
+            }
+        ],
+        "electronic": [
+            {
+                "name": "Digital Ambient",
+                "url": "https://www.bensound.com/bensound-music/bensound-scifi.mp3",
+                "duration": 198
+            },
+            {
+                "name": "Synth Pad",
+                "url": "https://www.bensound.com/bensound-music/bensound-futuristic.mp3", 
+                "duration": 180
+            }
+        ],
+        "minimal": [
+            {
+                "name": "Simple Piano",
+                "url": "https://www.bensound.com/bensound-music/bensound-pianomoment.mp3",
+                "duration": 165
+            },
+            {
+                "name": "Minimal Loop",
+                "url": "https://www.bensound.com/bensound-music/bensound-tenderness.mp3",
+                "duration": 155
+            }
+        ]
+    }
+    
+    return free_music_library
+
+
+def search_free_music(search_term: str = "ambient", minimum_duration: int = 60) -> List[dict]:
+    """
+    Search for free music from curated library
+    """
+    try:
+        music_library = get_youtube_audio_library_music()
+        
+        # Find matching category
+        category = "ambient"  # default
+        if "nature" in search_term.lower() or "forest" in search_term.lower():
+            category = "nature"
+        elif "electronic" in search_term.lower() or "synth" in search_term.lower():
+            category = "electronic" 
+        elif "minimal" in search_term.lower():
+            category = "minimal"
+        
+        music_tracks = music_library.get(category, music_library["ambient"])
+        
+        # Filter by minimum duration
+        filtered_tracks = []
+        for track in music_tracks:
+            if track.get("duration", 0) >= minimum_duration:
+                filtered_tracks.append({
+                    "provider": "free_library",
+                    "url": track["url"],
+                    "duration": track["duration"],
+                    "name": track["name"],
+                    "id": f"free_{category}_{len(filtered_tracks)}"
+                })
+        
+        logger.info(f"Found {len(filtered_tracks)} free music tracks for '{search_term}'")
+        return filtered_tracks
+        
+    except Exception as e:
+        logger.error(f"Failed to get free music: {e}")
+        return []
+
+
+def save_music(music_url: str, save_dir: str = "") -> str:
+    """
+    Download and save music file
+    """
+    if not save_dir:
+        save_dir = utils.storage_dir("cache_music")
+
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+
+    url_without_query = music_url.split("?")[0]
+    url_hash = utils.md5(url_without_query)
+    music_id = f"music-{url_hash}"
+    music_path = f"{save_dir}/{music_id}.mp3"
+
+    # if music already exists, return the path
+    if os.path.exists(music_path) and os.path.getsize(music_path) > 0:
+        logger.info(f"music already exists: {music_path}")
+        return music_path
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+    }
+
+    try:
+        # Download the music file
+        with open(music_path, "wb") as f:
+            response = requests.get(
+                music_url,
+                headers=headers,
+                proxies=config.proxy,
+                verify=False,
+                timeout=(20, 60),
+            )
+            response.raise_for_status()
+            f.write(response.content)
+
+        if os.path.exists(music_path) and os.path.getsize(music_path) > 0:
+            logger.info(f"music downloaded successfully: {music_path}")
+            return music_path
+        else:
+            logger.error(f"downloaded music file is empty: {music_path}")
+            return ""
+    except Exception as e:
+        logger.error(f"failed to download music: {str(e)}")
+        try:
+            if os.path.exists(music_path):
+                os.remove(music_path)
+        except Exception:
+            pass
+        return ""
+
+
+def get_free_music_urls():
+    """
+    Get free music URLs from various sources
+    Returns list of direct download URLs for royalty-free music
+    """
+    # Curated list of royalty-free music URLs (Creative Commons / Public Domain)
+    # Using more reliable sources
+    free_music_urls = {
+        "ambient": [
+            "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
+            "https://www.soundjay.com/misc/sounds/wind-chimes-1.wav",
+            "https://www.soundjay.com/misc/sounds/meditation-bell-1.wav",
+        ],
+        "nature": [
+            "https://www.soundjay.com/nature/sounds/rain-01.wav",
+            "https://www.soundjay.com/nature/sounds/wind-1.wav",
+            "https://www.soundjay.com/nature/sounds/birds-1.wav",
+        ],
+        "electronic": [
+            "https://www.soundjay.com/misc/sounds/beep-07a.wav",
+            "https://www.soundjay.com/misc/sounds/beep-10.wav",
+        ],
+        "minimal": [
+            "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
+            "https://www.soundjay.com/misc/sounds/meditation-bell-1.wav",
+        ]
+    }
+    
+    return free_music_urls
+
+
+def download_free_music(search_term: str = "ambient", save_dir: str = "") -> str:
+    """
+    Download free music from curated URLs
+    """
+    try:
+        if not save_dir:
+            save_dir = utils.storage_dir("cache_music")
+        
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+        
+        # Get music URLs
+        music_urls = get_free_music_urls()
+        
+        # Find matching category
+        category = "ambient"  # default
+        if "nature" in search_term.lower() or "forest" in search_term.lower():
+            category = "nature"
+        elif "electronic" in search_term.lower() or "synth" in search_term.lower():
+            category = "electronic"
+        elif "minimal" in search_term.lower():
+            category = "minimal"
+        
+        urls = music_urls.get(category, music_urls["ambient"])
+        if not urls:
+            return ""
+        
+        # Select random URL
+        selected_url = random.choice(urls)
+        
+        # Create filename
+        url_hash = utils.md5(selected_url)
+        music_filename = f"free_music_{category}_{url_hash}.mp3"
+        music_path = os.path.join(save_dir, music_filename)
+        
+        # Check if already downloaded
+        if os.path.exists(music_path) and os.path.getsize(music_path) > 0:
+            logger.info(f"Music already exists: {music_path}")
+            return music_path
+        
+        # Download the music
+        logger.info(f"Downloading free music from: {selected_url}")
+        
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }
+        
+        response = requests.get(selected_url, headers=headers, timeout=30)
+        response.raise_for_status()
+        
+        with open(music_path, "wb") as f:
+            f.write(response.content)
+        
+        if os.path.exists(music_path) and os.path.getsize(music_path) > 0:
+            logger.info(f"Free music downloaded successfully: {music_path}")
+            return music_path
+        else:
+            logger.error(f"Downloaded music file is empty: {music_path}")
+            return ""
+            
+    except Exception as e:
+        logger.error(f"Failed to download free music: {e}")
+        return ""
+
+
 def search_videos_pexels(
     search_term: str,
     minimum_duration: int,

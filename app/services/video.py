@@ -979,6 +979,9 @@ def generate_video(
 
 def generate_timer_video(duration_seconds: int, output_file: str, font_path: str = None, fontsize: int = 250, bg_video_path: str = None, bg_music_path: str = None, fast_mode: bool = False, timer_style: str = "minimal", progress_callback=None):
     logger.info(f"Generating timer video (MoviePy): {duration_seconds}s")
+    logger.info(f"Timer style received: '{timer_style}'")
+    logger.info(f"Background video path: {bg_video_path}")
+    logger.info(f"Fast mode: {fast_mode}")
     
     try:
         target_w, target_h = (720, 1280) if fast_mode else (1080, 1920)
@@ -986,12 +989,21 @@ def generate_timer_video(duration_seconds: int, output_file: str, font_path: str
         # Background setup
         if bg_video_path and os.path.exists(bg_video_path):
             try:
+                logger.info(f"Loading background video: {bg_video_path}")
                 # Check if it's an image
                 ext = os.path.splitext(bg_video_path)[1].lower()
                 if ext in ['.jpg', '.jpeg', '.png', '.bmp', '.webp']:
                     bg_clip = ImageClip(bg_video_path)
                 else:
                     bg_clip = VideoFileClip(bg_video_path)
+                    # Test if we can read frames safely
+                    try:
+                        test_frame = bg_clip.get_frame(0)
+                        logger.info(f"Background video loaded successfully, duration: {bg_clip.duration}s")
+                    except Exception as frame_error:
+                        logger.error(f"Cannot read frames from video: {frame_error}")
+                        bg_clip.close()
+                        raise frame_error
                     
                 ratio = bg_clip.w / bg_clip.h
                 target_ratio = target_w / target_h
@@ -1006,47 +1018,69 @@ def generate_timer_video(duration_seconds: int, output_file: str, font_path: str
                 # Loop video if shorter (only for video clips)
                 if ext not in ['.jpg', '.jpeg', '.png', '.bmp', '.webp']:
                      if hasattr(bg_clip, 'duration') and bg_clip.duration < duration_seconds:
+                        logger.info("Looping background video to match timer duration")
                         bg_clip = vfx.loop(bg_clip, duration=duration_seconds)
                         
             except Exception as e:
                 logger.error(f"Failed to load BG video/image: {e}")
                 logger.info("Creating gradient background as fallback instead of black")
-                # Create a gradient background instead of pure black
-                gradient = np.zeros((target_h, target_w, 3), dtype=np.uint8)
-                for i in range(target_h):
+                # Create a gradient background instead of pure black using PIL
+                from PIL import Image as PILImage
+                img = PILImage.new('RGB', (target_w, target_h))
+                pixels = img.load()
+                for y in range(target_h):
                     # Create a vertical gradient from dark blue to dark purple
-                    ratio = i / target_h
-                    gradient[i, :, 0] = int(20 + ratio * 30)  # Red: 20-50
-                    gradient[i, :, 1] = int(10 + ratio * 20)  # Green: 10-30  
-                    gradient[i, :, 2] = int(40 + ratio * 60)  # Blue: 40-100
+                    ratio = y / target_h
+                    r = int(20 + ratio * 30)  # Red: 20-50
+                    g = int(10 + ratio * 20)  # Green: 10-30  
+                    b = int(40 + ratio * 60)  # Blue: 40-100
+                    for x in range(target_w):
+                        pixels[x, y] = (r, g, b)
+                
+                # Convert PIL image to numpy array for MoviePy
+                gradient = np.array(img)
                 bg_clip = ImageClip(gradient, duration=duration_seconds)
         else:
             logger.info(f"No background video specified, creating {timer_style} style background")
-            # Create background based on timer style
-            gradient = np.zeros((target_h, target_w, 3), dtype=np.uint8)
+            # Create background based on timer style using PIL
+            from PIL import Image as PILImage
             
             if "자연" in timer_style or "nature" in timer_style.lower():
                 # Nature-inspired gradient (green to blue)
-                for i in range(target_h):
-                    ratio = i / target_h
-                    gradient[i, :, 0] = int(10 + ratio * 20)   # Red: 10-30
-                    gradient[i, :, 1] = int(60 + ratio * 40)   # Green: 60-100
-                    gradient[i, :, 2] = int(30 + ratio * 50)   # Blue: 30-80
+                img = PILImage.new('RGB', (target_w, target_h))
+                pixels = img.load()
+                for y in range(target_h):
+                    ratio = y / target_h
+                    r = int(10 + ratio * 20)   # Red: 10-30
+                    g = int(60 + ratio * 40)   # Green: 60-100
+                    b = int(30 + ratio * 50)   # Blue: 30-80
+                    for x in range(target_w):
+                        pixels[x, y] = (r, g, b)
             elif "추상" in timer_style or "abstract" in timer_style.lower():
                 # Abstract gradient (purple to pink)
-                for i in range(target_h):
-                    ratio = i / target_h
-                    gradient[i, :, 0] = int(80 + ratio * 60)   # Red: 80-140
-                    gradient[i, :, 1] = int(20 + ratio * 40)   # Green: 20-60
-                    gradient[i, :, 2] = int(100 + ratio * 50)  # Blue: 100-150
+                img = PILImage.new('RGB', (target_w, target_h))
+                pixels = img.load()
+                for y in range(target_h):
+                    ratio = y / target_h
+                    r = int(80 + ratio * 60)   # Red: 80-140
+                    g = int(20 + ratio * 40)   # Green: 20-60
+                    b = int(100 + ratio * 50)  # Blue: 100-150
+                    for x in range(target_w):
+                        pixels[x, y] = (min(255, r), min(255, g), min(255, b))
             else:
                 # Minimal style (dark gradient)
-                for i in range(target_h):
-                    ratio = i / target_h
-                    gradient[i, :, 0] = int(20 + ratio * 30)   # Red: 20-50
-                    gradient[i, :, 1] = int(10 + ratio * 20)   # Green: 10-30  
-                    gradient[i, :, 2] = int(40 + ratio * 60)   # Blue: 40-100
+                img = PILImage.new('RGB', (target_w, target_h))
+                pixels = img.load()
+                for y in range(target_h):
+                    ratio = y / target_h
+                    r = int(20 + ratio * 30)   # Red: 20-50
+                    g = int(10 + ratio * 20)   # Green: 10-30  
+                    b = int(40 + ratio * 60)   # Blue: 40-100
+                    for x in range(target_w):
+                        pixels[x, y] = (r, g, b)
             
+            # Convert PIL image to numpy array for MoviePy
+            gradient = np.array(img)
             bg_clip = ImageClip(gradient, duration=duration_seconds)
 
         # Font setup with fallback
@@ -1143,11 +1177,7 @@ def generate_timer_video(duration_seconds: int, output_file: str, font_path: str
             memo[remaining] = frame
             
             # Update progress directly from frame generation
-            if progress_callback:
-                if duration_seconds > 0:
-                    p = int((t / duration_seconds) * 100)
-                    p = min(p, 99)
-                    progress_callback(p)
+            # Removed progress_callback to avoid NoSessionContext error in Streamlit
                     
             return frame
 
@@ -1202,9 +1232,7 @@ def generate_timer_video(duration_seconds: int, output_file: str, font_path: str
         except:
             pass
         
-        # Final progress update
-        if progress_callback:
-            progress_callback(100)
+        # Final progress update - removed to avoid NoSessionContext error
             
         logger.info(f"Timer video generated successfully: {output_file}")
         return output_file

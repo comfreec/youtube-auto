@@ -17,6 +17,10 @@ root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 if root_dir not in sys.path:
     sys.path.append(root_dir)
 
+# Import VideoAspect for timer video generation
+from app.models.schema import VideoAspect
+from app.config import config
+
 # Import mobile optimization
 try:
     from webui.mobile_optimization import (
@@ -1391,6 +1395,7 @@ with tab_main:
                 timer_style = st.selectbox(
                     "타이머 스타일",
                     ["⚫ 미니멀 (검은배경)", "🌅 자연 배경", "🎨 추상 배경"],
+                    index=1,  # 자연 배경을 기본값으로 설정
                     key="timer_style_select"
                 )
             
@@ -1403,16 +1408,25 @@ with tab_main:
                     help="720p/24fps로 빠르게 렌더링합니다."
                 )
             with col_music:
-                add_music = st.checkbox(
-                    "🎵 배경음악 추가", 
-                    value=True,
-                    help="랜덤 배경음악을 추가합니다."
+                music_option = st.selectbox(
+                    "🎵 배경음악",
+                    ["🚫 없음", "📁 로컬 파일", "🌐 온라인 무료음악"],
+                    index=2,  # 온라인 무료음악을 기본값으로
+                    help="배경음악 소스를 선택하세요."
                 )
         
         with col_timer_generate:
             st.markdown("#### 🚀 **생성 시작**")
             st.markdown(f"**예상 영상 길이:** {timer_duration}분")
             st.markdown(f"**예상 생성 시간:** {timer_duration * 0.3:.1f}분")
+            
+            # Auto-upload checkbox
+            timer_auto_upload_main = st.checkbox(
+                "📤 생성 후 YouTube 자동 업로드", 
+                value=st.session_state.get("timer_auto_upload", False),
+                key="timer_auto_upload_main",
+                help="체크하면 타이머 영상 생성 완료 즉시 YouTube에 자동 업로드됩니다"
+            )
             
             if st.button("⏱️ 타이머 영상 생성", use_container_width=True, key="timer_generate_btn", type="primary"):
                 # Timer generation logic (existing code with improvements)
@@ -1430,60 +1444,183 @@ with tab_main:
                     
                     try:
                         status_text.info(f"🎬 {timer_duration}분 타이머 영상 생성 시작...")
+                        logger.info(f"Starting timer generation: {timer_duration} minutes, output: {output_file}")
+                        logger.info(f"Timer style selected: {timer_style}")
                         
                         from app.services import video, material
                         
                         bg_video_path = None
                         
                         # Background selection based on style
-                        if "자연" in timer_style and not fast_mode:
+                        if "자연" in timer_style:
                             status_text.info("🌿 자연 배경 영상 검색 중...")
-                            try:
-                                from app.services import material
-                                # Search for nature background videos
-                                search_terms = ["nature", "forest", "ocean", "mountain", "landscape"]
-                                search_term = random.choice(search_terms)
-                                materials = material.search_videos(search_term, 1, VideoAspect.portrait)
-                                if materials:
-                                    bg_video_path = materials[0].url
-                                    status_text.info(f"🌿 자연 배경 영상 다운로드 중: {search_term}")
-                                    bg_video_path = material.download_video(materials[0])
-                            except Exception as e:
-                                logger.warning(f"자연 배경 검색 실패: {e}")
-                                status_text.warning("자연 배경 검색 실패, 미니멀 배경으로 대체")
-                        elif "추상" in timer_style and not fast_mode:
+                            bg_video_path = None
+                            max_retries = 3
+                            
+                            for attempt in range(max_retries):
+                                try:
+                                    from app.services import material
+                                    # Search for nature background videos with more variety
+                                    search_terms = [
+                                        "nature", "forest", "ocean", "mountain", "landscape", 
+                                        "waterfall", "river", "lake", "sunset", "sunrise",
+                                        "clouds", "sky", "beach", "trees", "flowers",
+                                        "grass", "meadow", "valley", "canyon", "desert",
+                                        "snow", "winter", "spring", "autumn", "rain"
+                                    ]
+                                    search_term = random.choice(search_terms)
+                                    status_text.info(f"🌿 '{search_term}' 테마 영상 검색 중... (시도 {attempt + 1}/{max_retries})")
+                                    
+                                    materials = material.search_videos_pexels(search_term, 3, VideoAspect.portrait)  # 3개 검색
+                                    if materials:
+                                        # 랜덤하게 하나 선택
+                                        selected_material = random.choice(materials)
+                                        status_text.info(f"🌿 자연 배경 영상 다운로드 중: '{search_term}' 테마")
+                                        bg_video_path = material.save_video(selected_material.url)
+                                        if bg_video_path and os.path.exists(bg_video_path):
+                                            # Verify video file is valid
+                                            try:
+                                                from moviepy.video.io.VideoFileClip import VideoFileClip
+                                                test_clip = VideoFileClip(bg_video_path)
+                                                # Test if we can read the first frame
+                                                test_frame = test_clip.get_frame(0)
+                                                test_clip.close()
+                                                status_text.success(f"✅ 자연 배경 영상 준비 완료: {search_term}")
+                                                break
+                                            except Exception as video_error:
+                                                logger.warning(f"Downloaded video is corrupted: {video_error}")
+                                                # Try to delete corrupted file
+                                                try:
+                                                    os.remove(bg_video_path)
+                                                except:
+                                                    pass
+                                                bg_video_path = None
+                                                continue
+                                except Exception as e:
+                                    logger.warning(f"자연 배경 검색 시도 {attempt + 1} 실패: {e}")
+                                    if attempt == max_retries - 1:
+                                        status_text.error("❌ 자연 배경 검색 실패, 미니멀 배경으로 대체")
+                                    else:
+                                        status_text.info(f"🔄 다른 테마로 재시도 중...")
+                        elif "추상" in timer_style:
                             status_text.info("🎨 추상 배경 영상 검색 중...")
-                            try:
-                                from app.services import material
-                                # Search for abstract background videos
-                                search_terms = ["abstract", "geometric", "gradient", "particles", "motion graphics"]
-                                search_term = random.choice(search_terms)
-                                materials = material.search_videos(search_term, 1, VideoAspect.portrait)
-                                if materials:
-                                    bg_video_path = materials[0].url
-                                    status_text.info(f"🎨 추상 배경 영상 다운로드 중: {search_term}")
-                                    bg_video_path = material.download_video(materials[0])
-                            except Exception as e:
-                                logger.warning(f"추상 배경 검색 실패: {e}")
-                                status_text.warning("추상 배경 검색 실패, 미니멀 배경으로 대체")
+                            bg_video_path = None
+                            max_retries = 3
+                            
+                            for attempt in range(max_retries):
+                                try:
+                                    from app.services import material
+                                    # Search for abstract background videos with more variety
+                                    search_terms = [
+                                        "abstract", "geometric", "gradient", "particles", "motion graphics",
+                                        "fluid", "liquid", "smoke", "fire", "light", "neon",
+                                        "digital", "cyber", "space", "galaxy", "nebula",
+                                        "waves", "ripple", "texture", "pattern", "kaleidoscope",
+                                        "fractal", "crystal", "glass", "metal", "holographic"
+                                    ]
+                                    search_term = random.choice(search_terms)
+                                    status_text.info(f"🎨 '{search_term}' 테마 영상 검색 중... (시도 {attempt + 1}/{max_retries})")
+                                    
+                                    materials = material.search_videos_pexels(search_term, 3, VideoAspect.portrait)  # 3개 검색
+                                    if materials:
+                                        # 랜덤하게 하나 선택
+                                        selected_material = random.choice(materials)
+                                        status_text.info(f"🎨 추상 배경 영상 다운로드 중: '{search_term}' 테마")
+                                        bg_video_path = material.save_video(selected_material.url)
+                                        if bg_video_path and os.path.exists(bg_video_path):
+                                            # Verify video file is valid
+                                            try:
+                                                from moviepy.video.io.VideoFileClip import VideoFileClip
+                                                test_clip = VideoFileClip(bg_video_path)
+                                                # Test if we can read the first frame
+                                                test_frame = test_clip.get_frame(0)
+                                                test_clip.close()
+                                                status_text.success(f"✅ 추상 배경 영상 준비 완료: {search_term}")
+                                                break
+                                            except Exception as video_error:
+                                                logger.warning(f"Downloaded video is corrupted: {video_error}")
+                                                # Try to delete corrupted file
+                                                try:
+                                                    os.remove(bg_video_path)
+                                                except:
+                                                    pass
+                                                bg_video_path = None
+                                                continue
+                                except Exception as e:
+                                    logger.warning(f"추상 배경 검색 시도 {attempt + 1} 실패: {e}")
+                                    if attempt == max_retries - 1:
+                                        status_text.error("❌ 추상 배경 검색 실패, 미니멀 배경으로 대체")
+                                    else:
+                                        status_text.info(f"🔄 다른 테마로 재시도 중...")
                         else:
                             status_text.info("⚫ 미니멀 배경으로 설정...")
                         
                         # Background music selection
                         bg_music_path = None
-                        if add_music:
+                        if music_option == "📁 로컬 파일":
+                            # Use local music files
                             song_dir = os.path.join(root_dir, "resource", "songs")
                             songs = glob.glob(os.path.join(song_dir, "*.mp3"))
-                            bg_music_path = random.choice(songs) if songs else None
+                            if songs:
+                                bg_music_path = random.choice(songs)
+                                status_text.info(f"🎵 로컬 음악 선택됨")
+                            else:
+                                status_text.warning("⚠️ 로컬 음악 파일이 없어 온라인 음악을 사용합니다")
+                                music_option = "🌐 온라인 무료음악"
                         
-                        # Progress tracking
-                        progress_status = {"percent": 0}
-                        def update_progress(p):
-                            progress_status["percent"] = p
-                            progress_bar.progress(p / 100)
-                            status_text.info(f"🎬 타이머 영상 렌더링 중... {p}%")
+                        if music_option == "🌐 온라인 무료음악":
+                            # Try to download free music from Pixabay
+                            status_text.info("🌐 Pixabay에서 무료 배경음악 검색 중...")
+                            bg_music_path = None
+                            
+                            try:
+                                from app.services import material
+                                
+                                # Check if Pixabay API key is configured
+                                pixabay_keys = config.app.get("pixabay_api_keys", [])
+                                if not pixabay_keys or pixabay_keys == ["YOUR_PIXABAY_API_KEY_HERE"]:
+                                    status_text.warning("⚠️ Pixabay API 키가 설정되지 않았습니다. 로컬 음악을 사용합니다.")
+                                    raise ValueError("Pixabay API key not configured")
+                                
+                                # Search terms based on timer style
+                                if "자연" in timer_style:
+                                    music_terms = ["nature", "ambient", "forest", "peaceful", "meditation", "calm"]
+                                elif "추상" in timer_style:
+                                    music_terms = ["electronic", "ambient", "synthesizer", "modern", "digital", "abstract"]
+                                else:
+                                    music_terms = ["minimal", "ambient", "calm", "focus", "concentration", "simple"]
+                                
+                                search_term = random.choice(music_terms)
+                                status_text.info(f"🎵 '{search_term}' 테마 음악 검색 중...")
+                                
+                                music_list = material.search_free_music(search_term, timer_duration)
+                                if music_list:
+                                    selected_music = random.choice(music_list)
+                                    status_text.info(f"🎵 음악 다운로드 중: {selected_music.get('name', 'Unknown')}")
+                                    bg_music_path = material.save_music(selected_music.get('url'))
+                                    
+                                    if bg_music_path and os.path.exists(bg_music_path):
+                                        status_text.success(f"✅ Pixabay 무료 음악 준비 완료")
+                                    else:
+                                        raise ValueError("Music download failed")
+                                else:
+                                    raise ValueError("No music found on Pixabay")
+                                    
+                            except Exception as e:
+                                logger.error(f"Failed to get Pixabay music: {e}")
+                                status_text.info("🎵 로컬 음악으로 대체합니다...")
+                                # Fallback to local music
+                                song_dir = os.path.join(root_dir, "resource", "songs")
+                                songs = glob.glob(os.path.join(song_dir, "*.mp3"))
+                                if songs:
+                                    bg_music_path = random.choice(songs)
+                                    status_text.success(f"✅ 로컬 배경음악 선택됨")
+                                else:
+                                    status_text.warning("⚠️ 배경음악 파일이 없어 음악 없이 진행")
+                                    bg_music_path = None
                         
                         # Generate timer video
+                        logger.info("Calling generate_timer_video function...")
                         with concurrent.futures.ThreadPoolExecutor() as executor:
                             future = executor.submit(
                                 video.generate_timer_video, 
@@ -1495,23 +1632,74 @@ with tab_main:
                                 bg_music_path, 
                                 fast_mode, 
                                 timer_style,
-                                update_progress
+                                None  # Remove progress_callback to avoid NoSessionContext error
                             )
                             
-                            while not future.done():
-                                time.sleep(0.5)
-                                p = progress_status["percent"]
-                                if p > 0:
-                                    progress_bar.progress(p / 100)
-                                    status_text.info(f"🎬 타이머 영상 렌더링 중... {p}%")
+                            # Enhanced progress tracking with time estimation
+                            start_time = time.time()
+                            estimated_duration = timer_duration * 0.3 * 60  # Estimated time in seconds (0.3 minutes per timer minute)
                             
-                            result_file = future.result()
+                            # Progress messages for different stages
+                            progress_messages = [
+                                "🎬 타이머 영상 렌더링 시작...",
+                                "🎨 배경 영상 처리 중...",
+                                "🎵 배경음악 동기화 중...",
+                                "⏰ 타이머 오버레이 생성 중...",
+                                "🔄 프레임 합성 중...",
+                                "💾 최종 영상 저장 중...",
+                                "✨ 마무리 작업 중..."
+                            ]
+                            
+                            message_index = 0
+                            last_message_time = start_time
+                            
+                            while not future.done():
+                                elapsed_time = time.time() - start_time
+                                
+                                # Calculate progress with better distribution
+                                if elapsed_time < estimated_duration * 0.8:
+                                    # First 80% of estimated time -> 0-90% progress
+                                    estimated_progress = (elapsed_time / (estimated_duration * 0.8)) * 0.9
+                                else:
+                                    # Remaining time -> 90-95% progress, then detailed final steps
+                                    base_progress = 0.9
+                                    remaining_progress = 0.05
+                                    overtime_factor = (elapsed_time - estimated_duration * 0.8) / (estimated_duration * 0.2)
+                                    estimated_progress = base_progress + (remaining_progress * min(overtime_factor, 1.0))
+                                
+                                progress_percentage = int(estimated_progress * 100)
+                                progress_bar.progress(estimated_progress)
+                                
+                                # Change message every 10 seconds or when reaching certain progress points
+                                if (time.time() - last_message_time > 10) or (progress_percentage >= 90 and message_index < len(progress_messages) - 1):
+                                    message_index = min(message_index + 1, len(progress_messages) - 1)
+                                    last_message_time = time.time()
+                                
+                                # Show different messages based on progress
+                                if progress_percentage < 95:
+                                    status_text.info(f"{progress_messages[min(message_index, 4)]} {progress_percentage}%")
+                                else:
+                                    # Final stage messages with animation
+                                    dots = "." * ((int(elapsed_time) % 3) + 1)
+                                    remaining_time = max(0, int(estimated_duration - elapsed_time))
+                                    if remaining_time > 0:
+                                        status_text.info(f"{progress_messages[min(message_index, len(progress_messages)-1)]}{dots} (예상 완료: {remaining_time}초 후)")
+                                    else:
+                                        status_text.info(f"{progress_messages[-1]}{dots}")
+                                
+                                time.sleep(2)  # Update every 2 seconds
+                            
+                            try:
+                                result_file = future.result()
+                            except Exception as e:
+                                logger.error(f"Timer generation thread failed: {e}")
+                                raise e
                         
                         status_text.success(f"✅ {timer_duration}분 타이머 영상 생성 완료!")
                         progress_bar.progress(1.0)
                         
                         # Auto-upload timer video if enabled
-                        if st.session_state.get("timer_auto_upload"):
+                        if timer_auto_upload_main or st.session_state.get("timer_auto_upload"):
                             status_text.info("📤 YouTube 자동 업로드 중...")
                             timer_token_file = os.path.join(root_dir, "token_timer.pickle")
                             client_secrets_file = os.path.join(root_dir, "client_secrets.json")
@@ -1520,15 +1708,58 @@ with tab_main:
                                 try:
                                     from app.services.youtube import upload_video
                                     
-                                    # Generate title for timer video
+                                    # Generate title and tags for timer video
                                     title_prefix = st.session_state.get("yt_title_prefix", "#Shorts")
-                                    video_title = f"{title_prefix} {timer_duration}분 타이머 - 명상/집중/운동용"
+                                    
+                                    # Style-based title and tags
+                                    if "자연" in timer_style:
+                                        style_text = "자연배경"
+                                        style_tags = ["자연", "nature", "forest", "peaceful", "힐링", "healing"]
+                                    elif "추상" in timer_style:
+                                        style_text = "추상배경"
+                                        style_tags = ["추상", "abstract", "modern", "digital", "아트", "art"]
+                                    else:
+                                        style_text = "미니멀"
+                                        style_tags = ["미니멀", "minimal", "simple", "clean", "깔끔", "focus"]
+                                    
+                                    video_title = f"{title_prefix} {timer_duration}분 {style_text} 타이머 - 명상/집중/운동용"
+                                    
+                                    # Comprehensive tags (Korean + English)
+                                    base_tags = [
+                                        "타이머", "timer", 
+                                        f"{timer_duration}분", f"{timer_duration}min",
+                                        f"{timer_duration}분타이머", f"{timer_duration}minute timer",
+                                        "명상", "meditation", "집중", "focus", "concentration",
+                                        "운동", "workout", "exercise", "공부", "study",
+                                        "힐링", "healing", "휴식", "rest", "relax",
+                                        "pomodoro", "뽀모도로", "productivity", "생산성",
+                                        "countdown", "카운트다운", "시간관리", "time management"
+                                    ]
+                                    
+                                    # Add style-specific tags
+                                    all_tags = base_tags + style_tags
+                                    
+                                    # Add more specific time-related tags
+                                    time_tags = []
+                                    if timer_duration <= 5:
+                                        time_tags = ["짧은타이머", "short timer", "quick timer"]
+                                    elif timer_duration <= 15:
+                                        time_tags = ["중간타이머", "medium timer", "break timer"]
+                                    elif timer_duration <= 30:
+                                        time_tags = ["긴타이머", "long timer", "work timer"]
+                                    else:
+                                        time_tags = ["장시간타이머", "extended timer", "marathon timer"]
+                                    
+                                    all_tags.extend(time_tags)
+                                    
+                                    # YouTube allows max 500 characters for tags, limit to reasonable number
+                                    final_tags = all_tags[:20]  # Increased to 20 tags
                                     
                                     upload_result = upload_video(
                                         video_file=result_file,
                                         title=video_title,
-                                        description=f"{timer_duration}분 타이머 영상입니다. 명상, 집중, 운동 등에 활용하세요.",
-                                        tags=["타이머", "명상", "집중", "운동", "timer", "meditation"],
+                                        description=f"{timer_duration}분 {style_text} 타이머 영상입니다.\n\n🎯 용도: 명상, 집중, 운동, 공부, 휴식\n🎨 스타일: {style_text}\n⏰ 시간: {timer_duration}분\n\n#타이머 #명상 #집중 #운동 #공부 #힐링 #timer #meditation #focus #study",
+                                        tags=final_tags,
                                         privacy_status=st.session_state.get("yt_privacy", "private"),
                                         category_id=st.session_state.get("yt_category", "22"),
                                         client_secrets_file=client_secrets_file,
@@ -1557,7 +1788,10 @@ with tab_main:
                         st.rerun()
                         
                     except Exception as e:
+                        import traceback
+                        error_details = traceback.format_exc()
                         logger.error(f"Timer generation failed: {e}")
+                        logger.error(f"Full traceback: {error_details}")
                         status_text.error(f"❌ 생성 실패: {str(e)}")
                         progress_bar.empty()
 
