@@ -1708,6 +1708,13 @@ with tab_main:
                                 try:
                                     from app.utils.youtube import get_authenticated_service, upload_video
                                     
+                                    # Clear any previous video session data to prevent tag contamination
+                                    if "video_terms" in st.session_state:
+                                        del st.session_state["video_terms"]
+                                    if "video_subject" in st.session_state:
+                                        previous_subject = st.session_state["video_subject"]
+                                        logger.info(f"Clearing previous video subject: {previous_subject}")
+                                    
                                     # Get authenticated YouTube service
                                     youtube = get_authenticated_service(client_secrets_file, timer_token_file)
                                     
@@ -1758,8 +1765,8 @@ with tab_main:
                                     # Format tags as comma-separated string for YouTube API
                                     keywords = ", ".join(all_tags[:25])  # Limit to 25 tags
                                     
-                                    logger.info(f"Generated timer video title: {video_title}")
-                                    logger.info(f"Generated timer video tags: {keywords}")
+                                    logger.info(f"TIMER VIDEO - Generated title: {video_title}")
+                                    logger.info(f"TIMER VIDEO - Generated tags: {keywords}")
                                     
                                     video_id = upload_video(
                                         youtube=youtube,

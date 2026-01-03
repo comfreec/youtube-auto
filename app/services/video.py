@@ -1013,14 +1013,14 @@ def generate_timer_video(duration_seconds: int, output_file: str, font_path: str
                 else:
                     bg_clip = bg_clip.resized(width=target_w)
                     bg_clip = bg_clip.cropped(y1=(bg_clip.h - target_h)/2, height=target_h)
-                bg_clip = bg_clip.with_duration(duration_seconds)
                 
                 # Loop video if shorter (only for video clips) - FIXED LOOP ISSUE
                 if ext not in ['.jpg', '.jpeg', '.png', '.bmp', '.webp']:
-                    if hasattr(bg_clip, 'duration') and bg_clip.duration < duration_seconds:
-                        logger.info(f"Background video duration ({bg_clip.duration}s) shorter than timer ({duration_seconds}s), creating seamless loop")
+                    original_duration = bg_clip.duration
+                    if original_duration < duration_seconds:
+                        logger.info(f"Background video duration ({original_duration}s) shorter than timer ({duration_seconds}s), creating seamless loop")
                         # Calculate how many loops we need
-                        loops_needed = int(duration_seconds / bg_clip.duration) + 1
+                        loops_needed = int(duration_seconds / original_duration) + 1
                         logger.info(f"Creating {loops_needed} loops of background video")
                         
                         # Create multiple copies and concatenate them
@@ -1048,6 +1048,9 @@ def generate_timer_video(duration_seconds: int, output_file: str, font_path: str
                     else:
                         # Just set duration if video is long enough
                         bg_clip = bg_clip.with_duration(duration_seconds)
+                else:
+                    # For images, just set duration
+                    bg_clip = bg_clip.with_duration(duration_seconds)
                         
             except Exception as e:
                 logger.error(f"Failed to load BG video/image: {e}")
