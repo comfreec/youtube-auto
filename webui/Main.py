@@ -3342,7 +3342,16 @@ if start_button:
 
     # Success handling
     if final_video_files:
-        st.session_state["generated_video_files"] = final_video_files
+        # Add new videos to existing list instead of replacing
+        if "generated_video_files" not in st.session_state:
+            st.session_state["generated_video_files"] = []
+        
+        # Add new videos to the beginning of the list
+        for video_file in reversed(final_video_files):
+            if video_file not in st.session_state["generated_video_files"]:
+                st.session_state["generated_video_files"].insert(0, video_file)
+        
+        logger.info(f"Updated video list with {len(final_video_files)} new videos. Total: {len(st.session_state['generated_video_files'])}")
         
         # Mobile optimization: Reset generation state
         st.session_state["generation_in_progress"] = False
