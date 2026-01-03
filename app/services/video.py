@@ -1014,35 +1014,29 @@ def generate_timer_video(duration_seconds: int, output_file: str, font_path: str
                     bg_clip = bg_clip.resized(width=target_w)
                     bg_clip = bg_clip.cropped(y1=(bg_clip.h - target_h)/2, height=target_h)
                 
-                # Loop video if shorter (only for video clips) - IMPROVED LOOP SYSTEM
+                # Loop video if shorter (only for video clips) - SIMPLIFIED STABLE APPROACH
                 if ext not in ['.jpg', '.jpeg', '.png', '.bmp', '.webp']:
                     original_duration = bg_clip.duration
                     if original_duration < duration_seconds:
                         logger.info(f"Background video duration ({original_duration}s) shorter than timer ({duration_seconds}s), creating seamless loop")
                         
-                        # Method 1: Try MoviePy's loop function (more stable)
+                        # Use MoviePy's built-in loop functionality - most stable approach
                         try:
+                            # Calculate how many full loops we need
+                            loops_needed = int(duration_seconds / original_duration) + 1
+                            logger.info(f"Creating {loops_needed} loops of background video")
+                            
+                            # Use MoviePy's loop effect
                             from moviepy import vfx
                             bg_clip = bg_clip.with_effects([vfx.Loop(duration=duration_seconds)])
-                            logger.info("Successfully created loop using MoviePy vfx.Loop")
-                        except Exception as loop_error:
-                            logger.warning(f"MoviePy loop failed: {loop_error}, trying manual approach")
+                            logger.info("Successfully created seamless loop using MoviePy vfx.Loop")
                             
-                            # Method 2: Manual frame-by-frame approach
-                            try:
-                                def make_looped_frame(t):
-                                    # Calculate which loop iteration we're in
-                                    loop_time = t % original_duration
-                                    return bg_clip.get_frame(loop_time)
-                                
-                                from moviepy import VideoClip
-                                bg_clip = VideoClip(make_frame=make_looped_frame, duration=duration_seconds)
-                                bg_clip = bg_clip.with_size((target_w, target_h))
-                                logger.info("Successfully created loop using manual frame approach")
-                            except Exception as manual_error:
-                                logger.error(f"Manual loop failed: {manual_error}, using simple duration extension")
-                                # Method 3: Fallback - just extend duration (may freeze at end)
-                                bg_clip = bg_clip.with_duration(duration_seconds)
+                        except Exception as loop_error:
+                            logger.warning(f"MoviePy loop failed: {loop_error}, using fallback method")
+                            
+                            # Fallback: Simple duration extension (may freeze at end but stable)
+                            bg_clip = bg_clip.with_duration(duration_seconds)
+                            logger.info("Using simple duration extension as fallback")
                     else:
                         # Just set duration if video is long enough
                         bg_clip = bg_clip.with_duration(duration_seconds)
