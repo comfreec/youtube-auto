@@ -1708,12 +1708,14 @@ with tab_main:
                                 try:
                                     from app.utils.youtube import get_authenticated_service, upload_video
                                     
-                                    # Clear any previous video session data to prevent tag contamination
-                                    if "video_terms" in st.session_state:
-                                        del st.session_state["video_terms"]
-                                    if "video_subject" in st.session_state:
-                                        previous_subject = st.session_state["video_subject"]
-                                        logger.info(f"Clearing previous video subject: {previous_subject}")
+                                    # Clear any previous video session data to prevent tag contamination - ONLY FOR TIMER
+                                    # Note: Only clear for timer uploads, not for general video uploads
+                                    timer_video_terms = st.session_state.get("video_terms", "")
+                                    timer_video_subject = st.session_state.get("video_subject", "")
+                                    if timer_video_terms:
+                                        logger.info(f"Timer upload: Temporarily clearing video_terms: {timer_video_terms}")
+                                    if timer_video_subject:
+                                        logger.info(f"Timer upload: Previous video subject was: {timer_video_subject}")
                                     
                                     # Get authenticated YouTube service
                                     youtube = get_authenticated_service(client_secrets_file, timer_token_file)
