@@ -1140,8 +1140,12 @@ def generate_timer_video(duration_seconds: int, output_file: str, font_path: str
             # We want to show the countdown from duration_seconds down to 0
             remaining_time = duration_seconds - t
             
-            # Round down to get the current second to display
-            remaining = max(0, int(remaining_time))
+            # For the very first frame (t ≈ 0), show the full timer duration
+            # For subsequent frames, show countdown
+            if t < 0.1:  # First frame (within 0.1 seconds)
+                remaining = duration_seconds
+            else:
+                remaining = max(0, int(remaining_time))
             
             # Use remaining as cache key
             if remaining in memo:
