@@ -3300,7 +3300,10 @@ if start_button:
                                                 logger.info(f"DEBUG: video_terms from task_params: {video_terms_value}")
                                                 
                                                 # Generate language-specific tags
-                                                if getattr(task_params, 'video_language', 'ko-KR') == "en-US":
+                                                video_language = getattr(task_params, 'video_language', 'ko-KR')
+                                                logger.info(f"DEBUG: Detected video language: {video_language}")
+                                                
+                                                if video_language == "en-US":
                                                     # English version - use existing video_terms or generate new ones
                                                     existing_terms = video_terms_value or ""
                                                     if existing_terms:
@@ -3311,23 +3314,50 @@ if start_button:
                                                         keywords = ", ".join(terms + [str(title_subject).strip()])
                                                         logger.info(f"Generated new English terms: {keywords}")
                                                 else:
-                                                    # Korean version - use existing video_terms or generate Korean ones
+                                                    # Korean version - FORCE Korean tags
+                                                    logger.info(f"FORCING Korean tags for Korean video")
                                                     existing_terms = video_terms_value or ""
+                                                    
+                                                    # Check if existing terms are actually Korean
+                                                    has_korean_terms = False
                                                     if existing_terms:
-                                                        # Use existing terms (they should be Korean from script generation)
-                                                        keywords = existing_terms
+                                                        import re
+                                                        if isinstance(existing_terms, str):
+                                                            has_korean_terms = bool(re.search(r'[가-힣]', existing_terms))
+                                                        elif isinstance(existing_terms, list):
+                                                            has_korean_terms = any(re.search(r'[가-힣]', str(term)) for term in existing_terms)
+                                                    
+                                                    if has_korean_terms:
+                                                        # Use existing Korean terms
+                                                        if isinstance(existing_terms, list):
+                                                            keywords = ", ".join(existing_terms)
+                                                        else:
+                                                            keywords = existing_terms
                                                         logger.info(f"Using existing Korean terms: {keywords}")
                                                     else:
-                                                        # Generate new Korean terms if none exist
+                                                        # Generate new Korean terms (existing terms are English or empty)
+                                                        logger.warning(f"Existing terms are not Korean: {existing_terms}, generating Korean terms")
                                                         try:
                                                             korean_terms = llm.generate_korean_terms(task_params.video_subject, getattr(task_params, 'video_script', '') or "", amount=15) or []
-                                                            keywords = ", ".join(korean_terms + [str(title_subject).strip()])
-                                                            logger.info(f"Generated new Korean terms: {keywords}")
+                                                            
+                                                            # Verify Korean terms were generated
+                                                            if korean_terms and any(re.search(r'[가-힣]', str(term)) for term in korean_terms):
+                                                                keywords = ", ".join(korean_terms + [str(title_subject).strip()])
+                                                                logger.info(f"Generated new Korean terms: {keywords}")
+                                                            else:
+                                                                # Use Korean fallback
+                                                                logger.warning("Korean terms generation failed, using Korean fallback")
+                                                                from app.services.task import _generate_korean_fallback_terms
+                                                                fallback_terms = _generate_korean_fallback_terms(task_params.video_subject, getattr(task_params, 'video_script', '') or "")
+                                                                keywords = ", ".join(fallback_terms + [str(title_subject).strip()])
+                                                                logger.info(f"Using Korean fallback terms: {keywords}")
                                                         except Exception as e:
                                                             logger.error(f"Korean terms generation failed: {e}")
-                                                            # Last resort: just use the subject
-                                                            keywords = str(title_subject).strip()
-                                                            logger.info(f"Using subject as fallback: {keywords}")
+                                                            # Last resort: Korean fallback
+                                                            from app.services.task import _generate_korean_fallback_terms
+                                                            fallback_terms = _generate_korean_fallback_terms(task_params.video_subject, getattr(task_params, 'video_script', '') or "")
+                                                            keywords = ", ".join(fallback_terms + [str(title_subject).strip()])
+                                                            logger.info(f"Using Korean fallback terms as last resort: {keywords}")
                                                 
                                                 st.info(f"📝 업로드 제목: {title}")
                                                 st.info(f"🏷️ 키워드: {keywords}")

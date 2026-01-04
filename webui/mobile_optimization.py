@@ -185,19 +185,8 @@ def add_mobile_connection_monitor():
     """, unsafe_allow_html=True)
 
 def show_mobile_generation_tips():
-    """모바일 영상 생성 팁 표시"""
-    st.markdown("""
-    <div class="mobile-warning">
-        <h4 style="color: #ff6b35; margin: 0 0 0.5rem 0;">📱 모바일 사용자 필독!</h4>
-        <div style="color: #666; font-size: 0.9rem;">
-            <strong>🔋 배터리:</strong> 충전 상태를 확인하세요 (생성 시간: 3-10분)<br>
-            <strong>📶 네트워크:</strong> 안정적인 Wi-Fi 연결을 사용하세요<br>
-            <strong>🔒 화면:</strong> 화면 자동 잠금을 해제하거나 시간을 늘려주세요<br>
-            <strong>🚫 멀티태스킹:</strong> 다른 앱 사용을 최소화해주세요<br>
-            <strong>💾 저장공간:</strong> 최소 1GB 이상의 여유 공간이 필요합니다
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    """모바일 영상 생성 팁 표시 - 제거됨"""
+    pass
 
 def show_mobile_progress_tracker(progress: float, status: str, elapsed_time: float = 0):
     """모바일 친화적 진행 상태 표시 - 강화된 버전"""
