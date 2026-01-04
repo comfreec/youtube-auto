@@ -3281,6 +3281,10 @@ if start_button:
                                 st.info(f"📁 토큰 파일 확인: {os.path.exists(token_file)}")
                                 st.info(f"📁 클라이언트 시크릿 파일 확인: {os.path.exists(client_secrets_file)}")
                                 
+                                # Debug: Check task_params content
+                                logger.info(f"DEBUG: task_params keys: {list(task_params.__dict__.keys()) if hasattr(task_params, '__dict__') else 'No __dict__'}")
+                                logger.info(f"DEBUG: task_params type: {type(task_params)}")
+                                
                                 if os.path.exists(token_file) and os.path.exists(client_secrets_file):
                                     for video_path in generated_videos:
                                         if os.path.exists(video_path):
@@ -3291,20 +3295,24 @@ if start_button:
                                                 title = f"{st.session_state.get('yt_title_prefix', '#Shorts')} {title_subject}"
                                                 description = f"Generated youtube-auto AI\n\nSubject: {title_subject}"
                                                 
+                                                # Debug: Check video_terms
+                                                video_terms_value = getattr(task_params, 'video_terms', None)
+                                                logger.info(f"DEBUG: video_terms from task_params: {video_terms_value}")
+                                                
                                                 # Generate language-specific tags
-                                                if task_params.video_language == "en-US":
+                                                if getattr(task_params, 'video_language', 'ko-KR') == "en-US":
                                                     # English version - use existing video_terms or generate new ones
-                                                    existing_terms = task_params.get("video_terms", "")
+                                                    existing_terms = video_terms_value or ""
                                                     if existing_terms:
                                                         keywords = existing_terms
                                                         logger.info(f"Using existing English terms: {keywords}")
                                                     else:
-                                                        terms = llm.generate_terms(task_params.video_subject, task_params.video_script or "", amount=15) or []
+                                                        terms = llm.generate_terms(task_params.video_subject, getattr(task_params, 'video_script', '') or "", amount=15) or []
                                                         keywords = ", ".join(terms + [str(title_subject).strip()])
                                                         logger.info(f"Generated new English terms: {keywords}")
                                                 else:
                                                     # Korean version - use existing video_terms or generate Korean ones
-                                                    existing_terms = task_params.get("video_terms", "")
+                                                    existing_terms = video_terms_value or ""
                                                     if existing_terms:
                                                         # Use existing terms (they should be Korean from script generation)
                                                         keywords = existing_terms
@@ -3312,7 +3320,7 @@ if start_button:
                                                     else:
                                                         # Generate new Korean terms if none exist
                                                         try:
-                                                            korean_terms = llm.generate_korean_terms(task_params.video_subject, task_params.video_script or "", amount=15) or []
+                                                            korean_terms = llm.generate_korean_terms(task_params.video_subject, getattr(task_params, 'video_script', '') or "", amount=15) or []
                                                             keywords = ", ".join(korean_terms + [str(title_subject).strip()])
                                                             logger.info(f"Generated new Korean terms: {keywords}")
                                                         except Exception as e:
