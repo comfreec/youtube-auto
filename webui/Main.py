@@ -3304,9 +3304,33 @@ if start_button:
                                                         logger.info(f"Korean tags generated: {keywords}")
                                                     except Exception as e:
                                                         logger.error(f"Korean terms generation failed: {e}")
-                                                        # Fallback: generate basic Korean terms from subject
-                                                        basic_korean_terms = [str(title_subject).strip(), "한국어", "쇼츠", "AI생성", "영상", "콘텐츠"]
-                                                        keywords = ", ".join(basic_korean_terms)
+                                                        # Fallback: extract keywords from subject and script
+                                                        try:
+                                                            # Simple keyword extraction from Korean text
+                                                            import re
+                                                            
+                                                            # Combine subject and script for keyword extraction
+                                                            text_to_analyze = f"{task_params.video_subject} {task_params.video_script or ''}"
+                                                            
+                                                            # Extract Korean words (2+ characters)
+                                                            korean_words = re.findall(r'[가-힣]{2,}', text_to_analyze)
+                                                            
+                                                            # Remove duplicates and common words
+                                                            common_words = {'것이', '그것', '이것', '저것', '때문', '하지만', '그리고', '또한', '그래서', '하지만'}
+                                                            unique_words = []
+                                                            for word in korean_words:
+                                                                if word not in common_words and word not in unique_words:
+                                                                    unique_words.append(word)
+                                                            
+                                                            # Use top keywords + subject
+                                                            fallback_terms = [str(title_subject).strip()] + unique_words[:8]
+                                                            keywords = ", ".join(fallback_terms)
+                                                            logger.info(f"Using extracted Korean keywords: {keywords}")
+                                                            
+                                                        except Exception as extract_error:
+                                                            logger.error(f"Keyword extraction failed: {extract_error}")
+                                                            # Last resort: just use the subject
+                                                            keywords = str(title_subject).strip()
                                                 
                                                 st.info(f"📝 업로드 제목: {title}")
                                                 st.info(f"🏷️ 키워드: {keywords}")
