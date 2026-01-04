@@ -46,9 +46,28 @@ def generate_terms(task_id, params, video_script):
     logger.info("\n\n## generating video terms")
     video_terms = params.video_terms
     if not video_terms:
-        video_terms = llm.generate_terms(
-            video_subject=params.video_subject, video_script=video_script, amount=5
-        )
+        # Generate terms based on video language
+        video_language = getattr(params, 'video_language', 'ko-KR')
+        
+        if video_language == "en-US":
+            # English version - use English terms
+            video_terms = llm.generate_terms(
+                video_subject=params.video_subject, video_script=video_script, amount=5
+            )
+            logger.info(f"Generated English terms: {video_terms}")
+        else:
+            # Korean version - use Korean terms
+            try:
+                video_terms = llm.generate_korean_terms(
+                    video_subject=params.video_subject, video_script=video_script, amount=5
+                )
+                logger.info(f"Generated Korean terms: {video_terms}")
+            except Exception as e:
+                logger.error(f"Korean terms generation failed: {e}, falling back to English terms")
+                # Fallback to English terms if Korean generation fails
+                video_terms = llm.generate_terms(
+                    video_subject=params.video_subject, video_script=video_script, amount=5
+                )
     else:
         if isinstance(video_terms, str):
             video_terms = [term.strip() for term in re.split(r"[,，]", video_terms)]
