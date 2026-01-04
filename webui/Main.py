@@ -3291,8 +3291,6 @@ if start_button:
                                                 title = f"{st.session_state.get('yt_title_prefix', '#Shorts')} {title_subject}"
                                                 description = f"Generated youtube-auto AI\n\nSubject: {title_subject}"
                                                 
-                                                terms = llm.generate_terms(task_params.video_subject, task_params.video_script or "", amount=12) or []
-                                                
                                                 # Generate language-specific tags
                                                 if task_params.video_language == "en-US":
                                                     # English version - use script-based English tags only
@@ -3303,9 +3301,12 @@ if start_button:
                                                     try:
                                                         korean_terms = llm.generate_korean_terms(task_params.video_subject, task_params.video_script or "", amount=15) or []
                                                         keywords = ", ".join(korean_terms + [str(title_subject).strip()])
-                                                    except:
-                                                        # Fallback to subject only
-                                                        keywords = str(title_subject).strip()
+                                                        logger.info(f"Korean tags generated: {keywords}")
+                                                    except Exception as e:
+                                                        logger.error(f"Korean terms generation failed: {e}")
+                                                        # Fallback: generate basic Korean terms from subject
+                                                        basic_korean_terms = [str(title_subject).strip(), "한국어", "쇼츠", "AI생성", "영상", "콘텐츠"]
+                                                        keywords = ", ".join(basic_korean_terms)
                                                 
                                                 st.info(f"📝 업로드 제목: {title}")
                                                 st.info(f"🏷️ 키워드: {keywords}")
