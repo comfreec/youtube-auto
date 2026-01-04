@@ -1123,8 +1123,35 @@ def tts(
     voice_file: str,
     voice_volume: float = 1.0,
 ) -> Union[SubMaker, None]:
+    # TTS 텍스트 전처리 - 발음 개선
+    def preprocess_tts_text(text: str) -> str:
+        """TTS를 위한 텍스트 전처리"""
+        # "-"를 "다시"로 변경 (문맥에 따라)
+        import re
+        
+        # 단어 사이의 하이픈을 "다시"로 변경
+        # 예: "재시작 - 새로운 시작" -> "재시작 다시 새로운 시작"
+        text = re.sub(r'\s*-\s*', ' 다시 ', text)
+        
+        # 기타 TTS 발음 개선
+        text = re.sub(r'&', ' 그리고 ', text)  # &를 "그리고"로
+        text = re.sub(r'@', ' 골뱅이 ', text)  # @를 "골뱅이"로
+        text = re.sub(r'#', ' 샵 ', text)      # #을 "샵"으로
+        text = re.sub(r'\+', ' 플러스 ', text) # +를 "플러스"로
+        text = re.sub(r'=', ' 같다 ', text)    # =를 "같다"로
+        text = re.sub(r'%', ' 퍼센트 ', text)  # %를 "퍼센트"로
+        
+        # 연속된 공백 정리
+        text = re.sub(r'\s+', ' ', text).strip()
+        
+        return text
+    
+    # 텍스트 전처리 적용
+    processed_text = preprocess_tts_text(text)
+    logger.info(f"TTS 텍스트 전처리: '{text[:50]}...' -> '{processed_text[:50]}...'")
+    
     if is_azure_v2_voice(voice_name):
-        return azure_tts_v2(text, voice_name, voice_file)
+        return azure_tts_v2(processed_text, voice_name, voice_file)
     elif is_siliconflow_voice(voice_name):
         # 从voice_name中提取模型和声音
         # 格式: siliconflow:model:voice-Gender
@@ -1137,7 +1164,7 @@ def tts(
             # 构建完整的voice参数，格式为 "model:voice"
             full_voice = f"{model}:{voice}"
             return siliconflow_tts(
-                text, model, full_voice, voice_rate, voice_file, voice_volume
+                processed_text, model, full_voice, voice_rate, voice_file, voice_volume
             )
         else:
             logger.error(f"Invalid siliconflow voice name format: {voice_name}")
@@ -1150,11 +1177,11 @@ def tts(
             # 移除性别后缀，例如 "Zephyr-Female" -> "Zephyr"
             voice_with_gender = parts[1]
             voice = voice_with_gender.split("-")[0]
-            return gemini_tts(text, voice, voice_rate, voice_file, voice_volume)
+            return gemini_tts(processed_text, voice, voice_rate, voice_file, voice_volume)
         else:
             logger.error(f"Invalid gemini voice name format: {voice_name}")
             return None
-    return azure_tts_v1(text, voice_name, voice_rate, voice_file)
+    return azure_tts_v1(processed_text, voice_name, voice_rate, voice_file)
 
 
 def convert_rate_to_percent(rate: float) -> str:
