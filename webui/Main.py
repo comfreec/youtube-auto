@@ -1770,6 +1770,17 @@ with tab_main:
                                     logger.info(f"TIMER VIDEO - Generated title: {video_title}")
                                     logger.info(f"TIMER VIDEO - Generated tags: {keywords}")
                                     
+                                    # Create custom thumbnail for timer video
+                                    thumbnail_path = None
+                                    try:
+                                        from app.utils.youtube import create_timer_thumbnail
+                                        thumbnail_path = result_file.replace(".mp4", "_thumbnail.jpg")
+                                        create_timer_thumbnail(timer_duration, thumbnail_path, timer_style)
+                                        logger.info(f"Timer thumbnail created: {thumbnail_path}")
+                                    except Exception as thumb_error:
+                                        logger.warning(f"Failed to create timer thumbnail: {thumb_error}")
+                                        thumbnail_path = None
+                                    
                                     video_id = upload_video(
                                         youtube=youtube,
                                         file_path=result_file,
@@ -1777,7 +1788,8 @@ with tab_main:
                                         description=f"{timer_duration}분 {style_text} 타이머 영상입니다.\n\n🎯 용도: 명상, 집중, 운동, 공부, 휴식\n🎨 스타일: {style_text}\n⏰ 시간: {timer_duration}분\n\nGenerated youtube-auto AI\n\n#타이머 #명상 #집중 #운동 #공부 #힐링 #timer #meditation #focus #study",
                                         keywords=keywords,
                                         privacy_status=st.session_state.get("yt_privacy", "private"),
-                                        category=st.session_state.get("yt_category", "22")
+                                        category=st.session_state.get("yt_category", "22"),
+                                        thumbnail_path=thumbnail_path
                                     )
                                     
                                     if video_id:
@@ -3273,13 +3285,19 @@ if start_button:
                             status_text.success(f"🎉 {task_label} 생성 완료!")
                             
                             # Auto-upload if enabled
-                            if st.session_state.get("yt_auto_upload"):
+                            auto_upload_enabled = st.session_state.get("yt_auto_upload", False)
+                            logger.info(f"🔍 DEBUG: Auto-upload checkbox state: {auto_upload_enabled}")
+                            logger.info(f"🔍 DEBUG: Session state yt_auto_upload: {st.session_state.get('yt_auto_upload')}")
+                            logger.info(f"🔍 DEBUG: All session keys with 'upload': {[k for k in st.session_state.keys() if 'upload' in k.lower()]}")
+                            
+                            if auto_upload_enabled:
+                                logger.info("✅ 자동 업로드가 활성화되어 있습니다.")
                                 st.info("🔍 자동 업로드가 활성화되어 있습니다.")
                                 token_file = os.path.join(root_dir, "token.pickle")
                                 client_secrets_file = os.path.join(root_dir, "client_secrets.json")
                                 
-                                st.info(f"📁 토큰 파일 확인: {os.path.exists(token_file)}")
-                                st.info(f"📁 클라이언트 시크릿 파일 확인: {os.path.exists(client_secrets_file)}")
+                                logger.info(f"🔍 Token file exists: {os.path.exists(token_file)}")
+                                logger.info(f"🔍 Client secrets file exists: {os.path.exists(client_secrets_file)}")
                                 
                                 # Debug: Check task_params content
                                 logger.info(f"DEBUG: task_params keys: {list(task_params.__dict__.keys()) if hasattr(task_params, '__dict__') else 'No __dict__'}")
@@ -3295,69 +3313,59 @@ if start_button:
                                                 title = f"{st.session_state.get('yt_title_prefix', '#Shorts')} {title_subject}"
                                                 description = f"Generated youtube-auto AI\n\nSubject: {title_subject}"
                                                 
-                                                # Debug: Check video_terms
+                                                # Use existing video_terms (search keywords) as YouTube tags
                                                 video_terms_value = getattr(task_params, 'video_terms', None)
-                                                logger.info(f"DEBUG: video_terms from task_params: {video_terms_value}")
-                                                
-                                                # Generate language-specific tags
                                                 video_language = getattr(task_params, 'video_language', 'ko-KR')
-                                                logger.info(f"DEBUG: Detected video language: {video_language}")
+                                                logger.info(f"DEBUG: video_terms from task_params: {video_terms_value}")
+                                                logger.info(f"DEBUG: video_language: {video_language}")
                                                 
-                                                if video_language == "en-US":
-                                                    # English version - use existing video_terms or generate new ones
-                                                    existing_terms = video_terms_value or ""
-                                                    if existing_terms:
-                                                        keywords = existing_terms
-                                                        logger.info(f"Using existing English terms: {keywords}")
+                                                if video_terms_value:
+                                                    # Check if this is Korean version and terms are in English
+                                                    if video_language != "en-US":
+                                                        # Korean version - check if terms need translation
+                                                        if isinstance(video_terms_value, list):
+                                                            terms_list = video_terms_value
+                                                        else:
+                                                            terms_list = [term.strip() for term in str(video_terms_value).split(",")]
+                                                        
+                                                        # Check if terms contain Korean characters
+                                                        import re
+                                                        has_korean = any(re.search(r'[가-힣]', str(term)) for term in terms_list)
+                                                        
+                                                        if not has_korean:
+                                                            # English terms detected in Korean version - translate them
+                                                            logger.info(f"🇰🇷 Translating English terms to Korean: {terms_list}")
+                                                            try:
+                                                                korean_terms = llm.translate_terms_to_korean(terms_list)
+                                                                keywords = ", ".join(korean_terms + [str(title_subject).strip()])
+                                                                logger.info(f"🇰🇷 Successfully translated tags: {keywords}")
+                                                            except Exception as e:
+                                                                logger.error(f"Translation failed: {e}, using fallback Korean tags")
+                                                                fallback_terms = ["정보", "팁", "노하우", "가이드", "도움"]
+                                                                keywords = ", ".join(fallback_terms + [str(title_subject).strip()])
+                                                        else:
+                                                            # Already Korean terms
+                                                            keywords = ", ".join(terms_list + [str(title_subject).strip()])
+                                                            logger.info(f"🇰🇷 Using existing Korean tags: {keywords}")
                                                     else:
+                                                        # English version - use as is
+                                                        if isinstance(video_terms_value, list):
+                                                            keywords = ", ".join(video_terms_value + [str(title_subject).strip()])
+                                                        else:
+                                                            keywords = f"{video_terms_value}, {str(title_subject).strip()}"
+                                                        logger.info(f"🇺🇸 Using English tags: {keywords}")
+                                                else:
+                                                    # Fallback: generate new tags only if no search keywords exist
+                                                    logger.warning(f"No existing video_terms found, generating new tags for language: {video_language}")
+                                                    
+                                                    if video_language == "en-US":
                                                         terms = llm.generate_terms(task_params.video_subject, getattr(task_params, 'video_script', '') or "", amount=15) or []
                                                         keywords = ", ".join(terms + [str(title_subject).strip()])
                                                         logger.info(f"Generated new English terms: {keywords}")
-                                                else:
-                                                    # Korean version - FORCE Korean tags
-                                                    logger.info(f"FORCING Korean tags for Korean video")
-                                                    existing_terms = video_terms_value or ""
-                                                    
-                                                    # Check if existing terms are actually Korean
-                                                    has_korean_terms = False
-                                                    if existing_terms:
-                                                        import re
-                                                        if isinstance(existing_terms, str):
-                                                            has_korean_terms = bool(re.search(r'[가-힣]', existing_terms))
-                                                        elif isinstance(existing_terms, list):
-                                                            has_korean_terms = any(re.search(r'[가-힣]', str(term)) for term in existing_terms)
-                                                    
-                                                    if has_korean_terms:
-                                                        # Use existing Korean terms
-                                                        if isinstance(existing_terms, list):
-                                                            keywords = ", ".join(existing_terms)
-                                                        else:
-                                                            keywords = existing_terms
-                                                        logger.info(f"Using existing Korean terms: {keywords}")
                                                     else:
-                                                        # Generate new Korean terms (existing terms are English or empty)
-                                                        logger.warning(f"Existing terms are not Korean: {existing_terms}, generating Korean terms")
-                                                        try:
-                                                            korean_terms = llm.generate_korean_terms(task_params.video_subject, getattr(task_params, 'video_script', '') or "", amount=15) or []
-                                                            
-                                                            # Verify Korean terms were generated
-                                                            if korean_terms and any(re.search(r'[가-힣]', str(term)) for term in korean_terms):
-                                                                keywords = ", ".join(korean_terms + [str(title_subject).strip()])
-                                                                logger.info(f"Generated new Korean terms: {keywords}")
-                                                            else:
-                                                                # Use Korean fallback
-                                                                logger.warning("Korean terms generation failed, using Korean fallback")
-                                                                from app.services.task import _generate_korean_fallback_terms
-                                                                fallback_terms = _generate_korean_fallback_terms(task_params.video_subject, getattr(task_params, 'video_script', '') or "")
-                                                                keywords = ", ".join(fallback_terms + [str(title_subject).strip()])
-                                                                logger.info(f"Using Korean fallback terms: {keywords}")
-                                                        except Exception as e:
-                                                            logger.error(f"Korean terms generation failed: {e}")
-                                                            # Last resort: Korean fallback
-                                                            from app.services.task import _generate_korean_fallback_terms
-                                                            fallback_terms = _generate_korean_fallback_terms(task_params.video_subject, getattr(task_params, 'video_script', '') or "")
-                                                            keywords = ", ".join(fallback_terms + [str(title_subject).strip()])
-                                                            logger.info(f"Using Korean fallback terms as last resort: {keywords}")
+                                                        korean_terms = llm.generate_korean_terms(task_params.video_subject, getattr(task_params, 'video_script', '') or "", amount=15) or []
+                                                        keywords = ", ".join(korean_terms + [str(title_subject).strip()])
+                                                        logger.info(f"Generated new Korean terms: {keywords}")
                                                 
                                                 st.info(f"📝 업로드 제목: {title}")
                                                 st.info(f"🏷️ 키워드: {keywords}")
@@ -3380,11 +3388,12 @@ if start_button:
                                             except Exception as e:
                                                 logger.error(f"Upload error: {e}")
                                                 status_text.error(f"❌ 업로드 오류: {e}")
-                                else:
-                                    status_text.warning("⚠️ 자동 업로드가 활성화되어 있지만 YouTube 인증이 필요합니다")
-                                    st.info("💡 '고급 설정' → 'YouTube 업로드 설정'에서 '🔐 메인 채널 인증' 버튼을 클릭하세요")
+                                            else:
+                                                status_text.warning("⚠️ 자동 업로드가 활성화되어 있지만 YouTube 인증이 필요합니다")
+                                                st.info("💡 '고급 설정' → 'YouTube 업로드 설정'에서 '🔐 메인 채널 인증' 버튼을 클릭하세요")
                             else:
-                                st.info("ℹ️ 자동 업로드가 비활성화되어 있습니다.")
+                                logger.warning("❌ 자동 업로드가 비활성화되어 있습니다.")
+                                st.warning("⚠️ 자동 업로드가 비활성화되어 있습니다.")
                         else:
                             status_text.error(f"❌ {task_label} 생성 실패")
                             

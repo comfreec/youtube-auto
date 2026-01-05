@@ -46,37 +46,10 @@ def generate_terms(task_id, params, video_script):
     logger.info("\n\n## generating video terms")
     video_terms = params.video_terms
     if not video_terms:
-        # Generate terms based on video language
-        video_language = getattr(params, 'video_language', 'ko-KR')
-        logger.info(f"Video language detected: {video_language}")
-        
-        if video_language == "en-US":
-            # English version - use English terms
-            video_terms = llm.generate_terms(
-                video_subject=params.video_subject, video_script=video_script, amount=5
-            )
-            logger.info(f"Generated English terms: {video_terms}")
-        else:
-            # Korean version - FORCE Korean terms generation
-            logger.info(f"FORCING Korean terms generation for subject: {params.video_subject}")
-            try:
-                video_terms = llm.generate_korean_terms(
-                    video_subject=params.video_subject, video_script=video_script, amount=5
-                )
-                logger.info(f"Successfully generated Korean terms: {video_terms}")
-                
-                # CRITICAL: Verify Korean terms were actually generated
-                if not video_terms or not any(re.search(r'[가-힣]', str(term)) for term in video_terms):
-                    logger.warning("Korean terms generation returned non-Korean terms, forcing fallback")
-                    raise Exception("Non-Korean terms returned")
-                    
-            except Exception as e:
-                logger.error(f"Korean terms generation failed: {e}, using Korean fallback")
-                # Use Korean fallback instead of English
-                video_terms = _generate_korean_fallback_terms(params.video_subject, video_script)
-                logger.info(f"Korean fallback terms: {video_terms}")
+        video_terms = llm.generate_terms(
+            video_subject=params.video_subject, video_script=video_script, amount=5
+        )
     else:
-        logger.info(f"Using existing video_terms: {video_terms}")
         if isinstance(video_terms, str):
             video_terms = [term.strip() for term in re.split(r"[,，]", video_terms)]
         elif isinstance(video_terms, list):
@@ -92,43 +65,6 @@ def generate_terms(task_id, params, video_script):
         return None
 
     return video_terms
-
-
-def _generate_korean_fallback_terms(video_subject: str, video_script: str) -> list:
-    """한국어 키워드 생성 실패 시 사용할 한국어 폴백 키워드"""
-    subject_lower = video_subject.lower()
-    script_lower = video_script.lower()
-    
-    # 주제별 한국어 키워드 매핑
-    korean_keywords = {
-        "건강": ["건강관리", "웰빙", "건강정보", "건강팁", "건강습관"],
-        "운동": ["운동법", "헬스", "체력관리", "운동팁", "피트니스"],
-        "다이어트": ["다이어트", "체중관리", "건강식단", "다이어트팁", "살빼기"],
-        "음식": ["음식정보", "건강식품", "영양정보", "요리팁", "식단관리"],
-        "스트레스": ["스트레스관리", "마음건강", "힐링", "휴식", "정신건강"],
-        "수면": ["수면건강", "잠", "숙면", "수면팁", "잠자리"],
-        "물": ["물마시기", "수분섭취", "건강습관", "물의효능", "하루물마시기"],
-        "아침": ["아침루틴", "모닝", "하루시작", "아침습관", "기상"],
-        "습관": ["좋은습관", "습관만들기", "라이프스타일", "자기관리", "일상"],
-        "성공": ["성공법", "자기계발", "동기부여", "목표달성", "성취"],
-        "시간": ["시간관리", "효율성", "생산성", "계획", "스케줄"],
-        "관계": ["인간관계", "소통", "관계개선", "사회생활", "친구"],
-        "돈": ["재정관리", "투자", "경제", "돈관리", "부자"],
-        "공부": ["학습법", "공부법", "교육", "지식", "성장"],
-        "일": ["직장생활", "업무", "커리어", "성과", "비즈니스"]
-    }
-    
-    # 주제에서 키워드 찾기
-    found_keywords = []
-    for keyword, korean_list in korean_keywords.items():
-        if keyword in subject_lower or keyword in script_lower:
-            found_keywords.extend(korean_list[:3])
-    
-    # 기본 키워드가 없으면 일반적인 키워드 사용
-    if not found_keywords:
-        found_keywords = ["정보", "팁", "노하우", "라이프스타일", "일상"]
-    
-    return found_keywords[:5]
 
 
 def save_script_data(task_id, video_script, video_terms, params):
@@ -204,7 +140,6 @@ def generate_subtitle(task_id, params, video_script, sub_maker, audio_file):
     '''
     logger.info("\n\n## generating subtitle")
     if not params.subtitle_enabled:
-        logger.info("Subtitle generation disabled by user settings")
         return ""
 
     subtitle_path = path.join(utils.task_dir(task_id), "subtitle.srt")
@@ -213,96 +148,32 @@ def generate_subtitle(task_id, params, video_script, sub_maker, audio_file):
 
     subtitle_fallback = False
     if sub_maker is None:
-        logger.warning("No subtitle maker available, will try fallback")
         subtitle_fallback = True
     else:
         if subtitle_provider == "edge":
-            try:
-                voice.create_subtitle(
-                    text=video_script, sub_maker=sub_maker, subtitle_file=subtitle_path
-                )
-                logger.info(f"Edge subtitle generation completed, checking file: {subtitle_path}")
-                
-                if not os.path.exists(subtitle_path) or os.path.getsize(subtitle_path) == 0:
-                    subtitle_fallback = True
-                    logger.warning("Edge subtitle file not found or empty, will try fallback")
-                else:
-                    logger.info(f"Edge subtitle file created successfully: {os.path.getsize(subtitle_path)} bytes")
-            except Exception as e:
-                logger.error(f"Edge subtitle generation failed: {e}")
+            voice.create_subtitle(
+                text=video_script, sub_maker=sub_maker, subtitle_file=subtitle_path
+            )
+            if not os.path.exists(subtitle_path) or os.path.getsize(subtitle_path) == 0:
                 subtitle_fallback = True
+                logger.warning("subtitle file not found or empty, fallback to whisper")
 
     if subtitle_provider == "whisper" or subtitle_fallback:
-        # Create a simple SRT file as fallback to ensure subtitles are always available
-        logger.warning("Creating simple SRT fallback to ensure subtitles are available")
-        try:
-            _create_simple_srt_fallback(video_script, subtitle_path)
-            logger.info(f"Simple SRT fallback created: {subtitle_path}")
-        except Exception as e:
-            logger.error(f"Failed to create SRT fallback: {e}")
-            return ""
+        # Whisper fallback disabled for stability
+        logger.warning("Whisper subtitle generation skipped to prevent system hang.")
+        return ""
+        # subtitle.create(audio_file=audio_file, subtitle_file=subtitle_path)
+        # logger.info("\n\n## correcting subtitle")
+        # subtitle.correct(subtitle_file=subtitle_path, video_script=video_script)
 
-    # Final validation
-    if os.path.exists(subtitle_path) and os.path.getsize(subtitle_path) > 0:
-        subtitle_lines = subtitle.file_to_subtitles(subtitle_path)
-        if subtitle_lines:
-            logger.info(f"Subtitle file validated successfully: {len(subtitle_lines)} lines")
-            return subtitle_path
-        else:
-            logger.warning(f"Subtitle file exists but contains no valid lines")
-    
-    logger.warning("No valid subtitle file could be created")
-    return ""
+    subtitle_lines = subtitle.file_to_subtitles(subtitle_path)
+    if not subtitle_lines:
+        logger.warning(f"subtitle file is invalid: {subtitle_path}")
+        if os.path.exists(subtitle_path) and os.path.getsize(subtitle_path) > 0:
+             return subtitle_path
+        return ""
 
-
-def _create_simple_srt_fallback(video_script: str, subtitle_path: str):
-    """Create a simple SRT file as fallback when other subtitle methods fail"""
-    import re
-    
-    # Split script into sentences
-    sentences = re.split(r'[.!?]+', video_script.strip())
-    sentences = [s.strip() for s in sentences if s.strip()]
-    
-    if not sentences:
-        sentences = [video_script.strip()]
-    
-    # Create simple timing (assume 3 seconds per sentence)
-    srt_content = []
-    start_time = 0
-    
-    for i, sentence in enumerate(sentences):
-        if not sentence:
-            continue
-            
-        duration = max(3, len(sentence) * 0.1)  # At least 3 seconds, or based on length
-        end_time = start_time + duration
-        
-        # Format time as SRT format (HH:MM:SS,mmm)
-        start_srt = _seconds_to_srt_time(start_time)
-        end_srt = _seconds_to_srt_time(end_time)
-        
-        srt_content.append(f"{i + 1}")
-        srt_content.append(f"{start_srt} --> {end_srt}")
-        srt_content.append(sentence.strip())
-        srt_content.append("")  # Empty line between entries
-        
-        start_time = end_time
-    
-    # Write SRT file
-    with open(subtitle_path, 'w', encoding='utf-8') as f:
-        f.write('\n'.join(srt_content))
-    
-    logger.info(f"Created simple SRT fallback with {len(sentences)} entries")
-
-
-def _seconds_to_srt_time(seconds: float) -> str:
-    """Convert seconds to SRT time format (HH:MM:SS,mmm)"""
-    hours = int(seconds // 3600)
-    minutes = int((seconds % 3600) // 60)
-    secs = int(seconds % 60)
-    millisecs = int((seconds % 1) * 1000)
-    
-    return f"{hours:02d}:{minutes:02d}:{secs:02d},{millisecs:03d}"
+    return subtitle_path
 
 
 def get_video_materials(task_id, params, video_terms, audio_duration):
