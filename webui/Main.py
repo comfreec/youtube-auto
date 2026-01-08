@@ -1310,13 +1310,13 @@ with tab_main:
             with col_gen_opt1:
                 generate_english_version = st.checkbox(
                     "🌍 글로벌 버전 추가", 
-                    value=False, 
+                    value=True, 
                     help="한국어 영상 생성 후, 영어 자막/성우가 적용된 글로벌 버전을 추가로 생성합니다."
                 )
             with col_gen_opt2:
                 auto_upload = st.checkbox(
                     "📺 자동 업로드", 
-                    value=False,
+                    value=True,
                     key="yt_auto_upload",
                     help="영상 생성 완료 후 자동으로 YouTube에 업로드합니다."
                 )
@@ -1423,7 +1423,7 @@ with tab_main:
             # Auto-upload checkbox
             timer_auto_upload_main = st.checkbox(
                 "📤 생성 후 YouTube 자동 업로드", 
-                value=st.session_state.get("timer_auto_upload", False),
+                value=st.session_state.get("timer_auto_upload", True),
                 key="timer_auto_upload_main",
                 help="체크하면 타이머 영상 생성 완료 즉시 YouTube에 자동 업로드됩니다"
             )
@@ -3177,6 +3177,9 @@ if start_button:
                     selected_voice = random.choice(english_voices)
                     eng_params.voice_name = selected_voice
                     eng_params.video_language = "en-US"
+                    
+                    # 영어 버전 자막 설정 명시적 활성화
+                    eng_params.subtitle_enabled = True
                     
                     # 영어 키워드 생성 (영상 소재 검색용)
                     try:

@@ -85,8 +85,38 @@ def upload_video(youtube, file_path, title, description, category="22", keywords
                 if progress_callback:
                     progress_callback(progress)
 
-        logger.success(f"Video uploaded successfully! Video ID: {response['id']}")
-        return response['id']
+        video_id = response['id']
+        logger.success(f"Video uploaded successfully! Video ID: {video_id}")
+        
+        # 업로드 후 검증 (30초 대기 후 확인)
+        logger.info("업로드 검증 중... (30초 대기)")
+        import time
+        time.sleep(30)
+        
+        try:
+            # YouTube에서 실제 영상 확인
+            video_info = youtube.videos().list(part="snippet,status", id=video_id).execute()
+            if video_info['items']:
+                video_data = video_info['items'][0]
+                upload_status = video_data['status']['uploadStatus']
+                logger.info(f"✅ 업로드 검증 성공 - 상태: {upload_status}")
+                return video_id
+            else:
+                logger.warning("⚠️ 업로드 지연 처리 중 - 5분 후 재확인 예정")
+                # 5분 후 재확인
+                time.sleep(300)  # 5분 대기
+                video_info = youtube.videos().list(part="snippet,status", id=video_id).execute()
+                if video_info['items']:
+                    logger.info("✅ 지연된 업로드 완료 확인")
+                    return video_id
+                else:
+                    logger.error("❌ 업로드 실패 - 수동 업로드 권장")
+                    return None
+        except Exception as verify_error:
+            logger.warning(f"⚠️ 업로드 검증 실패 (하지만 업로드는 성공): {verify_error}")
+            return video_id  # 검증 실패해도 업로드는 성공으로 처리
+        
+        return video_id
 
     except Exception as e:
         logger.error(f"An error occurred during video upload: {e}")
