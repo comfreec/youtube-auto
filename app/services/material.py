@@ -458,39 +458,87 @@ def download_videos(
     if source == "pixabay":
         search_videos = search_videos_pixabay
 
+    # Enhanced keyword search with variations and fallbacks
     for search_term in search_terms:
-        video_items = search_videos(
-            search_term=search_term,
-            minimum_duration=max_clip_duration,
-            video_aspect=video_aspect,
-        )
-        logger.info(f"found {len(video_items)} videos for '{search_term}'")
+        logger.info(f"🔍 Searching for videos with keyword: '{search_term}'")
+        
+        # Try multiple search variations for better content matching
+        search_variations = [search_term]
+        
+        # Add related terms for better matching
+        if search_term in ["success", "achievement"]:
+            search_variations.extend(["business success", "celebration", "winner", "goal"])
+        elif search_term in ["money", "finance"]:
+            search_variations.extend(["cash", "investment", "banking", "wealth"])
+        elif search_term in ["health", "wellness"]:
+            search_variations.extend(["healthy lifestyle", "fitness", "nutrition", "exercise"])
+        elif search_term in ["morning", "routine"]:
+            search_variations.extend(["morning routine", "sunrise", "breakfast", "wake up"])
+        elif search_term in ["work", "business"]:
+            search_variations.extend(["office", "professional", "workplace", "meeting"])
+        elif search_term in ["home", "house"]:
+            search_variations.extend(["living room", "kitchen", "bedroom", "family"])
+        elif search_term in ["study", "learning"]:
+            search_variations.extend(["reading", "books", "education", "student"])
+        elif search_term in ["exercise", "workout"]:
+            search_variations.extend(["gym", "fitness", "running", "training"])
+        elif search_term in ["food", "meal"]:
+            search_variations.extend(["cooking", "kitchen", "healthy food", "nutrition"])
+        elif search_term in ["time", "clock"]:
+            search_variations.extend(["time management", "schedule", "planning", "productivity"])
+        elif search_term in ["happiness", "joy"]:
+            search_variations.extend(["smile", "celebration", "positive", "cheerful"])
+        elif search_term in ["stress", "pressure"]:
+            search_variations.extend(["relaxation", "meditation", "calm", "peaceful"])
+        
+        # Try each variation until we find good results
+        video_items = []
+        for variation in search_variations:
+            logger.info(f"  🎯 Trying search variation: '{variation}'")
+            items = search_videos(
+                search_term=variation,
+                minimum_duration=max_clip_duration,
+                video_aspect=video_aspect,
+            )
+            if items:
+                logger.info(f"  ✅ Found {len(items)} videos for '{variation}'")
+                video_items.extend(items)
+                break  # Use first successful variation
+            else:
+                logger.info(f"  ❌ No videos found for '{variation}'")
 
+        # If no results with variations, try translation
         if not video_items:
-            logger.warning(f"No videos found for '{search_term}', trying translation to English...")
+            logger.warning(f"No videos found for any variation of '{search_term}', trying translation...")
             try:
+                from app.services import llm
                 translated_term = llm.translate_to_english(search_term)
                 if translated_term and "Error" not in translated_term and translated_term != search_term:
-                    logger.info(f"Translated '{search_term}' to '{translated_term}'")
+                    logger.info(f"  🌐 Translated '{search_term}' to '{translated_term}'")
                     video_items = search_videos(
                         search_term=translated_term,
                         minimum_duration=max_clip_duration,
                         video_aspect=video_aspect,
                     )
-                    logger.info(f"found {len(video_items)} videos for '{translated_term}'")
+                    logger.info(f"  📊 Found {len(video_items)} videos for translated term")
                 else:
-                    logger.warning(f"Translation returned invalid result: {translated_term}")
+                    logger.warning(f"  ⚠️ Translation returned invalid result: {translated_term}")
             except Exception as e:
-                logger.error(f"Translation failed: {str(e)}")
+                logger.error(f"  ❌ Translation failed: {str(e)}")
 
+        # Add unique videos to our collection
+        added_count = 0
         for item in video_items:
             if item.url not in valid_video_urls:
                 valid_video_items.append(item)
                 valid_video_urls.append(item.url)
                 found_duration += item.duration
+                added_count += 1
+        
+        logger.info(f"  ➕ Added {added_count} unique videos for '{search_term}'")
 
     logger.info(
-        f"found total videos: {len(valid_video_items)}, required duration: {audio_duration} seconds, found duration: {found_duration} seconds"
+        f"📊 Search complete - Total videos: {len(valid_video_items)}, Required duration: {audio_duration}s, Found duration: {found_duration}s"
     )
     video_paths = []
 

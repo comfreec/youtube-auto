@@ -176,7 +176,7 @@ def generate_subtitle(task_id, params, video_script, sub_maker, audio_file):
     return subtitle_path
 
 
-def get_video_materials(task_id, params, video_terms, audio_duration):
+def get_video_materials(task_id, params, video_terms, audio_duration, script=None):
     if params.video_source == "local":
         logger.info("\n\n## preprocess local materials")
         if not params.video_materials:
@@ -367,7 +367,7 @@ def start(task_id, params: VideoParams, stop_at: str = "video"):
 
     # 5. Get video materials
     downloaded_videos = get_video_materials(
-        task_id, params, video_terms, audio_duration
+        task_id, params, video_terms, audio_duration, video_script
     )
     if not downloaded_videos:
         sm.state.update_task(task_id, state=const.TASK_STATE_FAILED, message="자료 준비 실패")
@@ -422,3 +422,174 @@ if __name__ == "__main__":
         voice_rate=1.0,
     )
     start(task_id, params, stop_at="video")
+
+def generate_longform_video(task_id, params):
+    """롱폼 영상 생성 메인 함수"""
+    logger.info(f"\n\n## Starting long-form video generation for task: {task_id}")
+    
+    try:
+        # 1. 롱폼 대본 생성
+        sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=10, message="롱폼 대본 생성 중...")
+        
+        longform_script = llm.generate_longform_script(
+            video_subject=params.video_subject,
+            language=params.video_language,
+            duration_minutes=getattr(params, 'longform_duration', 10)
+        )
+        
+        if not longform_script or "실패" in longform_script:
+            sm.state.update_task(task_id, state=const.TASK_STATE_FAILED, message="롱폼 대본 생성 실패")
+            return None
+        
+        # 2. 대본을 세그먼트로 분할
+        sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=20, message="대본 세그먼트 분할 중...")
+        
+        segments = llm.split_longform_script(longform_script, segment_duration=3)
+        logger.info(f"Created {len(segments)} segments for long-form video")
+        
+        # 3. 각 세그먼트별로 영상 생성
+        segment_videos = []
+        segment_audios = []
+        
+        for i, segment in enumerate(segments):
+            logger.info(f"\n## Processing segment {i+1}/{len(segments)}")
+            sm.state.update_task(
+                task_id, 
+                state=const.TASK_STATE_PROCESSING, 
+                progress=30 + (i * 50 // len(segments)), 
+                message=f"세그먼트 {i+1}/{len(segments)} 처리 중..."
+            )
+            
+            # 세그먼트별 파라미터 생성
+            segment_params = params.copy()
+            segment_params.video_script = segment
+            segment_params.paragraph_number = 1  # 세그먼트는 이미 분할됨
+            
+            # 세그먼트별 배경 키워드 생성
+            bg_keywords = llm.generate_longform_background_keywords(
+                params.video_subject, segment, i+1
+            )
+            segment_params.video_terms = bg_keywords
+            
+            # 세그먼트 영상 생성
+            segment_task_id = f"{task_id}_segment_{i+1}"
+            segment_result = generate_single_segment(segment_task_id, segment_params, segment)
+            
+            if segment_result:
+                segment_videos.append(segment_result['video'])
+                segment_audios.append(segment_result['audio'])
+            else:
+                logger.error(f"Failed to generate segment {i+1}")
+                sm.state.update_task(task_id, state=const.TASK_STATE_FAILED, message=f"세그먼트 {i+1} 생성 실패")
+                return None
+        
+        # 4. 모든 세그먼트 병합
+        sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=85, message="세그먼트 병합 중...")
+        
+        final_video = merge_longform_segments(task_id, segment_videos, params)
+        
+        if final_video:
+            sm.state.update_task(
+                task_id, 
+                state=const.TASK_STATE_COMPLETE, 
+                progress=100, 
+                videos=[final_video],
+                message="롱폼 영상 생성 완료"
+            )
+            logger.success(f"Long-form video generation completed: {final_video}")
+            return final_video
+        else:
+            sm.state.update_task(task_id, state=const.TASK_STATE_FAILED, message="세그먼트 병합 실패")
+            return None
+            
+    except Exception as e:
+        logger.error(f"Long-form video generation failed: {e}")
+        sm.state.update_task(task_id, state=const.TASK_STATE_FAILED, message=f"롱폼 영상 생성 오류: {e}")
+        return None
+
+
+def generate_single_segment(task_id, params, script):
+    """단일 세그먼트 영상 생성"""
+    logger.info(f"Generating single segment: {task_id}")
+    
+    try:
+        # 1. 오디오 생성
+        audio_file, audio_duration, sub_maker = generate_audio(task_id, params, script)
+        if not audio_file:
+            return None
+        
+        # 2. 자막 생성
+        subtitle_path = generate_subtitle(task_id, params, script, sub_maker, audio_file)
+        
+        # 3. 배경 영상 다운로드
+        video_terms = getattr(params, 'video_terms', [])
+        downloaded_videos = get_video_materials(task_id, params, video_terms, audio_duration, script)
+        if not downloaded_videos:
+            return None
+        
+        # 4. 최종 영상 생성
+        final_videos = generate_final_videos(
+            task_id, params, downloaded_videos, audio_file, subtitle_path
+        )
+        
+        if final_videos:
+            return {
+                'video': final_videos[0],
+                'audio': audio_file,
+                'duration': audio_duration
+            }
+        
+        return None
+        
+    except Exception as e:
+        logger.error(f"Single segment generation failed: {e}")
+        return None
+
+
+def merge_longform_segments(task_id, segment_videos, params):
+    """롱폼 세그먼트들을 하나의 영상으로 병합"""
+    logger.info(f"Merging {len(segment_videos)} segments into long-form video")
+    
+    try:
+        from moviepy.editor import VideoFileClip, concatenate_videoclips
+        
+        # 세그먼트 영상들 로드
+        clips = []
+        for video_path in segment_videos:
+            if os.path.exists(video_path):
+                clip = VideoFileClip(video_path)
+                clips.append(clip)
+            else:
+                logger.warning(f"Segment video not found: {video_path}")
+        
+        if not clips:
+            logger.error("No valid segment clips found")
+            return None
+        
+        # 영상 병합
+        final_clip = concatenate_videoclips(clips, method="compose")
+        
+        # 출력 파일 경로
+        output_path = os.path.join(utils.task_dir(task_id), f"longform_final_{task_id}.mp4")
+        
+        # 영상 저장
+        final_clip.write_videofile(
+            output_path,
+            fps=30,
+            codec='libx264',
+            audio_codec='aac',
+            temp_audiofile='temp-audio.m4a',
+            remove_temp=True
+        )
+        
+        # 리소스 정리
+        for clip in clips:
+            clip.close()
+        final_clip.close()
+        
+        logger.success(f"Long-form video merged successfully: {output_path}")
+        return output_path
+        
+    except Exception as e:
+        logger.error(f"Failed to merge long-form segments: {e}")
+        return None

@@ -296,85 +296,251 @@ def generate_script(video_subject: str, language: str = "auto", paragraph_number
     return final_script
 
 def generate_terms(video_subject: str, video_script: str, amount: int = 5) -> List[str]:
-    logger.info(f"Starting enhanced English keyword generation for subject: {video_subject}")
+    logger.info(f"Starting enhanced script-content matching keyword generation for subject: {video_subject}")
     
-    # 대본 내용 분석 기반 영어 키워드 생성 프롬프트
+    # 대본 내용을 문장별로 분석하여 더 정확한 키워드 생성
     prompt = f"""
-    You are a professional video editor. Analyze the following script content to generate English keywords optimized for stock video search.
+    You are a professional video editor specializing in matching script content with perfect background footage.
 
-    Script Analysis & Keyword Generation Requirements:
-    1. Convert specific actions, objects, and scenes mentioned in the script into English keywords
-    2. Focus on visually filmable elements
-    3. Each keyword should be 1-3 words
-    4. Prioritize keywords directly related to the script's core message
-    5. Use common terms easily found in stock footage
-    6. DO NOT use generic terms like "AI generated", "viral", "content", "shorts", "video"
-    7. Focus on script-mentioned actions, emotions, results, and methods
+    TASK: Analyze the script sentence by sentence and generate English keywords that will find EXACTLY matching stock footage.
 
-    Script Content Analysis:
+    ANALYSIS REQUIREMENTS:
+    1. Read each sentence and identify SPECIFIC visual elements mentioned
+    2. Convert Korean concepts to English keywords that stock footage sites use
+    3. Focus on CONCRETE, FILMABLE elements (not abstract concepts)
+    4. Each keyword should be 1-2 words maximum
+    5. Prioritize keywords that will find footage matching the script's narrative flow
+    6. Avoid generic terms - be SPECIFIC to what's actually mentioned
+
+    SCRIPT CONTENT ANALYSIS:
     Subject: {video_subject}
-    Script: {video_script[:1000]}
+    Full Script: {video_script}
 
-    Visual elements extractable from script:
-    - Mentioned actions or movements
-    - Objects or tools that appear
-    - Described places or environments
-    - Expressed emotions or states
-    - Presented results or effects
+    DETAILED ANALYSIS PROCESS:
+    1. Break down the script into key visual concepts
+    2. Identify specific actions, objects, settings, emotions that can be filmed
+    3. Convert to English terms commonly used in stock footage
+    4. Ensure keywords match the script's tone and message
 
-    Based on the script content above, generate {amount} English keywords.
-    List only the keywords separated by commas:
+    EXAMPLES OF GOOD KEYWORD MATCHING:
+    - Script mentions "아침 루틴" → keywords: "morning routine", "wake up", "coffee"
+    - Script mentions "성공한 사람들" → keywords: "business success", "professional", "achievement"
+    - Script mentions "운동하는 방법" → keywords: "workout", "exercise", "fitness training"
+    - Script mentions "돈 관리" → keywords: "money management", "finance", "savings"
+
+    Based on the script analysis above, generate {amount} HIGHLY SPECIFIC English keywords that will find footage perfectly matching the script content.
+    
+    Return ONLY the keywords separated by commas, no explanations:
     """
     
     try:
-        logger.info("Attempting to generate script-based English keywords using LLM...")
+        logger.info("Generating script-content-matched keywords using advanced LLM analysis...")
         response = _generate_response(prompt)
-        logger.info(f"LLM response: {response}")
+        logger.info(f"LLM keyword response: {response}")
         
         if response:
             # Clean up the response more aggressively
             cleaned = response.strip()
             
-            # Remove common prefixes
-            prefixes = ["keywords:", "Keywords:", "Sure", "The keywords", "Based on", "For this", "Here are"]
+            # Remove common prefixes and formatting
+            prefixes = ["keywords:", "Keywords:", "Sure", "The keywords", "Based on", "For this", "Here are", "Analysis:", "Result:"]
             for p in prefixes:
                 if cleaned.lower().startswith(p.lower()):
                     cleaned = cleaned[len(p):].strip()
                     if cleaned.startswith(":"):
                         cleaned = cleaned[1:].strip()
             
-            # Clean formatting
-            cleaned = cleaned.replace("\n", ",").replace("- ", "").replace("* ", "").replace('"', '').strip()
-            logger.info(f"Cleaned response: {cleaned}")
-            
-            # Extract terms
+            # Clean formatting and extract terms
+            cleaned = cleaned.replace("\n", ",").replace("- ", "").replace("* ", "").replace('"', '').replace("'", "").strip()
             terms = [t.strip() for t in cleaned.split(",") if t.strip()]
-            logger.info(f"Extracted terms: {terms}")
             
-            # Filter and validate terms
+            # Enhanced validation for script-content matching
             valid_terms = []
             for term in terms:
                 term = term.strip().lower()
-                # Skip if too long or contains non-English characters
-                if (len(term.split()) <= 3 and term.isascii() and len(term) > 2 and
-                    # Exclude generic terms
-                    not any(generic in term for generic in ["ai generated", "viral", "content", "shorts", "video", "youtube"])):
-                    # Skip common stop words
-                    if not any(stop_word in term for stop_word in ["the", "and", "or", "but", "with", "for"]):
-                        valid_terms.append(term)
+                # More strict validation for content matching
+                if (len(term.split()) <= 2 and  # Max 2 words for better search results
+                    term.isascii() and 
+                    len(term) > 2 and
+                    # Exclude generic/meta terms
+                    not any(generic in term for generic in [
+                        "ai generated", "viral", "content", "shorts", "video", "youtube",
+                        "script", "keyword", "analysis", "example", "concept"
+                    ]) and
+                    # Exclude common stop words
+                    not any(stop_word in term for stop_word in [
+                        "the", "and", "or", "but", "with", "for", "this", "that", "these", "those"
+                    ]) and
+                    # Ensure it's a concrete, searchable term
+                    not term.startswith(("how to", "what is", "why", "when"))):
+                    valid_terms.append(term)
             
-            logger.info(f"Valid terms after filtering: {valid_terms}")
+            logger.info(f"Script-matched valid terms: {valid_terms}")
             
             if len(valid_terms) >= 3:
-                logger.info(f"Generated script-based English keywords: {valid_terms[:amount]}")
-                return valid_terms[:amount]
+                # Return the most relevant terms
+                final_terms = valid_terms[:amount]
+                logger.info(f"Final script-content-matched keywords: {final_terms}")
+                return final_terms
                 
     except Exception as e:
-        logger.error(f"failed to generate script-based English terms: {e}")
+        logger.error(f"Failed to generate script-content-matched terms: {e}")
     
-    # Enhanced fallback with script content analysis
-    logger.warning("LLM failed to generate English terms. Using enhanced script analysis fallback.")
-    return _generate_script_based_keywords(video_subject, video_script, amount)
+    # Enhanced fallback with deeper script analysis
+    logger.warning("LLM failed. Using enhanced script content analysis fallback...")
+    return _generate_enhanced_script_keywords(video_subject, video_script, amount)
+
+
+def _generate_enhanced_script_keywords(video_subject: str, video_script: str, amount: int = 5) -> List[str]:
+    """Enhanced fallback that analyzes script content more deeply"""
+    logger.info(f"Performing enhanced script content analysis for: '{video_subject}'")
+    
+    script_lower = video_script.lower()
+    subject_lower = video_subject.lower()
+    
+    # Comprehensive Korean-to-English mapping with script context analysis
+    content_mapping = {
+        # Actions and behaviors
+        "루틴": ["routine", "daily habits"],
+        "습관": ["habits", "lifestyle"],
+        "방법": ["method", "technique"],
+        "비법": ["secret", "strategy"],
+        "팁": ["tips", "advice"],
+        "가이드": ["guide", "tutorial"],
+        "운동": ["workout", "exercise"],
+        "명상": ["meditation", "mindfulness"],
+        "집중": ["focus", "concentration"],
+        "공부": ["study", "learning"],
+        "독서": ["reading", "books"],
+        "요리": ["cooking", "kitchen"],
+        "청소": ["cleaning", "organization"],
+        
+        # Emotions and states
+        "성공": ["success", "achievement"],
+        "행복": ["happiness", "joy"],
+        "스트레스": ["stress", "pressure"],
+        "피로": ["tired", "exhausted"],
+        "에너지": ["energy", "vitality"],
+        "자신감": ["confidence", "self-esteem"],
+        "동기": ["motivation", "inspiration"],
+        
+        # Objects and tools
+        "돈": ["money", "cash"],
+        "투자": ["investment", "finance"],
+        "부동산": ["real estate", "property"],
+        "자동차": ["car", "vehicle"],
+        "핸드폰": ["smartphone", "phone"],
+        "컴퓨터": ["computer", "laptop"],
+        "책": ["book", "reading"],
+        "음식": ["food", "meal"],
+        "커피": ["coffee", "cafe"],
+        
+        # Places and environments
+        "집": ["home", "house"],
+        "사무실": ["office", "workplace"],
+        "카페": ["cafe", "coffee shop"],
+        "헬스장": ["gym", "fitness"],
+        "도서관": ["library", "study"],
+        "공원": ["park", "outdoor"],
+        "바다": ["ocean", "beach"],
+        "산": ["mountain", "hiking"],
+        
+        # Time and scheduling
+        "아침": ["morning", "sunrise"],
+        "저녁": ["evening", "sunset"],
+        "밤": ["night", "dark"],
+        "주말": ["weekend", "leisure"],
+        "휴가": ["vacation", "holiday"],
+        "시간": ["time", "clock"],
+        
+        # Health and wellness
+        "건강": ["health", "wellness"],
+        "다이어트": ["diet", "weight loss"],
+        "영양": ["nutrition", "healthy food"],
+        "수면": ["sleep", "rest"],
+        "휴식": ["rest", "relaxation"],
+        
+        # Relationships and social
+        "가족": ["family", "together"],
+        "친구": ["friends", "social"],
+        "연인": ["couple", "romance"],
+        "결혼": ["wedding", "marriage"],
+        "아이": ["children", "kids"],
+        "부모": ["parents", "family"],
+        
+        # Work and career
+        "일": ["work", "business"],
+        "회사": ["company", "corporate"],
+        "창업": ["startup", "entrepreneur"],
+        "면접": ["interview", "job"],
+        "승진": ["promotion", "career"],
+        "퇴사": ["resignation", "quit job"],
+        
+        # Technology and modern life
+        "AI": ["artificial intelligence", "technology"],
+        "디지털": ["digital", "tech"],
+        "온라인": ["online", "internet"],
+        "소셜미디어": ["social media", "smartphone"],
+        "유튜브": ["content creation", "video"],
+        "인스타그램": ["social media", "photography"]
+    }
+    
+    # Analyze script content for matching keywords
+    matched_keywords = []
+    
+    # First, look for direct matches in script content
+    for korean_term, english_terms in content_mapping.items():
+        if korean_term in script_lower:
+            matched_keywords.extend(english_terms[:2])  # Take first 2 from each match
+            logger.info(f"Found script content match: '{korean_term}' -> {english_terms[:2]}")
+    
+    # Then, look for subject-based matches
+    for korean_term, english_terms in content_mapping.items():
+        if korean_term in subject_lower and korean_term not in script_lower:
+            matched_keywords.extend(english_terms[:1])  # Take 1 from subject matches
+            logger.info(f"Found subject match: '{korean_term}' -> {english_terms[:1]}")
+    
+    # Remove duplicates while preserving order
+    unique_keywords = []
+    seen = set()
+    for keyword in matched_keywords:
+        if keyword.lower() not in seen:
+            unique_keywords.append(keyword.lower())
+            seen.add(keyword.lower())
+    
+    # If we don't have enough keywords, add contextual ones
+    if len(unique_keywords) < amount:
+        contextual_keywords = []
+        
+        # Add context-based keywords based on script tone and content
+        if any(word in script_lower for word in ["성공", "달성", "목표", "이루"]):
+            contextual_keywords.extend(["success", "achievement", "goal"])
+        if any(word in script_lower for word in ["건강", "운동", "다이어트", "몸"]):
+            contextual_keywords.extend(["health", "fitness", "wellness"])
+        if any(word in script_lower for word in ["돈", "투자", "부자", "경제"]):
+            contextual_keywords.extend(["money", "finance", "wealth"])
+        if any(word in script_lower for word in ["시간", "효율", "생산성", "관리"]):
+            contextual_keywords.extend(["time", "productivity", "efficiency"])
+        if any(word in script_lower for word in ["행복", "만족", "기쁨", "즐거"]):
+            contextual_keywords.extend(["happiness", "joy", "satisfaction"])
+        
+        # Add unique contextual keywords
+        for keyword in contextual_keywords:
+            if keyword not in seen and len(unique_keywords) < amount:
+                unique_keywords.append(keyword)
+                seen.add(keyword)
+    
+    # Final fallback with universal keywords if still not enough
+    if len(unique_keywords) < amount:
+        universal_keywords = ["lifestyle", "people", "modern", "daily life", "professional"]
+        for keyword in universal_keywords:
+            if keyword not in seen and len(unique_keywords) < amount:
+                unique_keywords.append(keyword)
+                seen.add(keyword)
+    
+    result = unique_keywords[:amount]
+    logger.info(f"Enhanced script analysis final keywords: {result}")
+    return result
 
 def _generate_fallback_keywords(video_subject: str, video_script: str, amount: int = 5) -> List[str]:
     """Generate fallback keywords when LLM fails"""
@@ -980,169 +1146,492 @@ def _clean_markdown_formatting(script: str) -> str:
     script = re.sub(r'\n\s*\n', '\n\n', script)
     
     return script.strip()
-def _generate_script_based_keywords(video_subject: str, video_script: str, amount: int = 5) -> List[str]:
-    """대본 내용 분석 기반 키워드 생성"""
-    logger.info(f"Analyzing script content for keyword generation: '{video_subject}'")
+def _generate_enhanced_script_keywords(video_subject: str, video_script: str, amount: int = 5) -> List[str]:
+    """Enhanced fallback that analyzes script content more deeply"""
+    logger.info(f"Performing enhanced script content analysis for: '{video_subject}'")
     
-    import re
-    
-    # 대본에서 키워드 추출을 위한 패턴 분석
     script_lower = video_script.lower()
     subject_lower = video_subject.lower()
     
-    # 대본 내용 기반 키워드 매핑 (더 구체적이고 시각적)
-    content_keywords = {
-        # 행동/동작 관련
-        "물": ["water", "drinking", "hydration"],
-        "스트레칭": ["stretching", "exercise", "flexibility"],
-        "명상": ["meditation", "mindfulness", "relaxation"],
-        "호흡": ["breathing", "meditation", "calm"],
-        "걷기": ["walking", "outdoor", "exercise"],
-        "운동": ["workout", "fitness", "gym"],
-        "요리": ["cooking", "kitchen", "food preparation"],
-        "독서": ["reading", "books", "learning"],
-        "쓰기": ["writing", "notebook", "planning"],
-        "기록": ["writing", "journal", "planning"],
+    # Comprehensive Korean-to-English mapping with script context analysis
+    content_mapping = {
+        # Actions and behaviors
+        "루틴": ["routine", "daily habits"],
+        "습관": ["habits", "lifestyle"],
+        "방법": ["method", "technique"],
+        "비법": ["secret", "strategy"],
+        "팁": ["tips", "advice"],
+        "가이드": ["guide", "tutorial"],
+        "운동": ["workout", "exercise"],
+        "명상": ["meditation", "mindfulness"],
+        "집중": ["focus", "concentration"],
+        "공부": ["study", "learning"],
+        "독서": ["reading", "books"],
+        "요리": ["cooking", "kitchen"],
+        "청소": ["cleaning", "organization"],
         
-        # 물건/도구 관련
-        "커피": ["coffee", "morning", "cafe"],
-        "책": ["books", "reading", "education"],
-        "노트": ["notebook", "writing", "planning"],
-        "스마트폰": ["smartphone", "technology", "digital"],
-        "컴퓨터": ["computer", "technology", "work"],
-        "돈": ["money", "finance", "cash"],
-        "통장": ["banking", "finance", "savings"],
-        "카드": ["credit card", "payment", "finance"],
+        # Emotions and states
+        "성공": ["success", "achievement"],
+        "행복": ["happiness", "joy"],
+        "스트레스": ["stress", "pressure"],
+        "피로": ["tired", "exhausted"],
+        "에너지": ["energy", "vitality"],
+        "자신감": ["confidence", "self-esteem"],
+        "동기": ["motivation", "inspiration"],
         
-        # 장소/환경 관련
-        "집": ["home", "house", "indoor"],
-        "사무실": ["office", "workplace", "business"],
-        "카페": ["cafe", "coffee shop", "social"],
-        "공원": ["park", "outdoor", "nature"],
-        "헬스장": ["gym", "fitness", "workout"],
-        "부엌": ["kitchen", "cooking", "home"],
+        # Objects and tools
+        "돈": ["money", "cash"],
+        "투자": ["investment", "finance"],
+        "부동산": ["real estate", "property"],
+        "자동차": ["car", "vehicle"],
+        "핸드폰": ["smartphone", "phone"],
+        "컴퓨터": ["computer", "laptop"],
+        "책": ["book", "reading"],
+        "음식": ["food", "meal"],
+        "커피": ["coffee", "cafe"],
         
-        # 감정/상태 관련
-        "스트레스": ["stress", "pressure", "tension"],
-        "행복": ["happiness", "joy", "positive"],
-        "피곤": ["tired", "fatigue", "rest"],
-        "집중": ["focus", "concentration", "productivity"],
-        "성공": ["success", "achievement", "goal"],
-        "실패": ["failure", "challenge", "learning"],
+        # Places and environments
+        "집": ["home", "house"],
+        "사무실": ["office", "workplace"],
+        "카페": ["cafe", "coffee shop"],
+        "헬스장": ["gym", "fitness"],
+        "도서관": ["library", "study"],
+        "공원": ["park", "outdoor"],
+        "바다": ["ocean", "beach"],
+        "산": ["mountain", "hiking"],
         
-        # 시간 관련
-        "아침": ["morning", "sunrise", "early"],
-        "저녁": ["evening", "sunset", "night"],
-        "하루": ["daily", "routine", "lifestyle"],
-        "주말": ["weekend", "leisure", "relaxation"],
+        # Time and scheduling
+        "아침": ["morning", "sunrise"],
+        "저녁": ["evening", "sunset"],
+        "밤": ["night", "dark"],
+        "주말": ["weekend", "leisure"],
+        "휴가": ["vacation", "holiday"],
+        "시간": ["time", "clock"],
         
-        # 결과/효과 관련
-        "변화": ["change", "transformation", "improvement"],
-        "성장": ["growth", "development", "progress"],
-        "효과": ["results", "benefits", "improvement"],
-        "건강": ["health", "wellness", "vitality"]
+        # Health and wellness
+        "건강": ["health", "wellness"],
+        "다이어트": ["diet", "weight loss"],
+        "영양": ["nutrition", "healthy food"],
+        "수면": ["sleep", "rest"],
+        "휴식": ["rest", "relaxation"],
+        
+        # Relationships and social
+        "가족": ["family", "together"],
+        "친구": ["friends", "social"],
+        "연인": ["couple", "romance"],
+        "결혼": ["wedding", "marriage"],
+        "아이": ["children", "kids"],
+        "부모": ["parents", "family"],
+        
+        # Work and career
+        "일": ["work", "business"],
+        "회사": ["company", "corporate"],
+        "창업": ["startup", "entrepreneur"],
+        "면접": ["interview", "job"],
+        "승진": ["promotion", "career"],
+        "퇴사": ["resignation", "quit job"],
+        
+        # Technology and modern life
+        "AI": ["artificial intelligence", "technology"],
+        "디지털": ["digital", "tech"],
+        "온라인": ["online", "internet"],
+        "소셜미디어": ["social media", "smartphone"],
+        "유튜브": ["content creation", "video"],
+        "인스타그램": ["social media", "photography"]
     }
     
-    # 대본에서 언급된 키워드 찾기
-    found_keywords = []
+    # Analyze script content for matching keywords
+    matched_keywords = []
     
-    # 1. 직접 매칭
-    for korean_word, english_keywords in content_keywords.items():
-        if korean_word in script_lower or korean_word in subject_lower:
-            found_keywords.extend(english_keywords[:2])  # 각 카테고리에서 2개씩
-            logger.info(f"Found keyword '{korean_word}' -> {english_keywords[:2]}")
+    # First, look for direct matches in script content
+    for korean_term, english_terms in content_mapping.items():
+        if korean_term in script_lower:
+            matched_keywords.extend(english_terms[:2])  # Take first 2 from each match
+            logger.info(f"Found script content match: '{korean_term}' -> {english_terms[:2]}")
     
-    # 2. 문맥 기반 키워드 추가
-    context_keywords = []
+    # Then, look for subject-based matches
+    for korean_term, english_terms in content_mapping.items():
+        if korean_term in subject_lower and korean_term not in script_lower:
+            matched_keywords.extend(english_terms[:1])  # Take 1 from subject matches
+            logger.info(f"Found subject match: '{korean_term}' -> {english_terms[:1]}")
     
-    # 건강 관련 문맥
-    if any(word in script_lower for word in ["건강", "몸", "체력", "운동", "다이어트"]):
-        context_keywords.extend(["healthy lifestyle", "wellness", "fitness"])
-    
-    # 성공/자기계발 문맥
-    if any(word in script_lower for word in ["성공", "목표", "달성", "습관", "계발"]):
-        context_keywords.extend(["success", "achievement", "personal growth"])
-    
-    # 돈/재정 문맥
-    if any(word in script_lower for word in ["돈", "투자", "저축", "재테크", "경제"]):
-        context_keywords.extend(["money", "finance", "investment"])
-    
-    # 일상/라이프스타일 문맥
-    if any(word in script_lower for word in ["일상", "하루", "루틴", "생활", "시간"]):
-        context_keywords.extend(["daily routine", "lifestyle", "time management"])
-    
-    # 3. 대본에서 구체적인 행동 추출
-    action_patterns = [
-        (r"(\w+)을?\s*마시", "drinking"),
-        (r"(\w+)을?\s*먹", "eating"),
-        (r"(\w+)을?\s*하", "doing"),
-        (r"(\w+)을?\s*보", "watching"),
-        (r"(\w+)을?\s*쓰", "writing"),
-        (r"(\w+)을?\s*읽", "reading"),
-    ]
-    
-    for pattern, action in action_patterns:
-        matches = re.findall(pattern, script_lower)
-        if matches:
-            context_keywords.append(action)
-    
-    # 4. 키워드 조합 및 정리
-    all_keywords = found_keywords + context_keywords
-    
-    # 중복 제거 및 정리
+    # Remove duplicates while preserving order
     unique_keywords = []
     seen = set()
+    for keyword in matched_keywords:
+        if keyword.lower() not in seen:
+            unique_keywords.append(keyword.lower())
+            seen.add(keyword.lower())
     
-    for keyword in all_keywords:
-        keyword_clean = keyword.lower().strip()
-        if keyword_clean not in seen and len(keyword_clean) > 2:
-            unique_keywords.append(keyword_clean)
-            seen.add(keyword_clean)
-    
-    # 5. 부족한 경우 주제 기반 키워드 추가
+    # If we don't have enough keywords, add contextual ones
     if len(unique_keywords) < amount:
-        subject_based = _get_subject_based_keywords(video_subject)
-        for keyword in subject_based:
-            if keyword.lower() not in seen and len(unique_keywords) < amount:
-                unique_keywords.append(keyword.lower())
-                seen.add(keyword.lower())
+        contextual_keywords = []
+        
+        # Add context-based keywords based on script tone and content
+        if any(word in script_lower for word in ["성공", "달성", "목표", "이루"]):
+            contextual_keywords.extend(["success", "achievement", "goal"])
+        if any(word in script_lower for word in ["건강", "운동", "다이어트", "몸"]):
+            contextual_keywords.extend(["health", "fitness", "wellness"])
+        if any(word in script_lower for word in ["돈", "투자", "부자", "경제"]):
+            contextual_keywords.extend(["money", "finance", "wealth"])
+        if any(word in script_lower for word in ["시간", "효율", "생산성", "관리"]):
+            contextual_keywords.extend(["time", "productivity", "efficiency"])
+        if any(word in script_lower for word in ["행복", "만족", "기쁨", "즐거"]):
+            contextual_keywords.extend(["happiness", "joy", "satisfaction"])
+        
+        # Add unique contextual keywords
+        for keyword in contextual_keywords:
+            if keyword not in seen and len(unique_keywords) < amount:
+                unique_keywords.append(keyword)
+                seen.add(keyword)
     
-    # 6. 여전히 부족한 경우 일반 키워드 추가
+    # Final fallback with universal keywords if still not enough
     if len(unique_keywords) < amount:
-        general_keywords = ["lifestyle", "people", "modern", "daily", "routine"]
-        for keyword in general_keywords:
+        universal_keywords = ["lifestyle", "people", "modern", "daily life", "professional"]
+        for keyword in universal_keywords:
             if keyword not in seen and len(unique_keywords) < amount:
                 unique_keywords.append(keyword)
                 seen.add(keyword)
     
     result = unique_keywords[:amount]
-    logger.info(f"Final script-based keywords: {result}")
+    logger.info(f"Enhanced script analysis final keywords: {result}")
     return result
 
-def _get_subject_based_keywords(video_subject: str) -> List[str]:
-    """주제 기반 키워드 생성"""
+
+def generate_longform_script(video_subject: str, language: str = "ko-KR", duration_minutes: int = 10) -> str:
+    """롱폼 영상용 긴 대본 생성 (5-15분 분량)"""
+    logger.info(f"Generating long-form script for subject: {video_subject}, duration: {duration_minutes} minutes")
+    
+    # 언어별 프롬프트 설정
+    if language == "ko-KR" or language == "auto":
+        prompt = f"""
+        주제 '{video_subject}'에 대한 {duration_minutes}분 분량의 롱폼 YouTube 영상 대본을 작성해주세요.
+
+        요구사항:
+        1. 총 {duration_minutes}분 분량 (약 {duration_minutes * 150}자)
+        2. 인트로 - 본론 - 아웃트로 구조
+        3. 5-7개의 주요 챕터로 구성
+        4. 각 챕터는 명확한 소제목과 2-3분 분량
+        5. 시청자 참여 유도 요소 포함 (질문, 댓글 유도 등)
+        6. 구체적이고 실용적인 정보 제공
+        7. 자연스러운 말투와 흐름
+        8. 마크다운 형식 사용 금지
+        9. 장면 설명 사용 금지
+        10. 순수한 텍스트만 작성
+
+        구조:
+        - 인트로: 주제 소개 및 시청자 관심 끌기
+        - 본론: 5-7개 챕터로 나누어 상세 설명
+        - 아웃트로: 요약 및 구독/좋아요 유도
+
+        스타일: 교육적이면서도 흥미롭게, 전문적이지만 이해하기 쉽게
+
+        주제: {video_subject}
+
+        {duration_minutes}분 분량의 롱폼 대본을 작성해주세요:
+        """
+    else:
+        prompt = f"""
+        Write a {duration_minutes}-minute long-form YouTube video script about '{video_subject}'.
+
+        Requirements:
+        1. Total duration: {duration_minutes} minutes (approximately {duration_minutes * 120} words)
+        2. Structure: Intro - Main Content - Outro
+        3. 5-7 main chapters
+        4. Each chapter: clear subtitle and 2-3 minutes content
+        5. Include viewer engagement elements (questions, comment prompts)
+        6. Provide specific and practical information
+        7. Natural speaking tone and flow
+        8. NO markdown formatting
+        9. NO scene descriptions
+        10. Plain text only
+
+        Structure:
+        - Intro: Topic introduction and hook
+        - Main: 5-7 chapters with detailed explanations
+        - Outro: Summary and subscribe/like call-to-action
+
+        Style: Educational yet engaging, professional but accessible
+
+        Subject: {video_subject}
+
+        Write the {duration_minutes}-minute long-form script:
+        """
+    
+    try:
+        response = _generate_response(prompt)
+        if response:
+            script = response.strip()
+            
+            # 인사말 제거 로직
+            script = _remove_greetings(script, language)
+            
+            # 마크다운 형식 제거
+            script = _clean_markdown_formatting(script)
+            
+            logger.info(f"Generated long-form script: {len(script)} characters")
+            return script
+    except Exception as e:
+        logger.error(f"Failed to generate long-form script: {e}")
+    
+    return "롱폼 대본 생성에 실패했습니다. 잠시 후 다시 시도해 주세요."
+
+
+def split_longform_script(script: str, segment_duration: int = 3) -> list:
+    """롱폼 대본을 세그먼트로 분할"""
+    logger.info(f"Splitting long-form script into {segment_duration}-minute segments")
+    
+    # 대본을 문장 단위로 분할
+    sentences = script.replace('\n\n', '\n').split('\n')
+    sentences = [s.strip() for s in sentences if s.strip()]
+    
+    # 각 세그먼트당 예상 문자 수 (3분 = 약 450자)
+    chars_per_segment = segment_duration * 150
+    
+    segments = []
+    current_segment = ""
+    
+    for sentence in sentences:
+        # 현재 세그먼트에 문장을 추가했을 때의 길이 확인
+        test_segment = current_segment + "\n" + sentence if current_segment else sentence
+        
+        if len(test_segment) <= chars_per_segment:
+            current_segment = test_segment
+        else:
+            # 현재 세그먼트가 너무 짧으면 더 추가
+            if len(current_segment) < chars_per_segment * 0.7:
+                current_segment = test_segment
+            else:
+                # 세그먼트 완성
+                if current_segment:
+                    segments.append(current_segment.strip())
+                current_segment = sentence
+    
+    # 마지막 세그먼트 추가
+    if current_segment:
+        segments.append(current_segment.strip())
+    
+    logger.info(f"Split script into {len(segments)} segments")
+    return segments
+
+
+def generate_longform_background_keywords(video_subject: str, script_segment: str, segment_index: int) -> list:
+    """롱폼 영상 세그먼트별 배경 영상 키워드 생성 - 향상된 대본 분석 기반"""
+    logger.info(f"Generating enhanced background keywords for longform segment {segment_index}")
+    
+    # 향상된 세그먼트 분석 프롬프트
+    prompt = f"""
+    You are a professional video editor specializing in matching longform content with perfect background footage.
+
+    TASK: Analyze this specific segment of a longform video and generate HIGHLY SPECIFIC English keywords for background video search.
+
+    LONGFORM CONTEXT:
+    - Overall Subject: {video_subject}
+    - Segment Number: {segment_index}
+    - Segment Content: {script_segment}
+
+    ENHANCED ANALYSIS REQUIREMENTS:
+    1. Read the segment content sentence by sentence
+    2. Identify SPECIFIC visual elements, actions, and concepts mentioned
+    3. Convert to English keywords that will find EXACTLY matching stock footage
+    4. Focus on CONCRETE, FILMABLE elements (not abstract concepts)
+    5. Each keyword should be 1-2 words maximum for better search results
+    6. Ensure variety - different segments should have different visual styles
+    7. Consider the educational/informational nature of longform content
+
+    LONGFORM-SPECIFIC CONSIDERATIONS:
+    - Longer content needs more visual variety
+    - Educational content benefits from professional, clean visuals
+    - Each segment should have distinct visual identity
+    - Mix of close-ups, wide shots, and different environments
+
+    EXAMPLES OF EXCELLENT LONGFORM KEYWORD MATCHING:
+    - Segment about "시간 관리" → "time management", "clock", "schedule", "planning"
+    - Segment about "성공 습관" → "business success", "professional", "achievement", "goal"
+    - Segment about "건강한 식습관" → "healthy food", "nutrition", "cooking", "fresh vegetables"
+    - Segment about "운동 루틴" → "workout", "gym", "exercise", "fitness training"
+
+    Based on the segment analysis above, generate 8 HIGHLY SPECIFIC English keywords that will find footage perfectly matching this segment's content.
+    
+    Return ONLY the keywords separated by commas, no explanations:
+    """
+    
+    try:
+        logger.info(f"Generating segment-specific keywords using enhanced LLM analysis for segment {segment_index}...")
+        response = _generate_response(prompt)
+        logger.info(f"LLM response for segment {segment_index}: {response}")
+        
+        if response:
+            # Clean up the response
+            cleaned = response.strip()
+            
+            # Remove common prefixes
+            prefixes = ["keywords:", "Keywords:", "Sure", "The keywords", "Based on", "For this", "Here are", "Analysis:", "Result:"]
+            for p in prefixes:
+                if cleaned.lower().startswith(p.lower()):
+                    cleaned = cleaned[len(p):].strip()
+                    if cleaned.startswith(":"):
+                        cleaned = cleaned[1:].strip()
+            
+            # Clean formatting and extract terms
+            cleaned = cleaned.replace("\n", ",").replace("- ", "").replace("* ", "").replace('"', '').replace("'", "").strip()
+            keywords = [k.strip() for k in cleaned.split(",") if k.strip()]
+            
+            # Enhanced validation for longform content
+            valid_keywords = []
+            for keyword in keywords:
+                keyword = keyword.strip().lower()
+                # Strict validation for longform content matching
+                if (len(keyword.split()) <= 2 and  # Max 2 words
+                    keyword.isascii() and 
+                    len(keyword) > 2 and
+                    # Exclude generic/meta terms
+                    not any(generic in keyword for generic in [
+                        "ai", "video", "content", "longform", "segment", "analysis", 
+                        "keyword", "example", "concept", "youtube", "education"
+                    ]) and
+                    # Exclude common stop words
+                    not any(stop_word in keyword for stop_word in [
+                        "the", "and", "or", "but", "with", "for", "this", "that"
+                    ]) and
+                    # Ensure it's a concrete, searchable term
+                    not keyword.startswith(("how to", "what is", "why", "when"))):
+                    valid_keywords.append(keyword)
+            
+            logger.info(f"Segment {segment_index} valid keywords: {valid_keywords}")
+            
+            if len(valid_keywords) >= 5:
+                final_keywords = valid_keywords[:8]
+                logger.info(f"Final longform segment {segment_index} keywords: {final_keywords}")
+                return final_keywords
+                
+    except Exception as e:
+        logger.error(f"Failed to generate longform segment keywords: {e}")
+    
+    # Enhanced fallback with segment-specific analysis
+    logger.warning(f"LLM failed for segment {segment_index}. Using enhanced segment analysis fallback...")
+    return _generate_longform_segment_keywords(video_subject, script_segment, segment_index)
+
+
+def _generate_longform_segment_keywords(video_subject: str, script_segment: str, segment_index: int) -> list:
+    """Enhanced fallback for longform segment keyword generation"""
+    logger.info(f"Performing enhanced longform segment analysis for segment {segment_index}")
+    
+    script_lower = script_segment.lower()
     subject_lower = video_subject.lower()
     
-    subject_mapping = {
-        "아침": ["morning", "sunrise", "breakfast", "routine"],
-        "루틴": ["routine", "daily", "habit", "lifestyle"],
-        "습관": ["habit", "routine", "lifestyle", "daily"],
-        "건강": ["health", "wellness", "fitness", "nutrition"],
-        "운동": ["exercise", "workout", "fitness", "gym"],
-        "다이어트": ["diet", "weight loss", "healthy eating", "nutrition"],
-        "돈": ["money", "finance", "cash", "wealth"],
-        "투자": ["investment", "finance", "money", "trading"],
-        "성공": ["success", "achievement", "goal", "winner"],
-        "스트레스": ["stress", "relaxation", "calm", "meditation"],
-        "시간": ["time", "clock", "schedule", "planning"],
-        "관리": ["management", "organization", "planning", "control"],
-        "방법": ["method", "way", "technique", "approach"],
-        "비법": ["secret", "tip", "technique", "method"]
+    # Longform-specific keyword mapping with more professional/educational focus
+    longform_mapping = {
+        # Professional and business
+        "성공": ["business success", "achievement", "professional", "goal"],
+        "비즈니스": ["business", "corporate", "office", "meeting"],
+        "전략": ["strategy", "planning", "business plan", "analysis"],
+        "목표": ["goal", "target", "achievement", "success"],
+        "계획": ["planning", "strategy", "organization", "schedule"],
+        
+        # Learning and education
+        "학습": ["learning", "education", "study", "knowledge"],
+        "교육": ["education", "teaching", "classroom", "training"],
+        "지식": ["knowledge", "information", "learning", "education"],
+        "연구": ["research", "analysis", "study", "investigation"],
+        "분석": ["analysis", "data", "research", "statistics"],
+        
+        # Health and wellness (professional focus)
+        "건강": ["health", "wellness", "medical", "healthcare"],
+        "운동": ["exercise", "fitness", "gym", "training"],
+        "영양": ["nutrition", "healthy food", "diet", "wellness"],
+        "의료": ["medical", "healthcare", "doctor", "hospital"],
+        
+        # Technology and innovation
+        "기술": ["technology", "innovation", "digital", "tech"],
+        "혁신": ["innovation", "technology", "modern", "future"],
+        "디지털": ["digital", "technology", "computer", "online"],
+        "AI": ["artificial intelligence", "technology", "computer", "digital"],
+        
+        # Finance and economics
+        "경제": ["economy", "finance", "business", "market"],
+        "투자": ["investment", "finance", "money", "business"],
+        "금융": ["finance", "banking", "investment", "money"],
+        "시장": ["market", "business", "economy", "trading"],
+        
+        # Time and productivity
+        "시간": ["time", "clock", "productivity", "schedule"],
+        "효율": ["efficiency", "productivity", "optimization", "performance"],
+        "생산성": ["productivity", "efficiency", "work", "performance"],
+        "관리": ["management", "organization", "control", "system"],
+        
+        # Communication and social
+        "소통": ["communication", "meeting", "discussion", "teamwork"],
+        "협업": ["teamwork", "collaboration", "meeting", "group"],
+        "리더십": ["leadership", "management", "team", "professional"],
+        "네트워킹": ["networking", "business", "professional", "meeting"],
+        
+        # Environment and sustainability
+        "환경": ["environment", "nature", "sustainability", "green"],
+        "지속가능": ["sustainability", "environment", "green", "eco"],
+        "자연": ["nature", "environment", "outdoor", "landscape"],
+        
+        # Psychology and mindset
+        "심리": ["psychology", "mindset", "mental", "brain"],
+        "마음": ["mindset", "psychology", "mental", "emotion"],
+        "감정": ["emotion", "psychology", "mental", "feeling"],
+        "스트레스": ["stress", "pressure", "mental health", "wellness"]
     }
     
-    keywords = []
-    for korean, english_list in subject_mapping.items():
-        if korean in subject_lower:
-            keywords.extend(english_list)
+    # Analyze segment content for matching keywords
+    matched_keywords = []
     
-    return keywords[:8] if keywords else ["lifestyle", "people", "modern", "daily"]
+    # Look for direct matches in segment content (prioritized)
+    for korean_term, english_terms in longform_mapping.items():
+        if korean_term in script_lower:
+            matched_keywords.extend(english_terms[:2])  # Take 2 from each match
+            logger.info(f"Segment {segment_index} content match: '{korean_term}' -> {english_terms[:2]}")
+    
+    # Look for subject-based matches (secondary)
+    for korean_term, english_terms in longform_mapping.items():
+        if korean_term in subject_lower and korean_term not in script_lower:
+            matched_keywords.extend(english_terms[:1])  # Take 1 from subject matches
+            logger.info(f"Segment {segment_index} subject match: '{korean_term}' -> {english_terms[:1]}")
+    
+    # Remove duplicates while preserving order
+    unique_keywords = []
+    seen = set()
+    for keyword in matched_keywords:
+        if keyword.lower() not in seen:
+            unique_keywords.append(keyword.lower())
+            seen.add(keyword.lower())
+    
+    # Add segment-specific variety based on index
+    if len(unique_keywords) < 8:
+        # Different visual styles for different segments
+        segment_variety = {
+            1: ["professional", "business", "modern"],
+            2: ["technology", "innovation", "digital"],
+            3: ["analysis", "data", "research"],
+            4: ["teamwork", "collaboration", "meeting"],
+            5: ["growth", "development", "progress"],
+            6: ["strategy", "planning", "organization"],
+            7: ["success", "achievement", "goal"],
+            8: ["future", "vision", "innovation"]
+        }
+        
+        variety_keywords = segment_variety.get(segment_index % 8 + 1, ["professional", "modern", "business"])
+        for keyword in variety_keywords:
+            if keyword not in seen and len(unique_keywords) < 8:
+                unique_keywords.append(keyword)
+                seen.add(keyword)
+    
+    # Final fallback with longform-appropriate keywords
+    if len(unique_keywords) < 8:
+        longform_fallback = [
+            "professional", "business", "modern", "technology", 
+            "education", "analysis", "strategy", "innovation"
+        ]
+        for keyword in longform_fallback:
+            if keyword not in seen and len(unique_keywords) < 8:
+                unique_keywords.append(keyword)
+                seen.add(keyword)
+    
+    result = unique_keywords[:8]
+    logger.info(f"Enhanced longform segment {segment_index} final keywords: {result}")
+    return result

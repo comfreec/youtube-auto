@@ -37,12 +37,114 @@ st.set_page_config(
     page_icon="🎬",
     layout="wide",
     initial_sidebar_state="collapsed",
-    menu_items={
-        "Get Help": "https://github.com/FujiwaraChoki/MoneyPrinterTurbo",
-        "Report a bug": "https://github.com/FujiwaraChoki/MoneyPrinterTurbo/issues",
-        "About": "# AI 영상 생성 스튜디오\n\n차세대 AI 기반 자동 영상 생성 플랫폼입니다.",
-    },
+    menu_items=None  # 완전히 메뉴 제거
 )
+
+# IMMEDIATE MENU HIDING - 페이지 로딩 즉시 적용
+immediate_hide_css = """
+<style>
+    /* IMMEDIATE HIDE - 로딩 시 깜빡임 방지 */
+    header[data-testid="stHeader"] {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        position: absolute !important;
+        top: -9999px !important;
+        opacity: 0 !important;
+    }
+    
+    #MainMenu {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+    }
+    
+    .stDeployButton {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+    }
+    
+    footer {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+    }
+    
+    /* Hide hamburger menu immediately */
+    button[title="View fullscreen"] {
+        display: none !important;
+        opacity: 0 !important;
+    }
+    
+    /* Hide settings menu immediately */
+    button[aria-label="Settings"] {
+        display: none !important;
+        opacity: 0 !important;
+    }
+    
+    /* Hide "Made with Streamlit" immediately */
+    .viewerBadge_container__1QSob,
+    .viewerBadge_link__1S137 {
+        display: none !important;
+        opacity: 0 !important;
+    }
+    
+    /* Hide toolbar immediately */
+    .stToolbar,
+    [data-testid="stToolbar"] {
+        display: none !important;
+        opacity: 0 !important;
+    }
+    
+    /* Hide status widget immediately */
+    .stStatusWidget,
+    [data-testid="stStatusWidget"] {
+        display: none !important;
+        opacity: 0 !important;
+    }
+    
+    /* Hide decoration immediately */
+    [data-testid="stDecoration"] {
+        display: none !important;
+        opacity: 0 !important;
+    }
+    
+    /* Hide floating container immediately */
+    .stFloatingContainer {
+        display: none !important;
+        opacity: 0 !important;
+    }
+    
+    /* Force hide any menu-related elements immediately */
+    .css-1d391kg, .css-1v0mbdj, .css-18e3th9, .css-1dp5vir {
+        display: none !important;
+        opacity: 0 !important;
+    }
+    
+    /* Remove top padding immediately */
+    .main .block-container {
+        padding-top: 1rem !important;
+    }
+    
+    /* Hide any remaining top elements immediately */
+    .element-container:first-child {
+        margin-top: 0 !important;
+    }
+    
+    /* Additional immediate hiding */
+    .stApp > header,
+    .stApp > div[data-testid="stHeader"] {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        height: 0 !important;
+        position: absolute !important;
+        top: -9999px !important;
+    }
+</style>
+"""
+st.markdown(immediate_hide_css, unsafe_allow_html=True)
 
 # Apply mobile optimizations
 if MOBILE_OPTIMIZATION_AVAILABLE:
@@ -654,21 +756,99 @@ streamlit_style = """
         border-radius: 20px !important;
     }
     
-    /* Hide Streamlit Branding */
+    /* Hide Streamlit Branding - ENHANCED */
     header[data-testid="stHeader"] {
         display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        position: absolute !important;
+        top: -9999px !important;
     }
     
     footer {
         display: none !important;
+        visibility: hidden !important;
     }
     
     #MainMenu {
-        visibility: hidden;
+        visibility: hidden !important;
+        display: none !important;
     }
     
     .stDeployButton {
-        display: none;
+        display: none !important;
+        visibility: hidden !important;
+    }
+    
+    /* Hide hamburger menu */
+    button[title="View fullscreen"] {
+        display: none !important;
+    }
+    
+    /* Hide settings menu */
+    button[aria-label="Settings"] {
+        display: none !important;
+    }
+    
+    /* Hide "Made with Streamlit" */
+    .viewerBadge_container__1QSob {
+        display: none !important;
+    }
+    
+    .viewerBadge_link__1S137 {
+        display: none !important;
+    }
+    
+    /* Hide toolbar */
+    .stToolbar {
+        display: none !important;
+    }
+    
+    /* Hide status widget */
+    .stStatusWidget {
+        display: none !important;
+    }
+    
+    /* Hide any remaining Streamlit branding */
+    [data-testid="stToolbar"] {
+        display: none !important;
+    }
+    
+    [data-testid="stDecoration"] {
+        display: none !important;
+    }
+    
+    [data-testid="stStatusWidget"] {
+        display: none !important;
+    }
+    
+    /* Hide top padding that might show menu space */
+    .main .block-container {
+        padding-top: 1rem !important;
+    }
+    
+    /* Force hide any menu-related elements */
+    .css-1d391kg, .css-1v0mbdj, .css-18e3th9, .css-1dp5vir {
+        display: none !important;
+    }
+    
+    /* Hide any floating elements */
+    .stFloatingContainer {
+        display: none !important;
+    }
+    
+    /* Additional menu hiding */
+    .stApp > header {
+        display: none !important;
+    }
+    
+    .stApp > div[data-testid="stHeader"] {
+        display: none !important;
+    }
+    
+    /* Hide any remaining top elements */
+    .element-container:first-child {
+        margin-top: 0 !important;
     }
     
     /* Premium Mobile Responsiveness - COMPACT VERSION */
@@ -859,6 +1039,91 @@ streamlit_style = """
 </style>
 """
 st.markdown(streamlit_style, unsafe_allow_html=True)
+
+# JavaScript to hide any remaining menu elements - IMMEDIATE EXECUTION
+hide_menu_js = """
+<script>
+// IMMEDIATE EXECUTION - 페이지 로딩 즉시 실행
+(function() {
+    'use strict';
+    
+    function hideMenuElements() {
+        const elementsToHide = [
+            'header[data-testid="stHeader"]',
+            '#MainMenu',
+            '.stDeployButton',
+            'button[title="View fullscreen"]',
+            'button[aria-label="Settings"]',
+            '.viewerBadge_container__1QSob',
+            '.viewerBadge_link__1S137',
+            '.stToolbar',
+            '.stStatusWidget',
+            '[data-testid="stToolbar"]',
+            '[data-testid="stDecoration"]',
+            '[data-testid="stStatusWidget"]',
+            '.stFloatingContainer',
+            '.css-1d391kg',
+            '.css-1v0mbdj', 
+            '.css-18e3th9',
+            '.css-1dp5vir'
+        ];
+        
+        elementsToHide.forEach(selector => {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach(element => {
+                element.style.display = 'none';
+                element.style.visibility = 'hidden';
+                element.style.opacity = '0';
+                element.style.height = '0';
+                element.style.position = 'absolute';
+                element.style.top = '-9999px';
+                element.style.zIndex = '-9999';
+            });
+        });
+        
+        // Remove any remaining top padding
+        const mainContainer = document.querySelector('.main .block-container');
+        if (mainContainer) {
+            mainContainer.style.paddingTop = '1rem';
+        }
+    }
+    
+    // Execute immediately
+    hideMenuElements();
+    
+    // Execute when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', hideMenuElements);
+    } else {
+        hideMenuElements();
+    }
+    
+    // Execute when page is fully loaded
+    window.addEventListener('load', hideMenuElements);
+    
+    // Run very frequently to catch any dynamically loaded elements
+    const intervalId = setInterval(hideMenuElements, 10); // Every 10ms for first few seconds
+    
+    // After 5 seconds, reduce frequency to save resources
+    setTimeout(() => {
+        clearInterval(intervalId);
+        setInterval(hideMenuElements, 100); // Every 100ms after that
+    }, 5000);
+    
+    // Also hide on any mutation
+    if (typeof MutationObserver !== 'undefined') {
+        const observer = new MutationObserver(hideMenuElements);
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['style', 'class']
+        });
+    }
+})();
+</script>
+"""
+st.markdown(hide_menu_js, unsafe_allow_html=True)
 
 # Imports moved here to speed up UI rendering
 from app.config import config
@@ -1823,6 +2088,470 @@ with tab_main:
                         logger.error(f"Full traceback: {error_details}")
                         status_text.error(f"❌ 생성 실패: {str(e)}")
                         progress_bar.empty()
+
+    # Premium Long-form Video Section
+    with st.expander("📺 **롱폼 영상 생성** - 5-15분 교육/정보 콘텐츠", expanded=False):
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); 
+                    padding: 1rem; border-radius: 12px; margin-bottom: 1rem;">
+            <p style="margin: 0; color: #a0a0a0;">
+                🎓 <strong>교육 콘텐츠</strong> | 📚 <strong>정보 전달</strong> | 🎯 <strong>심화 학습</strong><br>
+                5-15분 분량의 전문적인 롱폼 영상을 생성합니다. 쇼츠보다 깊이 있는 내용을 다룹니다.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Long-form Configuration
+        col_longform_config, col_longform_generate = st.columns([0.6, 0.4])
+        
+        with col_longform_config:
+            st.markdown("#### 📝 **롱폼 설정**")
+            
+            col_duration, col_style = st.columns(2)
+            with col_duration:
+                longform_duration = st.selectbox(
+                    "영상 길이 (분)", 
+                    options=[5, 8, 10, 12, 15], 
+                    index=2,  # 10분을 기본값으로
+                    key="longform_duration_input",
+                    help="5분부터 15분까지 설정 가능합니다."
+                )
+            
+            with col_style:
+                longform_style = st.selectbox(
+                    "콘텐츠 스타일",
+                    ["📚 교육형 (상세 설명)", "💡 팁 모음 (실용적)", "🎯 가이드 (단계별)", "📊 분석형 (데이터 기반)"],
+                    index=0,  # 교육형을 기본값으로
+                    key="longform_style_select"
+                )
+            
+            # Long-form subject input
+            st.markdown("#### 🎯 **롱폼 주제**")
+            longform_subject = st.text_input(
+                "롱폼 영상 주제",
+                placeholder="예: 성공하는 사람들의 시간 관리 비법 완전 분석",
+                key="longform_subject_input",
+                help="쇼츠보다 더 깊이 있고 구체적인 주제를 입력하세요."
+            )
+            
+            # Advanced longform options
+            col_chapters, col_segments = st.columns(2)
+            with col_chapters:
+                chapter_count = st.selectbox(
+                    "📖 챕터 수", 
+                    options=[5, 6, 7, 8], 
+                    index=1,  # 6개를 기본값으로
+                    help="롱폼 영상을 나눌 챕터 수입니다."
+                )
+            with col_segments:
+                segment_duration = st.selectbox(
+                    "⏱️ 세그먼트 길이 (분)",
+                    options=[2, 3, 4],
+                    index=1,  # 3분을 기본값으로
+                    help="각 세그먼트의 길이입니다. 짧을수록 더 많은 세그먼트가 생성됩니다."
+                )
+        
+        with col_longform_generate:
+            st.markdown("#### 🚀 **롱폼 생성**")
+            st.markdown(f"**예상 영상 길이:** {longform_duration}분")
+            st.markdown(f"**예상 챕터 수:** {chapter_count}개")
+            st.markdown(f"**예상 생성 시간:** {longform_duration * 2:.0f}분")
+            
+            # Auto-upload checkbox for longform
+            longform_auto_upload = st.checkbox(
+                "📤 생성 후 YouTube 자동 업로드", 
+                value=st.session_state.get("longform_auto_upload", True),
+                key="longform_auto_upload_main",
+                help="체크하면 롱폼 영상 생성 완료 즉시 YouTube에 자동 업로드됩니다"
+            )
+            
+            if st.button("📺 롱폼 영상 생성", use_container_width=True, key="longform_generate_btn", type="primary"):
+                if not longform_subject.strip():
+                    st.error("❌ 롱폼 영상 주제를 입력해주세요!")
+                    st.stop()
+                
+                # Long-form generation logic
+                task_id = str(uuid4())
+                
+                status_container = st.container()
+                with status_container:
+                    status_text = st.empty()
+                    progress_bar = st.progress(0)
+                    
+                    try:
+                        status_text.info(f"🎬 {longform_duration}분 롱폼 영상 생성 시작...")
+                        logger.info(f"Starting longform generation: {longform_duration} minutes, subject: {longform_subject}")
+                        
+                        # Create longform parameters
+                        longform_params = VideoParams(
+                            video_subject=longform_subject,
+                            video_language="ko-KR",
+                            paragraph_number=chapter_count,
+                            video_aspect=params.video_aspect,
+                            video_source=params.video_source,
+                            video_concat_mode=params.video_concat_mode,
+                            video_transition_mode=params.video_transition_mode,
+                            video_clip_duration=params.video_clip_duration,
+                            video_count=1,
+                            voice_name=params.voice_name,
+                            voice_rate=params.voice_rate,
+                            voice_volume=params.voice_volume,
+                            bgm_type=params.bgm_type,
+                            bgm_volume=params.bgm_volume,
+                            subtitle_enabled=params.subtitle_enabled,
+                            subtitle_position=params.subtitle_position,
+                            text_fore_color=params.text_fore_color,
+                            font_size=params.font_size,
+                            stroke_color=params.stroke_color,
+                            stroke_width=params.stroke_width,
+                            n_threads=params.n_threads
+                        )
+                        
+                        # Add longform-specific attributes
+                        longform_params.longform_duration = longform_duration
+                        longform_params.longform_style = longform_style
+                        longform_params.segment_duration = segment_duration
+                        
+                        # Generate longform video using task manager
+                        with concurrent.futures.ThreadPoolExecutor() as executor:
+                            future = executor.submit(
+                                tm.generate_longform_video,
+                                task_id,
+                                longform_params
+                            )
+                            
+                            # Enhanced progress tracking
+                            start_time = time.time()
+                            estimated_duration = longform_duration * 2 * 60  # 2 minutes per video minute
+                            
+                            progress_messages = [
+                                "📝 롱폼 대본 생성 중...",
+                                "✂️ 세그먼트 분할 중...", 
+                                "🎬 세그먼트 영상 생성 중...",
+                                "🎵 오디오 처리 중...",
+                                "🎨 배경 영상 수집 중...",
+                                "🔄 세그먼트 병합 중...",
+                                "💾 최종 영상 저장 중...",
+                                "✨ 마무리 작업 중..."
+                            ]
+                            
+                            message_index = 0
+                            last_message_time = start_time
+                            
+                            while not future.done():
+                                elapsed_time = time.time() - start_time
+                                
+                                # Calculate progress
+                                if elapsed_time < estimated_duration * 0.8:
+                                    estimated_progress = (elapsed_time / (estimated_duration * 0.8)) * 0.9
+                                else:
+                                    base_progress = 0.9
+                                    remaining_progress = 0.1
+                                    overtime_factor = (elapsed_time - estimated_duration * 0.8) / (estimated_duration * 0.2)
+                                    estimated_progress = base_progress + (remaining_progress * min(overtime_factor, 1.0))
+                                
+                                progress_percentage = int(estimated_progress * 100)
+                                progress_bar.progress(estimated_progress)
+                                
+                                # Change message periodically
+                                if (time.time() - last_message_time > 15) or (progress_percentage >= 90 and message_index < len(progress_messages) - 1):
+                                    message_index = min(message_index + 1, len(progress_messages) - 1)
+                                    last_message_time = time.time()
+                                
+                                # Show progress messages
+                                if progress_percentage < 95:
+                                    status_text.info(f"{progress_messages[min(message_index, 6)]} {progress_percentage}%")
+                                else:
+                                    dots = "." * ((int(elapsed_time) % 3) + 1)
+                                    remaining_time = max(0, int(estimated_duration - elapsed_time))
+                                    if remaining_time > 0:
+                                        status_text.info(f"{progress_messages[-1]}{dots} (예상 완료: {remaining_time//60}분 {remaining_time%60}초 후)")
+                                    else:
+                                        status_text.info(f"{progress_messages[-1]}{dots}")
+                                
+                                time.sleep(3)  # Update every 3 seconds for longform
+                            
+                            try:
+                                result_file = future.result()
+                            except Exception as e:
+                                logger.error(f"Longform generation thread failed: {e}")
+                                raise e
+                        
+                        if result_file:
+                            status_text.success(f"✅ {longform_duration}분 롱폼 영상 생성 완료!")
+                            progress_bar.progress(1.0)
+                            
+                            # Auto-upload longform video if enabled
+                            if longform_auto_upload:
+                                status_text.info("📤 YouTube 자동 업로드 중...")
+                                default_token_file = os.path.join(root_dir, "token.pickle")
+                                client_secrets_file = os.path.join(root_dir, "client_secrets.json")
+                                
+                                if os.path.exists(default_token_file) and os.path.exists(client_secrets_file):
+                                    try:
+                                        from app.utils.youtube import get_authenticated_service, upload_video
+                                        
+                                        # Get authenticated YouTube service
+                                        youtube = get_authenticated_service(client_secrets_file, default_token_file)
+                                        
+                                        # Generate title and tags for longform video
+                                        title_prefix = st.session_state.get("yt_title_prefix", "")
+                                        video_title = f"{title_prefix} {longform_subject} - {longform_duration}분 완전 가이드"
+                                        
+                                        # Comprehensive tags for longform content
+                                        base_tags = [
+                                            "롱폼", "longform", "가이드", "guide", "완전분석", "complete analysis",
+                                            "교육", "education", "학습", "learning", "정보", "information",
+                                            f"{longform_duration}분", f"{longform_duration}minutes", "심화학습", "deep learning",
+                                            "전문가", "expert", "상세설명", "detailed explanation"
+                                        ]
+                                        
+                                        # Add style-specific tags
+                                        if "교육형" in longform_style:
+                                            style_tags = ["교육콘텐츠", "educational content", "강의", "lecture", "설명", "explanation"]
+                                        elif "팁 모음" in longform_style:
+                                            style_tags = ["팁", "tips", "노하우", "know-how", "실용적", "practical"]
+                                        elif "가이드" in longform_style:
+                                            style_tags = ["단계별", "step by step", "튜토리얼", "tutorial", "방법", "method"]
+                                        else:  # 분석형
+                                            style_tags = ["분석", "analysis", "데이터", "data", "통계", "statistics"]
+                                        
+                                        all_tags = base_tags + style_tags
+                                        keywords = ", ".join(all_tags[:30])  # Limit to 30 tags
+                                        
+                                        logger.info(f"LONGFORM VIDEO - Generated title: {video_title}")
+                                        logger.info(f"LONGFORM VIDEO - Generated tags: {keywords}")
+                                        
+                                        video_id = upload_video(
+                                            youtube=youtube,
+                                            file_path=result_file,
+                                            title=video_title,
+                                            description=f"{longform_subject}에 대한 {longform_duration}분 완전 가이드입니다.\n\n🎯 스타일: {longform_style}\n⏰ 길이: {longform_duration}분\n📚 챕터: {chapter_count}개\n\n이 영상에서 다루는 내용을 통해 깊이 있는 학습을 경험하세요.\n\nGenerated by youtube-auto AI\n\n#롱폼 #가이드 #교육 #학습 #정보 #longform #guide #education",
+                                            keywords=keywords,
+                                            privacy_status=st.session_state.get("yt_privacy", "private"),
+                                            category=st.session_state.get("yt_category", "27"),  # Education category
+                                            thumbnail_path=None
+                                        )
+                                        
+                                        if video_id:
+                                            video_url = f"https://youtube.com/watch?v={video_id}"
+                                            status_text.success(f"✅ YouTube 업로드 완료! [영상 보기]({video_url})")
+                                            logger.info(f"Longform video uploaded successfully: {video_url}")
+                                        else:
+                                            status_text.error("❌ YouTube 업로드 실패")
+                                            logger.error("Longform video upload failed: no video ID returned")
+                                            
+                                    except Exception as e:
+                                        logger.error(f"Longform video upload failed: {e}")
+                                        status_text.error(f"❌ 업로드 실패: {str(e)}")
+                                else:
+                                    status_text.error("❌ YouTube 인증이 필요합니다 (메인 채널 인증 필요)")
+                                    logger.warning("Longform upload failed: missing authentication files")
+                            
+                            # Add to session state
+                            if "generated_video_files" not in st.session_state:
+                                st.session_state["generated_video_files"] = []
+                            st.session_state["generated_video_files"].insert(0, result_file)
+                            
+                            st.balloons()
+                            time.sleep(1)
+                            st.rerun()
+                        else:
+                            status_text.error("❌ 롱폼 영상 생성 실패")
+                            progress_bar.empty()
+                        
+                    except Exception as e:
+                        import traceback
+                        error_details = traceback.format_exc()
+                        logger.error(f"Longform generation failed: {e}")
+                        logger.error(f"Full traceback: {error_details}")
+                        status_text.error(f"❌ 생성 실패: {str(e)}")
+                        progress_bar.empty()
+
+    # Premium YouTube Analysis Section
+    with st.expander("🎯 **YouTube 영상 분석 & 재해석** - 기존 영상을 새롭게 재창조", expanded=False):
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 152, 0, 0.1) 100%); 
+                    padding: 1rem; border-radius: 12px; margin-bottom: 1rem;">
+            <p style="margin: 0; color: #a0a0a0;">
+                🔍 <strong>콘텐츠 분석</strong> | 🎭 <strong>창의적 재해석</strong> | 🚀 <strong>독창적 재창조</strong><br>
+                YouTube 영상을 분석하여 완전히 새로운 방식으로 재해석한 영상을 생성합니다.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # YouTube Analysis Configuration
+        col_yt_config, col_yt_generate = st.columns([0.6, 0.4])
+        
+        with col_yt_config:
+            st.markdown("#### 🔗 **YouTube 영상 분석**")
+            
+            # YouTube URL input
+            youtube_url = st.text_input(
+                "YouTube 영상 URL",
+                placeholder="https://www.youtube.com/watch?v=...",
+                key="youtube_url_input",
+                help="분석할 YouTube 영상의 URL을 입력하세요. 자막이 있는 영상이어야 합니다."
+            )
+            
+            # Analysis options
+            col_reinterpret, col_format = st.columns(2)
+            with col_reinterpret:
+                reinterpret_style = st.selectbox(
+                    "재해석 스타일",
+                    ["🎭 완전히 다른 톤", "📚 교육적 접근", "💡 실용적 팁", "🎯 문제해결형", "📊 데이터 중심"],
+                    index=0,
+                    key="reinterpret_style_select",
+                    help="원본과 다른 방식으로 재해석할 스타일을 선택하세요."
+                )
+            
+            with col_format:
+                output_format = st.selectbox(
+                    "출력 형식",
+                    ["📱 쇼츠 (60-90초)", "📺 롱폼 (5-10분)"],
+                    index=0,
+                    key="output_format_select",
+                    help="재해석된 콘텐츠의 출력 형식을 선택하세요."
+                )
+            
+            # Advanced options
+            st.markdown("#### ⚙️ **고급 옵션**")
+            col_creativity, col_similarity = st.columns(2)
+            with col_creativity:
+                creativity_level = st.slider(
+                    "창의성 수준",
+                    min_value=1,
+                    max_value=5,
+                    value=3,
+                    key="creativity_level",
+                    help="1: 보수적 재해석, 5: 매우 창의적 재해석"
+                )
+            
+            with col_similarity:
+                preserve_core = st.checkbox(
+                    "핵심 메시지 보존",
+                    value=True,
+                    key="preserve_core_message",
+                    help="원본의 핵심 메시지를 반드시 보존합니다."
+                )
+        
+        with col_yt_generate:
+            st.markdown("#### 🚀 **분석 & 생성**")
+            
+            # Analysis button
+            if st.button("🔍 영상 분석 시작", use_container_width=True, key="analyze_youtube_btn"):
+                if not youtube_url.strip():
+                    st.error("❌ YouTube URL을 입력해주세요!")
+                    st.stop()
+                
+                # URL 정리 및 검증
+                youtube_url = youtube_url.strip()
+                if not any(domain in youtube_url.lower() for domain in ['youtube.com', 'youtu.be']):
+                    st.error("❌ 올바른 YouTube URL을 입력해주세요!")
+                    st.stop()
+                
+                # Display URL for debugging
+                st.info(f"🔍 분석할 URL: {youtube_url}")
+                
+                analysis_container = st.container()
+                with analysis_container:
+                    analysis_status = st.empty()
+                    analysis_progress = st.progress(0)
+                    
+                    try:
+                        analysis_status.info("🔍 YouTube 영상 분석 중...")
+                        analysis_progress.progress(20)
+                        
+                        # Import YouTube analyzer
+                        from app.services.youtube_analyzer import analyze_youtube_video
+                        
+                        # Analyze YouTube video
+                        analysis_result = analyze_youtube_video(youtube_url)
+                        analysis_progress.progress(60)
+                        
+                        if analysis_result['success']:
+                            analysis_status.success("✅ 영상 분석 완료!")
+                            analysis_progress.progress(100)
+                            
+                            # Store analysis result in session state
+                            st.session_state['youtube_analysis'] = analysis_result
+                            
+                            # Display analysis results
+                            st.markdown("---")
+                            st.markdown("### 📊 **분석 결과**")
+                            
+                            col_info, col_script = st.columns([0.4, 0.6])
+                            
+                            with col_info:
+                                st.markdown("#### 📹 **영상 정보**")
+                                video_info = analysis_result['video_info']
+                                st.write(f"**제목**: {video_info['title']}")
+                                st.write(f"**채널**: {video_info['author']}")
+                                if video_info['thumbnail']:
+                                    st.image(video_info['thumbnail'], width=200)
+                                
+                                st.markdown("#### 🏷️ **핵심 주제**")
+                                topics = analysis_result['key_topics']
+                                if topics:
+                                    for topic in topics[:5]:
+                                        st.write(f"• {topic}")
+                            
+                            with col_script:
+                                st.markdown("#### 🎭 **재해석된 대본**")
+                                reinterpreted_script = analysis_result['reinterpreted_script']
+                                st.text_area(
+                                    "재해석된 대본",
+                                    value=reinterpreted_script,
+                                    height=300,
+                                    key="reinterpreted_script_display",
+                                    help="이 대본을 수정한 후 영상을 생성할 수 있습니다."
+                                )
+                            
+                            time.sleep(1)
+                            st.rerun()
+                            
+                        else:
+                            analysis_status.error(f"❌ 분석 실패: {analysis_result['error']}")
+                            analysis_progress.empty()
+                            
+                    except Exception as e:
+                        analysis_status.error(f"❌ 분석 중 오류: {str(e)}")
+                        analysis_progress.empty()
+            
+            # Generate video button (only show if analysis is complete)
+            if 'youtube_analysis' in st.session_state and st.session_state['youtube_analysis']['success']:
+                st.markdown("---")
+                
+                # Auto-upload checkbox
+                yt_analysis_auto_upload = st.checkbox(
+                    "📤 생성 후 자동 업로드",
+                    value=True,
+                    key="yt_analysis_auto_upload",
+                    help="재해석된 영상을 생성 후 자동으로 YouTube에 업로드합니다."
+                )
+                
+                if st.button("🎬 재해석 영상 생성", use_container_width=True, key="generate_reinterpreted_btn", type="primary"):
+                    analysis_result = st.session_state['youtube_analysis']
+                    
+                    # Use the reinterpreted script
+                    reinterpreted_script = st.session_state.get('reinterpreted_script_display', analysis_result['reinterpreted_script'])
+                    
+                    # Set up parameters for video generation
+                    params.video_subject = f"재해석: {analysis_result['video_info']['title']}"
+                    params.video_script = reinterpreted_script
+                    
+                    # Generate keywords from the reinterpreted content
+                    st.session_state["video_subject"] = params.video_subject
+                    st.session_state["video_script"] = reinterpreted_script
+                    
+                    # Extract keywords from analysis
+                    key_topics = analysis_result.get('key_topics', [])
+                    if key_topics:
+                        st.session_state["video_terms"] = ", ".join(key_topics[:5])
+                    
+                    st.success("🎯 재해석된 콘텐츠가 설정되었습니다! 위의 '영상 생성' 버튼을 클릭하여 영상을 만드세요.")
+                    time.sleep(2)
+                    st.rerun()
 
     # Container for progress bar (placed immediately after the button)
     # generation_status_container is already defined above after the main button
