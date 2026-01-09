@@ -222,48 +222,80 @@ def _generate_response(prompt: str) -> str:
 def generate_script(video_subject: str, language: str = "auto", paragraph_number: int = 1) -> str:
     # 언어별 프롬프트 설정
     if language == "ko-KR" or language == "auto":
+        # paragraph_number에 따른 대본 길이 동적 설정
+        if paragraph_number >= 3:
+            length_description = "총 길이는 90-120초 분량 (약 300-400자)"
+            detail_instruction = "각 문단은 3-4문장으로 구성하여 충분히 상세하게 작성"
+        elif paragraph_number >= 2:
+            length_description = "총 길이는 60-90초 분량 (약 200-280자)"
+            detail_instruction = "각 문단은 3문장으로 구성하여 상세하게 작성"
+        else:
+            length_description = "총 길이는 30-60초 분량 (약 150-200자)"
+            detail_instruction = "각 문단은 2-3문장으로 작성"
+        
         prompt = f"""
         주제 '{video_subject}'에 대한 유튜브 쇼츠용 대본을 작성해주세요.
 
+        ⚠️ 중요: 반드시 아래 길이 요구사항을 준수해주세요!
+
         요구사항:
         1. {paragraph_number}개의 문단으로 구성
-        2. 각 문단은 2-3문장으로 작성
-        3. 총 길이는 60-90초 분량 (약 150-200자)
+        2. {detail_instruction}
+        3. {length_description}
         4. 인사말(안녕하세요, 여러분, 시청자 여러분 등) 사용 금지
         5. 바로 본론으로 시작
-        6. 구체적이고 실용적인 내용
+        6. 구체적이고 실용적인 내용을 풍부하게 포함
         7. 감정적이고 매력적인 표현 사용
         8. 시청자의 관심을 끌 수 있는 내용
         9. 마크다운 형식(**, ##, - 등) 사용 금지
         10. 장면 설명([장면 1] 등) 사용 금지
         11. 순수한 텍스트만 작성
+        12. ⚠️ 너무 짧게 작성하지 말고 충분한 길이로 작성할 것
 
         스타일: 직접적이고 임팩트 있게, 인사말 없이 바로 핵심 내용으로 시작
 
         주제: {video_subject}
 
+        ⚠️ 다시 한번 강조: {length_description}에 맞게 충분히 길게 작성해주세요!
+
         대본을 작성해주세요:
         """
     else:
+        # paragraph_number에 따른 영어 대본 길이 동적 설정
+        if paragraph_number >= 3:
+            length_description = "Total length: 90-120 seconds (about 250-350 words)"
+            detail_instruction = "Each paragraph: 3-4 sentences with detailed content"
+        elif paragraph_number >= 2:
+            length_description = "Total length: 60-90 seconds (about 180-250 words)"
+            detail_instruction = "Each paragraph: 3 sentences with detailed content"
+        else:
+            length_description = "Total length: 30-60 seconds (about 120-180 words)"
+            detail_instruction = "Each paragraph: 2-3 sentences"
+        
         prompt = f"""
         Write a YouTube Shorts script about '{video_subject}'.
 
+        ⚠️ IMPORTANT: Please strictly follow the length requirements below!
+
         Requirements:
         1. {paragraph_number} paragraphs
-        2. Each paragraph: 2-3 sentences
-        3. Total length: 60-90 seconds (about 150-200 words)
+        2. {detail_instruction}
+        3. {length_description}
         4. NO greetings (Hello, Hi everyone, Welcome, etc.)
         5. Start directly with the main content
-        6. Specific and practical information
+        6. Include specific and practical information with rich details
         7. Engaging and emotional language
         8. Content that captures viewer attention
         9. NO markdown formatting (**, ##, - etc.)
         10. NO scene descriptions ([Scene 1] etc.)
         11. Plain text only
+        12. ⚠️ Do NOT write too short - write with sufficient length
 
         Style: Direct and impactful, start immediately with core content
 
         Subject: {video_subject}
+
+        ⚠️ REMINDER: Please write according to {length_description} with sufficient length!
 
         Write the script:
         """

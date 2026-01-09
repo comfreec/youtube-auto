@@ -2553,6 +2553,1318 @@ with tab_main:
                     time.sleep(2)
                     st.rerun()
 
+    # Premium Batch Video Generation Section
+    with st.expander("🔄 **배치 영상 생성** - 여러 영상을 한 번에 자동 생성", expanded=False):
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(139, 195, 74, 0.1) 100%); 
+                   padding: 1rem; border-radius: 10px; margin-bottom: 1rem;">
+            <p style="margin: 0; color: #a0a0a0;">
+                🚀 <strong>대량 생성</strong> | ⚡ <strong>자동화</strong> | 📋 <strong>리스트 처리</strong><br>
+                영상 제목 리스트를 입력하면 자동으로 모든 영상을 연속 생성합니다.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Batch video list input
+        st.markdown("#### 📝 **영상 제목 리스트**")
+        batch_video_list = st.text_area(
+            "생성할 영상 제목들을 한 줄에 하나씩 입력하세요",
+            placeholder="""예시:
+1. 건강한 아침 식사 레시피 5가지
+2. 집에서 할 수 있는 간단한 운동
+3. 스트레스 해소하는 방법
+4. 효율적인 시간 관리 팁
+5. 좋은 수면을 위한 습관들
+
+- 번호나 기호는 자동으로 제거됩니다
+- 빈 줄은 무시됩니다
+- 최대 20개까지 입력 가능합니다""",
+            height=200,
+            key="batch_video_list",
+            help="한 줄에 하나씩 영상 제목을 입력하세요. 번호나 기호는 자동으로 제거됩니다."
+        )
+        
+        # Batch settings
+        col_batch_type, col_batch_settings = st.columns(2)
+        
+        with col_batch_type:
+            st.markdown("#### ⚙️ **배치 설정**")
+            batch_video_type = st.selectbox(
+                "영상 타입",
+                ["shorts", "longform", "timer"],
+                format_func=lambda x: {
+                    "shorts": "🎬 쇼츠 (60초)",
+                    "longform": "📺 롱폼 (5-15분)",
+                    "timer": "⏱️ 타이머"
+                }[x],
+                key="batch_video_type",
+                help="배치로 생성할 영상의 타입을 선택하세요"
+            )
+            
+            batch_language = st.selectbox(
+                "언어",
+                ["ko-KR", "en-US"],
+                format_func=lambda x: "🇰🇷 한국어" if x == "ko-KR" else "🇺🇸 English",
+                key="batch_language"
+            )
+        
+        with col_batch_settings:
+            st.markdown("#### 🎯 **추가 옵션**")
+            
+            # 글로벌 버전 옵션 (쇼츠와 롱폼에만 적용)
+            if batch_video_type in ["shorts", "longform"]:
+                batch_create_global = st.checkbox(
+                    "🌍 글로벌 버전 추가 생성",
+                    value=True,
+                    key="batch_create_global",
+                    help="한국어 버전 생성 후, 영어 자막/성우가 적용된 글로벌 버전을 추가로 생성합니다."
+                )
+            else:
+                batch_create_global = False
+            
+            if batch_video_type == "shorts":
+                batch_duration = st.slider("영상 길이 (초)", 30, 90, 60, key="batch_duration")
+                batch_style = st.selectbox(
+                    "영상 스타일",
+                    ["informative", "entertaining", "educational", "motivational"],
+                    format_func=lambda x: {
+                        "informative": "📊 정보 전달",
+                        "entertaining": "🎉 재미있는",
+                        "educational": "🎓 교육적",
+                        "motivational": "💪 동기부여"
+                    }[x],
+                    key="batch_style"
+                )
+            elif batch_video_type == "longform":
+                batch_duration = st.slider("영상 길이 (분)", 5, 15, 10, key="batch_longform_duration")
+                batch_style = st.selectbox(
+                    "영상 스타일",
+                    ["educational", "documentary", "tutorial", "discussion"],
+                    format_func=lambda x: {
+                        "educational": "🎓 교육적",
+                        "documentary": "📹 다큐멘터리",
+                        "tutorial": "🛠️ 튜토리얼",
+                        "discussion": "💬 토론"
+                    }[x],
+                    key="batch_longform_style"
+                )
+            else:  # timer
+                batch_duration = st.slider("타이머 길이 (분)", 5, 60, 20, key="batch_timer_duration")
+                batch_style = st.selectbox(
+                    "타이머 스타일",
+                    ["modern", "minimal", "nature", "focus"],
+                    format_func=lambda x: {
+                        "modern": "🎨 모던",
+                        "minimal": "⚪ 미니멀",
+                        "nature": "🌿 자연",
+                        "focus": "🎯 집중"
+                    }[x],
+                    key="batch_timer_style"
+                )
+            
+            batch_auto_upload = st.checkbox(
+                "📤 자동 업로드",
+                value=True,
+                key="batch_auto_upload",
+                help="각 영상 생성 완료 후 자동으로 YouTube에 업로드합니다"
+            )
+        
+        # Preview parsed titles
+        if batch_video_list.strip():
+            from app.services.batch_processor import batch_processor
+            parsed_titles = batch_processor.parse_video_list(batch_video_list)
+            
+            if parsed_titles:
+                st.markdown("#### 📋 **파싱된 제목 목록**")
+                if len(parsed_titles) > 20:
+                    st.warning(f"⚠️ 입력된 제목이 {len(parsed_titles)}개입니다. 최대 20개까지만 처리됩니다.")
+                    parsed_titles = parsed_titles[:20]
+                
+                with st.container(border=True):
+                    for i, title in enumerate(parsed_titles, 1):
+                        st.write(f"{i}. {title}")
+                
+                # 예상 생성 영상 수 계산
+                expected_videos = len(parsed_titles)
+                if batch_video_type in ["shorts", "longform"] and st.session_state.get('batch_create_global', True):
+                    expected_videos *= 2  # 한국어 + 영어 버전
+                
+                st.info(f"📊 총 {len(parsed_titles)}개 주제, 예상 {expected_videos}개 영상이 생성됩니다.")
+                
+                if batch_video_type in ["shorts", "longform"] and st.session_state.get('batch_create_global', True):
+                    st.success("🌍 각 주제마다 한국어 + 영어 버전이 생성됩니다!")
+        
+        # Batch generation button
+        if st.button("🚀 배치 영상 생성 시작", use_container_width=True, key="batch_generate_btn", type="primary"):
+            if not batch_video_list.strip():
+                st.error("❌ 영상 제목 리스트를 입력해주세요!")
+                st.stop()
+            
+            from app.services.batch_processor import batch_processor
+            parsed_titles = batch_processor.parse_video_list(batch_video_list)
+            
+            if not parsed_titles:
+                st.error("❌ 유효한 영상 제목이 없습니다!")
+                st.stop()
+            
+            if len(parsed_titles) > 20:
+                parsed_titles = parsed_titles[:20]
+                st.warning("⚠️ 최대 20개까지만 처리합니다.")
+            
+            # 배치 영상 생성 즉시 시작
+            st.markdown("---")
+            st.markdown("### 🔄 **배치 영상 생성 진행 중**")
+            
+            # 진행률 표시 컨테이너
+            progress_container = st.container()
+            status_container = st.container()
+            results_container = st.container()
+            
+            with progress_container:
+                overall_progress = st.progress(0, text="배치 처리 준비 중...")
+                current_status = st.empty()
+            
+            # 배치 처리 시작
+            total_videos = len(parsed_titles)
+            if batch_create_global and batch_video_type in ["shorts", "longform"]:
+                expected_videos = total_videos * 2  # 한국어 + 영어
+            else:
+                expected_videos = total_videos
+            
+            completed_videos = []
+            failed_videos = []
+            
+            for i, title in enumerate(parsed_titles):
+                current_video_num = i + 1
+                
+                # Task header (일반 영상 생성과 동일)
+                st.markdown(f"""
+                <div style="
+                    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+                    padding: 1rem;
+                    border-radius: 12px;
+                    margin: 1rem 0;
+                    border-left: 4px solid #667eea;
+                ">
+                    <h4 style="margin: 0; color: #667eea;">🎬 ({current_video_num}/{total_videos}) {title} 생성 중...</h4>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                progress_bar = st.progress(0)
+                status_text = st.empty()
+                
+                try:
+                    # 1. 대본 생성 (일반 영상과 정확히 동일한 방식)
+                    status_text.text("🤖 AI가 대본을 생성 중입니다...")
+                    progress_bar.progress(10)
+                    
+                    # 일반 영상과 동일한 params 객체 생성
+                    from app.models.schema import VideoParams
+                    temp_params = VideoParams(
+                        video_subject=title,
+                        video_script="",  # 임시
+                        video_language="ko-KR"
+                    )
+                    
+                    script = ""
+                    with concurrent.futures.ThreadPoolExecutor() as executor:
+                        future = executor.submit(
+                            llm.generate_script,
+                            video_subject=temp_params.video_subject,  # 일반 영상과 동일
+                            language="ko-KR",
+                            paragraph_number=4 if batch_video_type == 'longform' else 1
+                        )
+                        
+                        # Animated progress (일반 영상과 동일)
+                        for i in range(50):
+                            if future.done():
+                                break
+                            time.sleep(0.1)
+                            current_p = min(10 + int(i * 0.8), 50)
+                            progress_bar.progress(current_p)
+                            
+                        script = future.result()
+                    
+                    if not script or "실패했습니다" in script or "Error:" in script:
+                        st.warning(f"⚠️ 대본 생성 실패 (API 할당량 초과): 기본 대본 사용")
+                        # API 할당량 초과 시 기본 대본 사용
+                        script = f"{title}에 대한 유용한 정보를 제공하는 영상입니다. 이 주제에 대해 자세히 알아보겠습니다."
+                        st.info("💡 API 할당량이 복구되면 더 나은 대본이 생성됩니다.")
+                    
+                    # 대본 표시 (중첩 expander 제거)
+                    st.markdown(f"**📝 사용된 대본 - {title}**")
+                    st.text_area("대본 내용", value=script, height=100, disabled=True, key=f"script_display_{i}")
+                    
+                    # 2. 키워드 생성 (일반 영상과 정확히 동일한 방식)
+                    status_text.text("🔍 대본 분석 및 키워드 추출 중...")
+                    progress_bar.progress(60)
+                    
+                    terms = []
+                    try:
+                        with concurrent.futures.ThreadPoolExecutor() as executor:
+                            future = executor.submit(
+                                llm.generate_terms,
+                                video_subject=temp_params.video_subject,  # 일반 영상과 동일
+                                video_script=script, 
+                                amount=5
+                            )
+                            
+                            # Animated progress (일반 영상과 동일)
+                            for i_term in range(40):
+                                if future.done():
+                                    break
+                                time.sleep(0.1)
+                                current_p = min(60 + int(i_term * 1), 90)
+                                progress_bar.progress(current_p)
+                                
+                            terms = future.result()
+                    except Exception as e:
+                        st.warning(f"⚠️ 키워드 생성 실패 (API 할당량 초과): 기본 키워드 사용")
+                        terms = []
+                    
+                    if not terms:
+                        terms = [title]  # 제목을 기본 키워드로 사용
+                    
+                    # 키워드 표시
+                    if terms and terms != [title]:
+                        st.info(f"🏷️ 생성된 키워드: {', '.join(terms)}")
+                    else:
+                        st.info(f"🏷️ 기본 키워드 사용: {', '.join(terms)}")
+                    
+                    status_text.text("🎬 영상 생성 중...")
+                    progress_bar.progress(95)
+                    
+                    # 한국어 버전 생성 (일반 영상 생성과 동일한 방식)
+                    import webui.batch_video_generator as batch_gen
+                    from uuid import uuid4
+                    from app.services import state as sm, llm
+                    from app.models import const
+                    import concurrent.futures
+                    import time
+                    
+                    task_id = str(uuid4())
+                    status_text.info(f"🎬 작업 시작... (ID: {task_id[:8]})")
+                    
+                    # 일반 영상 생성과 동일한 ThreadPoolExecutor 사용
+                    ko_result = None
+                    with concurrent.futures.ThreadPoolExecutor() as executor:
+                        future = executor.submit(batch_gen.generate_single_video,
+                            title=title,
+                            video_type=batch_video_type,
+                            language="ko-KR",
+                            duration=batch_duration,
+                            style=batch_style,
+                            auto_upload=batch_auto_upload,
+                            task_id=task_id,  # task_id 전달
+                            script=script,    # 생성된 대본 전달
+                            terms=terms       # 생성된 키워드 전달
+                        )
+                        
+                        # 일반 영상 생성과 동일한 진행률 모니터링
+                        while not future.done():
+                            task_info = sm.state.get_task(task_id)
+                            if task_info:
+                                progress = task_info.get("progress", 0)
+                                state = task_info.get("state", const.TASK_STATE_PROCESSING)
+                                task_msg = task_info.get("message", "")
+                                
+                                progress_normalized = min(int(progress) / 100, 1.0)
+                                progress_bar.progress(progress_normalized)
+                                
+                                if state == const.TASK_STATE_PROCESSING:
+                                    status_text.info(f"🎬 {task_msg} ({int(progress)}%)" if task_msg else f"처리 중... {int(progress)}%")
+                                elif state == const.TASK_STATE_FAILED:
+                                    status_text.error(f"❌ 실패: {task_msg}")
+                                    break
+                                elif state == const.TASK_STATE_COMPLETE:
+                                    status_text.success("✅ 완료!")
+                                    break
+                            time.sleep(1)
+                        
+                        if future.done():
+                            try:
+                                ko_result = future.result()
+                                logger.info(f"Korean version future completed. Result type: {type(ko_result)}")
+                                logger.info(f"Korean version result: {ko_result}")
+                                
+                                if ko_result:
+                                    if ko_result.get('file_path'):
+                                        status_text.success(f"🎉 한국어 버전 생성 완료!")
+                                        logger.info(f"Korean version file: {ko_result['file_path']}")
+                                        
+                                        # 파일 존재 확인
+                                        if os.path.exists(ko_result['file_path']):
+                                            file_size = os.path.getsize(ko_result['file_path'])
+                                            logger.info(f"Korean version file exists, size: {file_size} bytes")
+                                        else:
+                                            logger.warning(f"Korean version file does not exist: {ko_result['file_path']}")
+                                        
+                                        if ko_result.get('upload_error'):
+                                            st.warning(f"⚠️ YouTube 업로드 실패: {ko_result['upload_error']}")
+                                    else:
+                                        logger.warning(f"Korean version result missing file_path: {ko_result}")
+                                        status_text.warning(f"⚠️ 한국어 버전 생성 완료되었지만 파일 정보가 불완전합니다")
+                                else:
+                                    logger.error("Korean version result is None or empty")
+                                    status_text.error(f"❌ 한국어 버전 생성 결과가 없습니다")
+                                    raise Exception("영상 파일이 생성되지 않았습니다")
+                            except Exception as e:
+                                logger.error(f"Korean version generation failed: {e}")
+                                status_text.error(f"❌ 한국어 버전 생성 실패: {str(e)}")
+                                raise e
+                    
+                    # 결과 검증을 더 관대하게 처리
+                    if ko_result:
+                        logger.info(f"Processing Korean result for completed_videos: {ko_result}")
+                        
+                        video_result = {
+                            'title': title,
+                            'korean_version': ko_result,
+                            'english_version': None,
+                            'success': True
+                        }
+                        
+                        # 자동 업로드 처리 (일반 영상과 완전히 동일한 방식)
+                        if batch_auto_upload and ko_result.get('auto_upload_requested'):
+                            logger.info("Processing auto upload for Korean version...")
+                            try:
+                                video_path = ko_result.get('file_path')
+                                if video_path and os.path.exists(video_path):
+                                    status_text.info(f"📺 YouTube 자동 업로드 시작...")
+                                    
+                                    # 일반 영상과 완전히 동일한 파일 경로 처리
+                                    import os
+                                    root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+                                    token_file = os.path.join(root_dir, "token.pickle")
+                                    client_secrets_file = os.path.join(root_dir, "client_secrets.json")
+                                    
+                                    logger.info(f"🔍 Token file exists: {os.path.exists(token_file)}")
+                                    logger.info(f"🔍 Client secrets file exists: {os.path.exists(client_secrets_file)}")
+                                    
+                                    if os.path.exists(token_file) and os.path.exists(client_secrets_file):
+                                        from app.utils.youtube import get_authenticated_service, upload_video
+                                        
+                                        youtube = get_authenticated_service(client_secrets_file, token_file)
+                                        title_subject = title
+                                        upload_title = f"#Shorts {title_subject}"
+                                        description = f"Generated youtube-auto AI\n\nSubject: {title_subject}"
+                                        
+                                        # 태그 생성 (일반 영상과 완전히 동일한 방식)
+                                        script = ko_result.get('script', '')
+                                        try:
+                                            # 1. 먼저 영어 키워드 생성 (일반 영상과 동일)
+                                            english_terms = llm.generate_terms(title_subject, script, 10) or []
+                                            
+                                            # 2. 영어 키워드를 한국어로 번역 (일반 영상과 동일)
+                                            if english_terms:
+                                                try:
+                                                    korean_terms = llm.translate_terms_to_korean(english_terms)
+                                                    keywords = ", ".join(korean_terms + [str(title_subject).strip()])
+                                                    logger.info(f"🇰🇷 Successfully translated tags: {keywords}")
+                                                except Exception as e:
+                                                    logger.error(f"Translation failed: {e}, using fallback Korean tags")
+                                                    fallback_terms = ["정보", "팁", "노하우", "가이드", "도움"]
+                                                    keywords = ", ".join(fallback_terms + [str(title_subject).strip()])
+                                            else:
+                                                # 영어 키워드 생성 실패 시 fallback
+                                                fallback_terms = ["정보", "팁", "노하우", "가이드", "도움"]
+                                                keywords = ", ".join(fallback_terms + [str(title_subject).strip()])
+                                                
+                                            logger.info(f"🏷️ Final Korean tags: {keywords}")
+                                        except Exception as e:
+                                            logger.warning(f"Tag generation failed: {e}")
+                                            # 기본 키워드 사용
+                                            keywords = str(title_subject).strip()
+                                            logger.info(f"🏷️ Using fallback keywords: {keywords}")
+                                        
+                                        vid_id = upload_video(
+                                            youtube, 
+                                            video_path, 
+                                            title=upload_title[:100],
+                                            description=description,
+                                            category="22",
+                                            keywords=keywords,
+                                            privacy_status="private"
+                                        )
+                                        
+                                        if vid_id:
+                                            ko_result['video_id'] = vid_id
+                                            video_url = f"https://youtube.com/watch?v={vid_id}"
+                                            status_text.success(f"🎉 자동 업로드 성공! [영상 보기]({video_url})")
+                                        else:
+                                            ko_result['upload_error'] = "YouTube 업로드 실패"
+                                            status_text.warning("⚠️ 자동 업로드 실패")
+                                    else:
+                                        ko_result['upload_error'] = "YouTube 인증 필요"
+                                        status_text.warning("⚠️ YouTube 인증이 필요합니다")
+                                else:
+                                    logger.error("Video file not found for auto upload")
+                            except Exception as upload_error:
+                                logger.error(f"Auto upload failed: {upload_error}")
+                                ko_result['upload_error'] = str(upload_error)
+                                status_text.warning(f"⚠️ 자동 업로드 실패: {upload_error}")
+                        
+                        # 파일 경로가 없어도 결과는 표시하되 경고 표시
+                        if not ko_result.get('file_path'):
+                            st.warning(f"⚠️ {title}: 영상이 생성되었지만 파일 경로 정보가 없습니다")
+                            logger.warning(f"Missing file_path in result: {ko_result}")
+                    else:
+                        logger.error("No Korean result available for completed_videos")
+                        raise Exception("한국어 버전 생성 결과가 없습니다")
+                    
+                    # 영어 버전 생성 (글로벌 버전이 활성화된 경우)
+                    logger.info(f"Checking English version generation: batch_create_global={batch_create_global}, batch_video_type={batch_video_type}")
+                    if batch_create_global and batch_video_type in ["shorts", "longform"]:
+                        try:
+                            st.markdown(f"""
+                            <div style="
+                                background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(139, 195, 74, 0.1) 100%);
+                                padding: 1rem;
+                                border-radius: 12px;
+                                margin: 1rem 0;
+                                border-left: 4px solid #4caf50;
+                            ">
+                                <h4 style="margin: 0; color: #4caf50;">🌍 ({current_video_num}/{total_videos}) {title} 영어 버전 생성 중...</h4>
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                            eng_progress_bar = st.progress(0)
+                            eng_status_text = st.empty()
+                            
+                            # 영어 버전 대본 생성 (일반 영상과 정확히 동일한 방식)
+                            eng_status_text.text("🤖 AI가 영어 대본을 생성 중입니다...")
+                            eng_progress_bar.progress(10)
+                            
+                            # 일반 영상과 동일한 params 객체 생성
+                            from app.models.schema import VideoParams
+                            temp_eng_params = VideoParams(
+                                video_subject=title,
+                                video_script="",  # 임시
+                                video_language="en-US"
+                            )
+                            
+                            eng_script = ""
+                            with concurrent.futures.ThreadPoolExecutor() as executor:
+                                future = executor.submit(
+                                    llm.generate_script,
+                                    video_subject=temp_eng_params.video_subject,  # 일반 영상과 동일
+                                    language="en-US",
+                                    paragraph_number=4 if batch_video_type == 'longform' else 1
+                                )
+                                
+                                # Animated progress (일반 영상과 동일)
+                                for i in range(50):
+                                    if future.done():
+                                        break
+                                    time.sleep(0.1)
+                                    current_p = min(10 + int(i * 0.8), 50)
+                                    eng_progress_bar.progress(current_p)
+                                    
+                                eng_script = future.result()
+                            
+                            if not eng_script or "실패했습니다" in eng_script or "Error:" in eng_script:
+                                st.warning(f"⚠️ 영어 대본 생성 실패 (API 할당량 초과): 기본 대본 사용")
+                                # API 할당량 초과 시 기본 영어 대본 사용
+                                eng_script = f"This video provides useful information about {title}. Let's explore this topic in detail."
+                                st.info("💡 API 할당량이 복구되면 더 나은 영어 대본이 생성됩니다.")
+                            
+                            # 영어 대본 표시 (중첩 expander 제거)
+                            st.markdown(f"**📝 사용된 영어 대본 - {title}**")
+                            st.text_area("영어 대본 내용", value=eng_script, height=100, disabled=True, key=f"eng_script_display_{i}")
+                            
+                            # 영어 키워드 생성 (일반 영상과 정확히 동일한 방식)
+                            eng_status_text.text("🔍 영어 대본 분석 및 키워드 추출 중...")
+                            eng_progress_bar.progress(60)
+                            
+                            eng_terms = []
+                            try:
+                                with concurrent.futures.ThreadPoolExecutor() as executor:
+                                    future = executor.submit(
+                                        llm.generate_terms,
+                                        video_subject=temp_eng_params.video_subject,  # 일반 영상과 동일
+                                        video_script=eng_script, 
+                                        amount=5
+                                    )
+                                    
+                                    # Animated progress (일반 영상과 동일)
+                                    for i_term in range(40):
+                                        if future.done():
+                                            break
+                                        time.sleep(0.1)
+                                        current_p = min(60 + int(i_term * 1), 90)
+                                        eng_progress_bar.progress(current_p)
+                                        
+                                    eng_terms = future.result()
+                            except Exception as e:
+                                st.warning(f"⚠️ 영어 키워드 생성 실패 (API 할당량 초과): 기본 키워드 사용")
+                                eng_terms = []
+                            
+                            if not eng_terms:
+                                eng_terms = [title]  # 제목을 기본 키워드로 사용
+                            
+                            # 영어 키워드 표시
+                            if eng_terms and eng_terms != [title]:
+                                st.info(f"🏷️ 생성된 영어 키워드: {', '.join(eng_terms)}")
+                            else:
+                                st.info(f"🏷️ 기본 영어 키워드 사용: {', '.join(eng_terms)}")
+                            
+                            eng_status_text.text("🎬 영어 영상 생성 중...")
+                            eng_progress_bar.progress(95)
+                            
+                            # 영어 제목 생성 (일반 영상과 완전히 동일한 방식)
+                            eng_title = title  # 기본값
+                            try:
+                                # 주제를 영어로 번역 시도
+                                eng_title = llm.translate_to_english(title)
+                                if not eng_title or eng_title == title or re.search(r'[가-힣]', str(eng_title)):
+                                    # 번역 실패 시 키워드 기반 영어 제목 생성
+                                    if eng_terms and len(eng_terms) > 0:
+                                        eng_title = " · ".join([t for t in eng_terms[:3] if t and not re.search(r'[가-힣]', t)])
+                                    else:
+                                        eng_title = "Motivational Content"
+                                logger.info(f"🌍 Generated English title: {eng_title}")
+                            except Exception as e:
+                                logger.warning(f"English title generation failed: {e}")
+                                eng_title = "Motivational Content"
+                            
+                            eng_task_id = str(uuid4())
+                            eng_status_text.info(f"🌍 영어 버전 작업 시작... (ID: {eng_task_id[:8]})")
+                            
+                            with concurrent.futures.ThreadPoolExecutor() as executor:
+                                eng_future = executor.submit(batch_gen.generate_single_video,
+                                    title=eng_title,  # 영어로 번역된 제목 사용
+                                    video_type=batch_video_type,
+                                    language="en-US",
+                                    duration=batch_duration,
+                                    style=batch_style,
+                                    auto_upload=batch_auto_upload,
+                                    task_id=eng_task_id,  # task_id 전달
+                                    script=eng_script,    # 생성된 영어 대본 전달
+                                    terms=eng_terms       # 생성된 영어 키워드 전달
+                                )
+                                
+                                while not eng_future.done():
+                                    eng_task_info = sm.state.get_task(eng_task_id)
+                                    if eng_task_info:
+                                        eng_progress = eng_task_info.get("progress", 0)
+                                        eng_state = eng_task_info.get("state", const.TASK_STATE_PROCESSING)
+                                        eng_task_msg = eng_task_info.get("message", "")
+                                        
+                                        eng_progress_normalized = min(int(eng_progress) / 100, 1.0)
+                                        eng_progress_bar.progress(eng_progress_normalized)
+                                        
+                                        if eng_state == const.TASK_STATE_PROCESSING:
+                                            eng_status_text.info(f"🌍 {eng_task_msg} ({int(eng_progress)}%)" if eng_task_msg else f"영어 버전 처리 중... {int(eng_progress)}%")
+                                        elif eng_state == const.TASK_STATE_FAILED:
+                                            eng_status_text.error(f"❌ 영어 버전 실패: {eng_task_msg}")
+                                            break
+                                        elif eng_state == const.TASK_STATE_COMPLETE:
+                                            eng_status_text.success("✅ 영어 버전 완료!")
+                                            break
+                                    time.sleep(1)
+                                
+                                if eng_future.done():
+                                    eng_result = eng_future.result()
+                                    # 영어 제목 정보 추가
+                                    eng_result['english_title'] = eng_title
+                                    video_result['english_version'] = eng_result
+                                    eng_status_text.success(f"🎉 영어 버전 생성 완료!")
+                                    
+                                    # 영어 버전 자동 업로드 처리 (일반 영상과 완전히 동일한 방식)
+                                    if batch_auto_upload and eng_result and eng_result.get('auto_upload_requested'):
+                                        logger.info("Processing auto upload for English version...")
+                                        try:
+                                            video_path = eng_result.get('file_path')
+                                            if video_path and os.path.exists(video_path):
+                                                eng_status_text.info(f"📺 YouTube 자동 업로드 시작 (English)...")
+                                                
+                                                # 일반 영상과 완전히 동일한 파일 경로 처리
+                                                import os
+                                                root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+                                                token_file = os.path.join(root_dir, "token.pickle")
+                                                client_secrets_file = os.path.join(root_dir, "client_secrets.json")
+                                                
+                                                logger.info(f"🔍 Token file exists: {os.path.exists(token_file)}")
+                                                logger.info(f"🔍 Client secrets file exists: {os.path.exists(client_secrets_file)}")
+                                                
+                                                if os.path.exists(token_file) and os.path.exists(client_secrets_file):
+                                                    from app.utils.youtube import get_authenticated_service, upload_video
+                                                    
+                                                    youtube = get_authenticated_service(client_secrets_file, token_file)
+                                                    title_subject = title
+                                                    upload_title = f"#Shorts {title_subject}"
+                                                    description = f"Generated youtube-auto AI\n\nSubject: {title_subject}"
+                                                    
+                                                    # 키워드는 이미 생성된 것 사용 (API 재호출 방지)
+                                                    script = eng_result.get('script', '')
+                                                    if terms and len(terms) > 0:
+                                                        # 이미 생성된 키워드 사용
+                                                        keywords = ", ".join(terms + [str(title_subject).strip()])
+                                                        logger.info(f"🏷️ Using pre-generated keywords: {keywords}")
+                                                    else:
+                                                        # 기본 키워드 사용 (API 호출 없음)
+                                                        keywords = str(title_subject).strip()
+                                                        logger.info(f"🏷️ Using basic keywords: {keywords}")
+                                                    
+                                                    vid_id = upload_video(
+                                                        youtube, 
+                                                        video_path, 
+                                                        title=upload_title[:100],
+                                                        description=description,
+                                                        category="22",
+                                                        keywords=keywords,
+                                                        privacy_status="private"
+                                                    )
+                                                    
+                                                    if vid_id:
+                                                        eng_result['video_id'] = vid_id
+                                                        video_url = f"https://youtube.com/watch?v={vid_id}"
+                                                        eng_status_text.success(f"🎉 영어 버전 자동 업로드 성공! [영상 보기]({video_url})")
+                                                    else:
+                                                        eng_result['upload_error'] = "YouTube 업로드 실패"
+                                                        eng_status_text.warning("⚠️ 영어 버전 자동 업로드 실패")
+                                                else:
+                                                    eng_result['upload_error'] = "YouTube 인증 필요"
+                                                    eng_status_text.warning("⚠️ YouTube 인증이 필요합니다")
+                                            else:
+                                                logger.error("English video file not found for auto upload")
+                                        except Exception as upload_error:
+                                            logger.error(f"English auto upload failed: {upload_error}")
+                                            eng_result['upload_error'] = str(upload_error)
+                                            eng_status_text.warning(f"⚠️ 영어 버전 자동 업로드 실패: {upload_error}")
+                            
+                        except Exception as e:
+                            st.warning(f"⚠️ 영어 버전 생성 실패: {title} - {str(e)}")
+                    else:
+                        logger.info(f"Skipping English version: batch_create_global={batch_create_global}, batch_video_type={batch_video_type}")
+                        if not batch_create_global:
+                            st.info("ℹ️ 글로벌 버전 생성이 비활성화되어 있습니다.")
+                        elif batch_video_type not in ["shorts", "longform"]:
+                            st.info(f"ℹ️ {batch_video_type} 타입은 글로벌 버전을 지원하지 않습니다.")
+                    
+                    completed_videos.append(video_result)
+                    
+                except Exception as e:
+                    failed_videos.append({
+                        'title': title,
+                        'error': str(e)
+                    })
+                    st.error(f"❌ 영상 생성 실패: {title} - {str(e)}")
+                
+                # 각 영상 완료 후 잠시 대기 (UI 업데이트를 위해)
+                import time
+                time.sleep(0.5)
+            
+            # 최종 완료
+            overall_progress.progress(1.0, text=f"배치 처리 완료! {len(completed_videos)}개 성공, {len(failed_videos)}개 실패")
+            current_status.success("✅ 모든 배치 처리가 완료되었습니다!")
+            
+            # 결과 표시
+            with results_container:
+                st.markdown("---")
+                st.markdown("### 📊 **배치 처리 결과**")
+                
+                # 디버깅 정보
+                st.write(f"DEBUG: completed_videos 개수: {len(completed_videos)}")
+                st.write(f"DEBUG: failed_videos 개수: {len(failed_videos)}")
+                
+                col_success, col_fail = st.columns(2)
+                with col_success:
+                    st.metric("성공", len(completed_videos))
+                with col_fail:
+                    st.metric("실패", len(failed_videos))
+                
+                # 성공한 영상들
+                if completed_videos:
+                    st.markdown("#### ✅ **성공한 영상들**")
+                    for i, result in enumerate(completed_videos):
+                        st.write(f"DEBUG: 결과 {i+1}: {result}")  # 디버깅 정보
+                        
+                        with st.container(border=True):
+                            st.markdown(f"**✅ {result['title']}**")
+                            
+                            # 한국어 버전
+                            if result.get('korean_version'):
+                                ko_version = result['korean_version']
+                                st.markdown("**🇰🇷 한국어 버전**")
+                                
+                                # 파일 경로 표시
+                                if ko_version.get('file_path'):
+                                    video_path = ko_version['file_path']
+                                    st.write(f"**파일**: {video_path}")
+                                    
+                                    # 파일 존재 여부 확인
+                                    import os
+                                    if os.path.exists(video_path):
+                                        file_size = os.path.getsize(video_path)
+                                        st.success(f"✅ 파일 존재함 ({file_size:,} bytes)")
+                                        
+                                        # 영상 표시 및 컨트롤 (일반 영상과 동일)
+                                        col_video, col_controls = st.columns([0.6, 0.4])
+                                        
+                                        with col_video:
+                                            st.video(video_path, format="video/mp4")
+                                        
+                                        with col_controls:
+                                            st.markdown("#### 🎬 **영상 작업**")
+                                            
+                                            # 채널 선택
+                                            channels = [("🏠 메인 채널", "default"), ("⏱️ 타이머 채널", "timer")]
+                                            selected_channel_index = st.selectbox(
+                                                "업로드 채널 선택",
+                                                options=range(len(channels)),
+                                                format_func=lambda x: channels[x][0],
+                                                index=0,
+                                                key=f"batch_ko_channel_{i}"
+                                            )
+                                            
+                                            # 액션 버튼들
+                                            col_btn1, col_btn2 = st.columns(2)
+                                            
+                                            with col_btn1:
+                                                # 다운로드 버튼
+                                                try:
+                                                    with open(video_path, "rb") as video_file:
+                                                        video_bytes = video_file.read()
+                                                    st.download_button(
+                                                        label="📥 다운로드",
+                                                        data=video_bytes,
+                                                        file_name=os.path.basename(video_path),
+                                                        mime="video/mp4",
+                                                        key=f"batch_ko_dl_{i}",
+                                                        use_container_width=True
+                                                    )
+                                                except Exception:
+                                                    st.button("📥 다운로드", disabled=True, use_container_width=True)
+                                            
+                                            with col_btn2:
+                                                # 재생 버튼
+                                                if st.button("▶️ 재생", key=f"batch_ko_play_{i}", use_container_width=True):
+                                                    try:
+                                                        if os.name == 'nt':
+                                                            os.startfile(video_path)
+                                                        else:
+                                                            import subprocess
+                                                            subprocess.call(('xdg-open', video_path))
+                                                    except Exception:
+                                                        st.error("재생할 수 없습니다.")
+                                            
+                                            # 수동 업로드 버튼
+                                            upload_progress_container = st.empty()
+                                            
+                                            if st.button("📺 YouTube 업로드", key=f"batch_ko_upload_{i}", use_container_width=True, type="primary"):
+                                                st.session_state[f"batch_ko_upload_requested_{i}"] = True
+                                            
+                                            # 업로드 로직 처리 (일반 영상과 동일)
+                                            if st.session_state.get(f"batch_ko_upload_requested_{i}"):
+                                                with upload_progress_container.container():
+                                                    # 토큰 파일 선택
+                                                    timer_token_file = "token_timer.pickle"
+                                                    default_token_file = "token.pickle"
+                                                    ch_idx = st.session_state.get(f"batch_ko_channel_{i}", 0)
+                                                    token_file = timer_token_file if ch_idx == 1 else default_token_file
+                                                    
+                                                    # client_secrets.json 찾기
+                                                    client_secrets_file = "client_secrets.json"
+                                                    if not os.path.exists(client_secrets_file):
+                                                        alt_copy = "client_secrets - 복사본.json"
+                                                        if os.path.exists(alt_copy):
+                                                            client_secrets_file = alt_copy
+                                                    
+                                                    if os.path.exists(token_file) and os.path.exists(client_secrets_file):
+                                                        try:
+                                                            upload_progress = st.progress(0)
+                                                            upload_status = st.empty()
+                                                            upload_status.info("📤 업로드 준비 중...")
+                                                            
+                                                            def update_progress(p):
+                                                                upload_progress.progress(p / 100)
+                                                                upload_status.info(f"📤 업로드 중... {p}%")
+                                                            
+                                                            from app.utils.youtube import get_authenticated_service, upload_video
+                                                            youtube = get_authenticated_service(client_secrets_file, token_file)
+                                                            
+                                                            # 메타데이터 생성
+                                                            title_subject = result['title']
+                                                            title = f"#Shorts {title_subject}"
+                                                            description = f"{title}\n\nGenerated youtube-auto AI\nSubject: {title_subject}"
+                                                            
+                                                            # 한국어 키워드 생성 (일반 영상과 완전히 동일한 방식)
+                                                            script = ko_version.get('script', '')
+                                                            from app.services import llm
+                                                            
+                                                            # 1. 먼저 영어 키워드 생성 (일반 영상과 동일)
+                                                            english_terms = llm.generate_terms(title_subject, script, 10) or []
+                                                            
+                                                            # 2. 영어 키워드를 한국어로 번역 (일반 영상과 동일)
+                                                            if english_terms:
+                                                                try:
+                                                                    korean_terms = llm.translate_terms_to_korean(english_terms)
+                                                                    keywords = ", ".join(korean_terms + [str(title_subject).strip()])
+                                                                    logger.info(f"🇰🇷 Successfully translated tags: {keywords}")
+                                                                except Exception as e:
+                                                                    logger.error(f"Translation failed: {e}, using fallback Korean tags")
+                                                                    fallback_terms = ["정보", "팁", "노하우", "가이드", "도움"]
+                                                                    keywords = ", ".join(fallback_terms + [str(title_subject).strip()])
+                                                            else:
+                                                                # 영어 키워드 생성 실패 시 fallback
+                                                                fallback_terms = ["정보", "팁", "노하우", "가이드", "도움"]
+                                                                keywords = ", ".join(fallback_terms + [str(title_subject).strip()])
+                                                            
+                                                            vid_id = upload_video(
+                                                                youtube, 
+                                                                video_path, 
+                                                                title=title[:100],
+                                                                description=description,
+                                                                category="22",
+                                                                keywords=keywords,
+                                                                privacy_status="private",
+                                                                progress_callback=update_progress
+                                                            )
+                                                            
+                                                            if vid_id:
+                                                                upload_progress.progress(1.0)
+                                                                upload_status.success("✅ 업로드 성공!")
+                                                                st.markdown(f"🎉 [영상 보러가기](https://youtu.be/{vid_id})")
+                                                                st.session_state[f"batch_ko_upload_requested_{i}"] = False
+                                                            else:
+                                                                upload_status.error("❌ 업로드 실패")
+                                                                st.session_state[f"batch_ko_upload_requested_{i}"] = False
+                                                                
+                                                        except Exception as e:
+                                                            st.error(f"❌ 업로드 오류: {e}")
+                                                            st.session_state[f"batch_ko_upload_requested_{i}"] = False
+                                                    else:
+                                                        st.error("❌ 인증 필요 (설정에서 YouTube 인증을 완료해주세요)")
+                                                        st.session_state[f"batch_ko_upload_requested_{i}"] = False
+                                    else:
+                                        st.error("❌ 파일 없음")
+                                else:
+                                    st.warning("파일 경로 정보 없음")
+                                
+                                # YouTube 링크 표시 (자동 업로드된 경우)
+                                if ko_version.get('video_id'):
+                                    video_url = f"https://youtube.com/watch?v={ko_version['video_id']}"
+                                    st.write(f"**YouTube**: [영상 보기]({video_url})")
+                                
+                                # 업로드 오류 표시
+                                if ko_version.get('upload_error'):
+                                    st.warning(f"자동 업로드 오류: {ko_version['upload_error']}")
+                                    
+                                # 추가 정보 표시 (중첩 expander 제거)
+                                if ko_version.get('script'):
+                                    st.markdown("**📝 생성된 대본**")
+                                    st.text_area("대본 내용", value=ko_version['script'], height=100, disabled=True, key=f"result_script_{result.get('title', 'unknown')}_ko")
+                            else:
+                                st.warning("한국어 버전 정보 없음")
+                            
+                            # 영어 버전
+                            if result.get('english_version'):
+                                eng_version = result['english_version']
+                                st.markdown("**🇺🇸 English 버전**")
+                                
+                                # 파일 경로 표시
+                                if eng_version.get('file_path'):
+                                    video_path = eng_version['file_path']
+                                    st.write(f"**파일**: {video_path}")
+                                    
+                                    # 파일 존재 여부 확인
+                                    import os
+                                    if os.path.exists(video_path):
+                                        file_size = os.path.getsize(video_path)
+                                        st.success(f"✅ 파일 존재함 ({file_size:,} bytes)")
+                                        
+                                        # 영상 표시 및 컨트롤 (일반 영상과 동일)
+                                        col_video, col_controls = st.columns([0.6, 0.4])
+                                        
+                                        with col_video:
+                                            st.video(video_path, format="video/mp4")
+                                        
+                                        with col_controls:
+                                            st.markdown("#### 🎬 **영상 작업**")
+                                            
+                                            # 채널 선택
+                                            channels = [("🏠 메인 채널", "default"), ("⏱️ 타이머 채널", "timer")]
+                                            selected_channel_index = st.selectbox(
+                                                "업로드 채널 선택",
+                                                options=range(len(channels)),
+                                                format_func=lambda x: channels[x][0],
+                                                index=0,
+                                                key=f"batch_en_channel_{i}"
+                                            )
+                                            
+                                            # 액션 버튼들
+                                            col_btn1, col_btn2 = st.columns(2)
+                                            
+                                            with col_btn1:
+                                                # 다운로드 버튼
+                                                try:
+                                                    with open(video_path, "rb") as video_file:
+                                                        video_bytes = video_file.read()
+                                                    st.download_button(
+                                                        label="📥 다운로드",
+                                                        data=video_bytes,
+                                                        file_name=os.path.basename(video_path),
+                                                        mime="video/mp4",
+                                                        key=f"batch_en_dl_{i}",
+                                                        use_container_width=True
+                                                    )
+                                                except Exception:
+                                                    st.button("📥 다운로드", disabled=True, use_container_width=True)
+                                            
+                                            with col_btn2:
+                                                # 재생 버튼
+                                                if st.button("▶️ 재생", key=f"batch_en_play_{i}", use_container_width=True):
+                                                    try:
+                                                        if os.name == 'nt':
+                                                            os.startfile(video_path)
+                                                        else:
+                                                            import subprocess
+                                                            subprocess.call(('xdg-open', video_path))
+                                                    except Exception:
+                                                        st.error("재생할 수 없습니다.")
+                                            
+                                            # 수동 업로드 버튼
+                                            upload_progress_container = st.empty()
+                                            
+                                            if st.button("📺 YouTube 업로드", key=f"batch_en_upload_{i}", use_container_width=True, type="primary"):
+                                                st.session_state[f"batch_en_upload_requested_{i}"] = True
+                                            
+                                            # 업로드 로직 처리 (일반 영상과 동일)
+                                            if st.session_state.get(f"batch_en_upload_requested_{i}"):
+                                                with upload_progress_container.container():
+                                                    # 토큰 파일 선택
+                                                    timer_token_file = "token_timer.pickle"
+                                                    default_token_file = "token.pickle"
+                                                    ch_idx = st.session_state.get(f"batch_en_channel_{i}", 0)
+                                                    token_file = timer_token_file if ch_idx == 1 else default_token_file
+                                                    
+                                                    # client_secrets.json 찾기
+                                                    client_secrets_file = "client_secrets.json"
+                                                    if not os.path.exists(client_secrets_file):
+                                                        alt_copy = "client_secrets - 복사본.json"
+                                                        if os.path.exists(alt_copy):
+                                                            client_secrets_file = alt_copy
+                                                    
+                                                    if os.path.exists(token_file) and os.path.exists(client_secrets_file):
+                                                        try:
+                                                            upload_progress = st.progress(0)
+                                                            upload_status = st.empty()
+                                                            upload_status.info("📤 업로드 준비 중...")
+                                                            
+                                                            def update_progress(p):
+                                                                upload_progress.progress(p / 100)
+                                                                upload_status.info(f"📤 업로드 중... {p}%")
+                                                            
+                                                            from app.utils.youtube import get_authenticated_service, upload_video
+                                                            youtube = get_authenticated_service(client_secrets_file, token_file)
+                                                            
+                                                            # 메타데이터 생성 (영어 버전)
+                                                            eng_title = eng_version.get('english_title', result['title'])  # 영어 제목 사용
+                                                            title = f"#Shorts {eng_title}"
+                                                            description = f"{title}\n\nGenerated youtube-auto AI\nSubject: {eng_title}"
+                                                            
+                                                            # 키워드 생성 (영어)
+                                                            script = eng_version.get('script', '')
+                                                            from app.services import llm
+                                                            base_terms = llm.generate_terms(eng_title, script, amount=15) or []
+                                                            keywords = ", ".join(base_terms + [str(eng_title).strip()])
+                                                            
+                                                            vid_id = upload_video(
+                                                                youtube, 
+                                                                video_path, 
+                                                                title=title[:100],
+                                                                description=description,
+                                                                category="22",
+                                                                keywords=keywords,
+                                                                privacy_status="private",
+                                                                progress_callback=update_progress
+                                                            )
+                                                            
+                                                            if vid_id:
+                                                                upload_progress.progress(1.0)
+                                                                upload_status.success("✅ 업로드 성공!")
+                                                                st.markdown(f"🎉 [영상 보러가기](https://youtu.be/{vid_id})")
+                                                                st.session_state[f"batch_en_upload_requested_{i}"] = False
+                                                            else:
+                                                                upload_status.error("❌ 업로드 실패")
+                                                                st.session_state[f"batch_en_upload_requested_{i}"] = False
+                                                                
+                                                        except Exception as e:
+                                                            st.error(f"❌ 업로드 오류: {e}")
+                                                            st.session_state[f"batch_en_upload_requested_{i}"] = False
+                                                    else:
+                                                        st.error("❌ 인증 필요 (설정에서 YouTube 인증을 완료해주세요)")
+                                                        st.session_state[f"batch_en_upload_requested_{i}"] = False
+                                    else:
+                                        st.error("❌ 파일 없음")
+                                else:
+                                    st.warning("파일 경로 정보 없음")
+                                
+                                # YouTube 링크 표시 (자동 업로드된 경우)
+                                if eng_version.get('video_id'):
+                                    video_url = f"https://youtube.com/watch?v={eng_version['video_id']}"
+                                    st.write(f"**YouTube**: [영상 보기]({video_url})")
+                                
+                                # 업로드 오류 표시
+                                if eng_version.get('upload_error'):
+                                    st.warning(f"자동 업로드 오류: {eng_version['upload_error']}")
+                                    
+                                # 추가 정보 표시 (중첩 expander 제거)
+                                if eng_version.get('script'):
+                                    st.markdown("**📝 생성된 대본 (English)**")
+                                    st.text_area("대본 내용", value=eng_version['script'], height=100, disabled=True, key=f"result_script_{result.get('title', 'unknown')}_en")
+                            else:
+                                st.info("영어 버전 없음")
+                else:
+                    st.warning("성공한 영상이 없습니다.")
+                
+                # 실패한 영상들
+                if failed_videos:
+                    st.markdown("#### ❌ **실패한 영상들**")
+                    for error in failed_videos:
+                        with st.container(border=True):
+                            st.markdown(f"**❌ {error['title']}**")
+                            st.error(f"오류: {error['error']}")
+
+
+def generate_single_video(title: str, video_type: str, language: str, duration: int, style: str, auto_upload: bool = False) -> dict:
+    """단일 영상 생성 (기존 웹UI 로직 활용)"""
+    
+    from uuid import uuid4
+    from app.models.schema import VideoParams
+    from app.services import task, llm
+    from app.utils.youtube import get_authenticated_service, upload_video
+    import os
+    import glob
+    from app.utils import utils
+    
+    # Task ID 생성
+    task_id = str(uuid4())
+    
+    try:
+        # 1. 대본 생성
+        if video_type == "longform":
+            script = llm.generate_longform_script(
+                video_subject=title,
+                language=language,
+                duration_minutes=duration
+            )
+        else:  # shorts
+            script = llm.generate_script(
+                video_subject=title,
+                language=language,
+                paragraph_number=1
+            )
+        
+        if not script:
+            raise Exception("대본 생성 실패")
+        
+        # 2. VideoParams 설정
+        params_dict = {
+            'video_subject': title,
+            'video_script': script,
+            'video_language': language,
+            'voice_name': 'casual' if video_type == 'shorts' else 'professional',
+            'bgm_type': 'random',
+            'bgm_volume': 0.2,
+            'subtitle_enabled': True,
+            'subtitle_position': 'bottom',
+            'video_source': 'pexels',
+            'video_aspect': '9:16' if video_type == 'shorts' else '16:9',
+            'video_concat_mode': 'random',
+            'video_clip_duration': 3 if video_type == 'shorts' else 5,
+            'video_count': 5 if video_type == 'shorts' else 10,
+            'font_size': 60,
+            'stroke_width': 1.5,
+            'n_threads': 2,
+            'paragraph_number': 1 if video_type == 'shorts' else 4
+        }
+        
+        params = VideoParams(**params_dict)
+        
+        # 3. 영상 생성
+        if video_type == "longform":
+            task.generate_longform_video(task_id, params)
+        else:
+            task.start(task_id, params, stop_at="video")
+        
+        # 4. 생성된 파일 찾기
+        task_dir = utils.task_dir(task_id)
+        
+        video_patterns = [
+            os.path.join(task_dir, f"longform_final_{task_id}.mp4"),  # 롱폼
+            os.path.join(task_dir, "final-*.mp4"),                    # 쇼츠
+            os.path.join(task_dir, "combined-*.mp4"),                 # 결합된 영상
+            os.path.join(task_dir, "*.mp4")                           # 모든 mp4
+        ]
+        
+        video_file = None
+        for pattern in video_patterns:
+            files = glob.glob(pattern)
+            if files:
+                video_file = files[0]
+                break
+        
+        if not video_file:
+            raise Exception("영상 파일을 찾을 수 없습니다")
+        
+        # 5. YouTube 업로드 (옵션)
+        video_id = None
+        if auto_upload:
+            try:
+                client_secrets_file = "client_secrets.json"
+                token_file = "token.pickle"
+                
+                if os.path.exists(client_secrets_file) and os.path.exists(token_file):
+                    youtube_service = get_authenticated_service(client_secrets_file, token_file)
+                    
+                    # 태그 생성
+                    tags = llm.generate_terms(title, script, 10)
+                    
+                    video_id = upload_video(
+                        youtube=youtube_service,
+                        file_path=video_file,
+                        title=title,
+                        description=f"AI가 생성한 {video_type} 영상입니다.\n\n주제: {title}",
+                        keywords=",".join(tags) if tags else "",
+                        privacy_status="private"
+                    )
+            except Exception as e:
+                st.warning(f"YouTube 업로드 실패: {e}")
+        
+        return {
+            'file_path': video_file,
+            'script': script,
+            'video_id': video_id,
+            'type': video_type,
+            'language': language
+        }
+        
+    except Exception as e:
+        raise Exception(f"영상 생성 실패: {str(e)}")
+        
+        # Batch processing status
+        if st.session_state.get('batch_processing', False):
+            st.markdown("---")
+            st.markdown("### 🔄 **배치 처리 진행 상황**")
+            
+            from app.services.batch_processor import batch_processor
+            
+            # Create progress containers
+            batch_status_container = st.container()
+            batch_progress_container = st.container()
+            batch_results_container = st.container()
+            
+            with batch_status_container:
+                status = batch_processor.get_status()
+                
+                if status['is_processing']:
+                    # Overall progress
+                    overall_progress = status['current_progress'] / 100.0
+                    st.progress(overall_progress, text=f"전체 진행률: {status['current_progress']:.0f}%")
+                    
+                    # Current video info
+                    if status['current_video_title']:
+                        st.info(f"🎬 현재 처리 중: ({status['current_video_index']}/{status['total_videos']}) {status['current_video_title']}")
+                    
+                    # Auto-refresh every 2 seconds
+                    time.sleep(2)
+                    st.rerun()
+                
+                else:
+                    # Processing completed
+                    st.success("✅ 배치 처리가 완료되었습니다!")
+                    
+                    # Results summary
+                    col_success, col_error = st.columns(2)
+                    with col_success:
+                        st.metric("성공", status['completed_count'], delta=None)
+                    with col_error:
+                        st.metric("실패", status['error_count'], delta=None)
+                    
+                    # Detailed results
+                    if status['results']:
+                        st.markdown("#### ✅ **성공한 영상들**")
+                        for result in status['results']:
+                            with st.container(border=True):
+                                st.markdown(f"**✅ {result['title']}**")
+                                result_data = result['result']
+                                
+                                # 한국어 버전 정보
+                                if result_data.get('korean_version'):
+                                    ko_version = result_data['korean_version']
+                                    st.markdown("**🇰🇷 한국어 버전**")
+                                    st.write(f"**파일**: {ko_version.get('file_path', 'N/A')}")
+                                    if ko_version.get('video_id'):
+                                        video_url = f"https://youtube.com/watch?v={ko_version['video_id']}"
+                                        st.write(f"**YouTube**: [영상 보기]({video_url})")
+                                
+                                # 영어 버전 정보
+                                if result_data.get('english_version'):
+                                    eng_version = result_data['english_version']
+                                    st.markdown("**🇺🇸 English 버전**")
+                                    st.write(f"**파일**: {eng_version.get('file_path', 'N/A')}")
+                                    if eng_version.get('video_id'):
+                                        video_url = f"https://youtube.com/watch?v={eng_version['video_id']}"
+                                        st.write(f"**YouTube**: [영상 보기]({video_url})")
+                                
+                                # 단일 버전인 경우 (타이머 등)
+                                if not result_data.get('korean_version') and not result_data.get('english_version'):
+                                    st.write(f"**파일**: {result_data.get('file_path', 'N/A')}")
+                                    if result_data.get('video_id'):
+                                        video_url = f"https://youtube.com/watch?v={result_data['video_id']}"
+                                        st.write(f"**YouTube**: [영상 보기]({video_url})")
+                                
+                                st.write(f"**완료 시간**: {result['timestamp']}")
+                                
+                                # 총 생성된 버전 수 표시
+                                total_versions = result_data.get('total_versions', 1)
+                                if total_versions > 1:
+                                    st.info(f"📊 총 {total_versions}개 버전 생성됨")
+                    
+                    if status['errors']:
+                        st.markdown("#### ❌ **실패한 영상들**")
+                        for error in status['errors']:
+                            with st.container(border=True):
+                                st.markdown(f"**❌ {error['title']}**")
+                                st.error(f"오류: {error['error']}")
+                                st.write(f"**실패 시간**: {error['timestamp']}")
+                    
+                    # Reset batch processing state
+                    if st.button("🔄 새로운 배치 처리 시작", key="reset_batch_btn"):
+                        st.session_state['batch_processing'] = False
+                        if 'batch_titles' in st.session_state:
+                            del st.session_state['batch_titles']
+                        if 'batch_params' in st.session_state:
+                            del st.session_state['batch_params']
+                        st.rerun()
+            
+            # Start batch processing if not already started
+            if not batch_processor.is_processing and 'batch_titles' in st.session_state:
+                import asyncio
+                
+                async def run_batch_processing():
+                    titles = st.session_state['batch_titles']
+                    params = st.session_state['batch_params']
+                    
+                    def progress_callback(status):
+                        # This will be called by the batch processor
+                        pass
+                    
+                    result = await batch_processor.process_batch_videos(
+                        titles, params, progress_callback, params.get('auto_upload', False)
+                    )
+                    
+                    return result
+                
+                # Run batch processing
+                try:
+                    asyncio.run(run_batch_processing())
+                except Exception as e:
+                    st.error(f"배치 처리 중 오류 발생: {e}")
+                    st.session_state['batch_processing'] = False
+
     # Container for progress bar (placed immediately after the button)
     # generation_status_container is already defined above after the main button
 
