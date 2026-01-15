@@ -1,0 +1,16 @@
+[Script Info]
+Title: Enhanced Information Video Subtitles
+ScriptType: v4.00+
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arial,45,&H00FFFFFF,&H000000FF,&H00000000,&H80000000,0,0,0,0,100,100,0,0,1,2,2,2,10,10,10,1
+Style: Numbers,Arial,55,&H006B6BFF,&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,3,2,2,10,10,10,1
+Style: Important,Arial,50,&H00FFD700,&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,3,2,2,10,10,10,1
+Style: Action,Arial,45,&H00C4DC4E,&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,2,2,2,10,10,10,1
+Style: Time,Arial,45,&H00D1B745,&H000000FF,&H00000000,&H80000000,0,1,0,0,100,100,0,0,1,2,2,2,10,10,10,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,00:00:00.00,00:00:00.94,Default,,0,0,0,,안녕하세요
+Dialogue: 0,00:00:01.52,00:00:02.04,Default,,0,0,0,,반가워요

@@ -185,21 +185,67 @@ class BatchVideoProcessor:
         if create_global_version and video_type in ['shorts', 'longform']:
             logger.info(f"Creating global (English) version for: {title}")
             
+            # 영어 제목 생성 (일반 영상과 동일한 방식)
+            try:
+                from app.services import llm
+                import re
+                
+                # 1. 제목을 영어로 번역 시도
+                eng_title = llm.translate_to_english(title)
+                
+                # 번역 성공 여부 확인
+                if not eng_title or eng_title == title or re.search(r'[가-힣]', str(eng_title)):
+                    # 번역 실패 시 키워드 기반 영어 제목 생성
+                    logger.info("Title translation failed, generating English title from keywords")
+                    
+                    # 한국어 버전의 스크립트에서 키워드 추출
+                    ko_script = ko_result.get('script', '')
+                    terms_en = llm.generate_terms(video_subject=title, video_script=ko_script, amount=5) or []
+                    
+                    if terms_en:
+                        # 영어 키워드만 필터링하여 제목 생성
+                        english_terms = [t for t in terms_en if t and not re.search(r'[가-힣]', t)]
+                        if english_terms:
+                            eng_title = " · ".join(english_terms[:3])
+                        else:
+                            eng_title = "Motivational Content"
+                    else:
+                        eng_title = "Motivational Content"
+                
+                logger.info(f"Generated English title: {eng_title}")
+                
+            except Exception as e:
+                logger.warning(f"English title generation failed: {e}")
+                eng_title = "Motivational Content"
+            
             # 영어 버전용 파라미터 생성
             eng_params = video_params.copy()
             eng_params['language'] = 'en-US'
+            eng_params['english_title'] = eng_title  # 영어 제목 추가
             
             try:
                 if video_type == 'shorts':
-                    eng_result = await self._process_shorts_video(title, eng_params, youtube_service)
+                    eng_result = await self._process_shorts_video(eng_title, eng_params, youtube_service)
                     eng_result['version'] = 'english'
+                    # 영어 제목 강제 설정 (반환값에 없을 수 있으므로)
+                    eng_result['english_title'] = eng_title
+                    logger.info(f"✅ English shorts created")
+                    logger.info(f"   - English title: {eng_result['english_title']}")
+                    logger.info(f"   - Title field: {eng_result.get('title')}")
+                    logger.info(f"   - Result keys: {list(eng_result.keys())}")
                     results.append(eng_result)
                 elif video_type == 'longform':
-                    eng_result = await self._process_longform_video(title, eng_params, youtube_service)
+                    eng_result = await self._process_longform_video(eng_title, eng_params, youtube_service)
                     eng_result['version'] = 'english'
+                    # 영어 제목 강제 설정 (반환값에 없을 수 있으므로)
+                    eng_result['english_title'] = eng_title
+                    logger.info(f"✅ English longform created")
+                    logger.info(f"   - English title: {eng_result['english_title']}")
+                    logger.info(f"   - Title field: {eng_result.get('title')}")
+                    logger.info(f"   - Result keys: {list(eng_result.keys())}")
                     results.append(eng_result)
                 
-                logger.info(f"✅ Global version created for: {title}")
+                logger.info(f"✅ Global version created for: {title} with English title: {eng_title}")
                 
             except Exception as e:
                 logger.error(f"❌ Failed to create global version for {title}: {e}")
@@ -214,12 +260,22 @@ class BatchVideoProcessor:
     async def _process_shorts_video(self, title: str, video_params: Dict, youtube_service=None) -> Dict:
         """쇼츠 영상 생성"""
         
-        # 대본 생성
-        script = llm.generate_script(
-            video_subject=title,
-            language=video_params.get('language', 'ko-KR'),
-            paragraph_number=1
-        )
+        # 언어별 대본 생성
+        language = video_params.get('language', 'ko-KR')
+        
+        if language == 'en-US':
+            # 영어 버전: 영어 제목으로 영어 대본 생성
+            script = llm.generate_english_script(
+                video_subject=title,  # 이미 영어 제목이 전달됨
+                paragraph_number=1
+            )
+        else:
+            # 한국어 버전: 기존 방식
+            script = llm.generate_script(
+                video_subject=title,
+                language=language,
+                paragraph_number=1
+            )
         
         if not script:
             raise Exception("대본 생성 실패")
@@ -238,10 +294,15 @@ class BatchVideoProcessor:
         video_id = None
         if youtube_service:
             try:
-                # 제목과 설명 생성
-                video_title = title
-                description = f"AI가 생성한 쇼츠 영상입니다.\n\n주제: {title}"
-                tags = llm.generate_terms(title, script, 10)
+                # 제목과 설명 생성 (언어별)
+                if language == 'en-US':
+                    video_title = f"#Shorts {title}"  # 영어 제목 사용
+                    description = f"{title}\n\nGenerated by youtube-auto AI\nSubject: {title}"
+                    tags = llm.generate_terms(title, script, 10) or []
+                else:
+                    video_title = title  # 한국어 제목 사용
+                    description = f"AI가 생성한 쇼츠 영상입니다.\n\n주제: {title}"
+                    tags = llm.generate_terms(title, script, 10) or []
                 
                 video_id = upload_video(
                     youtube=youtube_service,
@@ -261,18 +322,30 @@ class BatchVideoProcessor:
             'file_path': result_file,
             'script': script,
             'video_id': video_id,
-            'type': 'shorts'
+            'type': 'shorts',
+            'title': title  # 사용된 제목 반환
+            # english_title은 _process_single_video에서 설정됨
         }
     
     async def _process_longform_video(self, title: str, video_params: Dict, youtube_service=None) -> Dict:
         """롱폼 영상 생성"""
         
-        # 롱폼 대본 생성
-        script = llm.generate_longform_script(
-            video_subject=title,
-            language=video_params.get('language', 'ko-KR'),
-            duration_minutes=video_params.get('duration_minutes', 10)
-        )
+        # 언어별 롱폼 대본 생성
+        language = video_params.get('language', 'ko-KR')
+        
+        if language == 'en-US':
+            # 영어 버전: 영어 제목으로 영어 대본 생성
+            script = llm.generate_english_script(
+                video_subject=title,  # 이미 영어 제목이 전달됨
+                paragraph_number=4
+            )
+        else:
+            # 한국어 버전: 기존 방식
+            script = llm.generate_longform_script(
+                video_subject=title,
+                language=language,
+                duration_minutes=video_params.get('duration_minutes', 10)
+            )
         
         if not script:
             raise Exception("롱폼 대본 생성 실패")
@@ -290,9 +363,15 @@ class BatchVideoProcessor:
         video_id = None
         if youtube_service:
             try:
-                video_title = title
-                description = f"AI가 생성한 롱폼 영상입니다.\n\n주제: {title}"
-                tags = llm.generate_terms(title, script, 10)
+                # 제목과 설명 생성 (언어별)
+                if language == 'en-US':
+                    video_title = title  # 영어 제목 사용
+                    description = f"{title}\n\nGenerated by youtube-auto AI\nSubject: {title}"
+                    tags = llm.generate_terms(title, script, 10) or []
+                else:
+                    video_title = title  # 한국어 제목 사용
+                    description = f"AI가 생성한 롱폼 영상입니다.\n\n주제: {title}"
+                    tags = llm.generate_terms(title, script, 10) or []
                 
                 video_id = upload_video(
                     youtube=youtube_service,
@@ -312,7 +391,9 @@ class BatchVideoProcessor:
             'file_path': result_file,
             'script': script,
             'video_id': video_id,
-            'type': 'longform'
+            'type': 'longform',
+            'title': title  # 사용된 제목 반환
+            # english_title은 _process_single_video에서 설정됨
         }
     
     async def _process_timer_video(self, title: str, video_params: Dict, youtube_service=None) -> Dict:

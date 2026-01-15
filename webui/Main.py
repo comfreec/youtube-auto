@@ -3191,9 +3191,17 @@ with tab_main:
                                                     from app.utils.youtube import get_authenticated_service, upload_video
                                                     
                                                     youtube = get_authenticated_service(client_secrets_file, token_file)
-                                                    title_subject = title
+                                                    
+                                                    # 일반 영상과 동일한 로직: eng_result에서 영어 제목 가져오기
+                                                    title_subject = eng_result.get('english_title') or eng_result.get('title', 'Motivational Content')
+                                                    
+                                                    logger.info(f"🔍 Auto Upload English - title_subject: {title_subject}")
+                                                    
                                                     upload_title = f"#Shorts {title_subject}"
                                                     description = f"Generated youtube-auto AI\n\nSubject: {title_subject}"
+                                                    
+                                                    logger.info(f"📺 Auto Upload - Title: {upload_title}")
+                                                    logger.info(f"📺 Auto Upload - Description: {description}")
                                                     
                                                     # 키워드는 이미 생성된 것 사용 (API 재호출 방지)
                                                     script = eng_result.get('script', '')
@@ -3559,16 +3567,24 @@ with tab_main:
                                                             from app.utils.youtube import get_authenticated_service, upload_video
                                                             youtube = get_authenticated_service(client_secrets_file, token_file)
                                                             
-                                                            # 메타데이터 생성 (영어 버전)
-                                                            eng_title = eng_version.get('english_title', result['title'])  # 영어 제목 사용
-                                                            title = f"#Shorts {eng_title}"
-                                                            description = f"{title}\n\nGenerated youtube-auto AI\nSubject: {eng_title}"
+                                                            # 일반 영상과 동일한 로직 사용
+                                                            # eng_version['english_title']이 이미 영어로 설정되어 있음
+                                                            title_subject = eng_version.get('english_title') or eng_version.get('title', 'Motivational Content')
+                                                            
+                                                            logger.info(f"🔍 Batch English Upload - title_subject: {title_subject}")
+                                                            
+                                                            # 일반 영상과 동일한 형식
+                                                            title = f"#Shorts {title_subject}"
+                                                            description = f"Generated youtube-auto AI\n\nSubject: {title_subject}"
+                                                            
+                                                            logger.info(f"📺 YouTube Upload - Title: {title}")
+                                                            logger.info(f"📺 YouTube Upload - Description: {description}")
                                                             
                                                             # 키워드 생성 (영어)
                                                             script = eng_version.get('script', '')
                                                             from app.services import llm
-                                                            base_terms = llm.generate_terms(eng_title, script, amount=15) or []
-                                                            keywords = ", ".join(base_terms + [str(eng_title).strip()])
+                                                            base_terms = llm.generate_terms(title_subject, script, amount=15) or []
+                                                            keywords = ", ".join(base_terms + [str(title_subject).strip()])
                                                             
                                                             vid_id = upload_video(
                                                                 youtube, 
