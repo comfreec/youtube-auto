@@ -21653,3 +21653,184 @@ Please retry in 11.680586074s. [links {
 2026-01-16 23:53:02 | INFO | "./app\utils\youtube.py:92": upload_video - 업로드 검증 중... (30초 대기)
 2026-01-16 23:53:32 | WARNING | "./app\utils\youtube.py:116": upload_video - ⚠️ 업로드 검증 실패 (하지만 업로드는 성공): <HttpError 403 when requesting https://youtube.googleapis.com/youtube/v3/videos?part=snippet%2Cstatus&id=Yq3bQ4jsYRo&alt=json returned "Request had insufficient authentication scopes.". Details: "[{'message': 'Insufficient Permission', 'domain': 'global', 'reason': 'insufficientPermissions'}]">
 2026-01-16 23:53:32 | INFO | "./webui\Main.py:5475": <module> - Updated video list with 2 new videos. Total: 3
+2026-01-16 23:56:23 | INFO | "./app\config\config.py:23": load_config - load config from file: ./config.toml
+2026-01-16 23:56:23 | INFO | "./app\config\config.py:52": reload - Config reloaded
+2026-01-16 23:56:23 | INFO | "./app\services\llm.py:19": _generate_response - llm provider: gemini
+2026-01-16 23:56:23 | INFO | "./app\services\llm.py:37": _generate_response - Found 5 Gemini API keys for rotation
+2026-01-16 23:56:23 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #1 (5 total)
+2026-01-16 23:56:23 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #1
+2026-01-16 23:56:24 | WARNING | "./app\services\llm.py:65": _generate_response - Gemini model gemini-2.5-flash-lite failed with key #1: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash-lite
+Please retry in 36.438964473s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash-lite"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 36
+}
+]
+2026-01-16 23:56:24 | WARNING | "./app\services\llm.py:67": _generate_response - 🚫 API key #1 quota exceeded, trying next key...
+2026-01-16 23:56:24 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #2 (5 total)
+2026-01-16 23:56:24 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #2
+2026-01-16 23:56:24 | WARNING | "./app\services\llm.py:65": _generate_response - Gemini model gemini-2.5-flash-lite failed with key #2: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash-lite
+Please retry in 36.005368618s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash-lite"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 36
+}
+]
+2026-01-16 23:56:24 | WARNING | "./app\services\llm.py:67": _generate_response - 🚫 API key #2 quota exceeded, trying next key...
+2026-01-16 23:56:24 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #3 (5 total)
+2026-01-16 23:56:24 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #3
+2026-01-16 23:56:27 | SUCCESS | "./app\services\llm.py:62": _generate_response - ✅ Success with API key #3 and model gemini-2.5-flash-lite
+2026-01-16 23:56:27 | INFO | "./app\services\animation_video_generator.py:129": generate_animation_materials - 🎨 Generating 5 animation materials
+2026-01-16 23:56:27 | INFO | "./app\services\animation_video_generator.py:30": generate_image_prompts_from_script - 📝 Generating 5 image prompts from script
+2026-01-16 23:56:27 | INFO | "./app\config\config.py:23": load_config - load config from file: ./config.toml
+2026-01-16 23:56:27 | INFO | "./app\config\config.py:52": reload - Config reloaded
+2026-01-16 23:56:27 | INFO | "./app\services\llm.py:19": _generate_response - llm provider: gemini
+2026-01-16 23:56:27 | INFO | "./app\services\llm.py:37": _generate_response - Found 5 Gemini API keys for rotation
+2026-01-16 23:56:27 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #1 (5 total)
+2026-01-16 23:56:27 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #1
+2026-01-16 23:56:27 | WARNING | "./app\services\llm.py:65": _generate_response - Gemini model gemini-2.5-flash-lite failed with key #1: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash-lite
+Please retry in 32.67170783s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash-lite"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 32
+}
+]
+2026-01-16 23:56:27 | WARNING | "./app\services\llm.py:67": _generate_response - 🚫 API key #1 quota exceeded, trying next key...
+2026-01-16 23:56:27 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #2 (5 total)
+2026-01-16 23:56:27 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #2
+2026-01-16 23:56:28 | WARNING | "./app\services\llm.py:65": _generate_response - Gemini model gemini-2.5-flash-lite failed with key #2: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash-lite
+Please retry in 32.393706598s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash-lite"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 32
+}
+]
+2026-01-16 23:56:28 | WARNING | "./app\services\llm.py:67": _generate_response - 🚫 API key #2 quota exceeded, trying next key...
+2026-01-16 23:56:28 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #3 (5 total)
+2026-01-16 23:56:28 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #3
+2026-01-16 23:56:31 | SUCCESS | "./app\services\llm.py:62": _generate_response - ✅ Success with API key #3 and model gemini-2.5-flash-lite
+2026-01-16 23:56:31 | WARNING | "./app\services\animation_video_generator.py:75": generate_image_prompts_from_script - Only 0 prompts generated, duplicating to reach 5
+2026-01-16 23:56:31 | ERROR | "./app\services\animation_video_generator.py:85": generate_image_prompts_from_script - ❌ Failed to generate prompts: integer modulo by zero
+2026-01-16 23:56:31 | INFO | "./app\services\animation_video_generator.py:143": generate_animation_materials - 🎨 Generating 5 images...
+2026-01-16 23:56:31 | INFO | "./app\services\animation_video_generator.py:146": generate_animation_materials - Generating image 1/5: cinematic, dramatic lighting, high quality, detail...
+2026-01-16 23:56:31 | INFO | "./app\services\ai_image.py:38": generate_image_pollinations - 🎨 Generating image with Pollinations.ai: cinematic, dramatic lighting, high quality, detail...
+2026-01-16 23:56:41 | SUCCESS | "./app\services\ai_image.py:72": generate_image_pollinations - ✅ Image generated: .\storage\ai_images\ai_image_1768575401_182826.png
+2026-01-16 23:56:41 | INFO | "./app\services\animation_video_generator.py:146": generate_animation_materials - Generating image 2/5: cinematic, dramatic lighting, high quality, detail...
+2026-01-16 23:56:41 | INFO | "./app\services\ai_image.py:38": generate_image_pollinations - 🎨 Generating image with Pollinations.ai: cinematic, dramatic lighting, high quality, detail...
+2026-01-16 23:57:42 | ERROR | "./app\services\ai_image.py:76": generate_image_pollinations - ❌ Failed to generate image: HTTPSConnectionPool(host='image.pollinations.ai', port=443): Read timed out. (read timeout=60)
+2026-01-16 23:57:42 | WARNING | "./app\services\animation_video_generator.py:156": generate_animation_materials - Failed to generate image 2, skipping
+2026-01-16 23:57:42 | INFO | "./app\services\animation_video_generator.py:146": generate_animation_materials - Generating image 3/5: cinematic, dramatic lighting, high quality, detail...
+2026-01-16 23:57:42 | INFO | "./app\services\ai_image.py:38": generate_image_pollinations - 🎨 Generating image with Pollinations.ai: cinematic, dramatic lighting, high quality, detail...
+2026-01-16 23:57:44 | SUCCESS | "./app\services\ai_image.py:72": generate_image_pollinations - ✅ Image generated: .\storage\ai_images\ai_image_1768575464_201361.png
+2026-01-16 23:57:44 | INFO | "./app\services\animation_video_generator.py:146": generate_animation_materials - Generating image 4/5: cinematic, dramatic lighting, high quality, detail...
+2026-01-16 23:57:44 | INFO | "./app\services\ai_image.py:38": generate_image_pollinations - 🎨 Generating image with Pollinations.ai: cinematic, dramatic lighting, high quality, detail...
+2026-01-16 23:57:46 | SUCCESS | "./app\services\ai_image.py:72": generate_image_pollinations - ✅ Image generated: .\storage\ai_images\ai_image_1768575466_879361.png
+2026-01-16 23:57:46 | INFO | "./app\services\animation_video_generator.py:146": generate_animation_materials - Generating image 5/5: cinematic, dramatic lighting, high quality, detail...
+2026-01-16 23:57:46 | INFO | "./app\services\ai_image.py:38": generate_image_pollinations - 🎨 Generating image with Pollinations.ai: cinematic, dramatic lighting, high quality, detail...
+2026-01-16 23:57:48 | SUCCESS | "./app\services\ai_image.py:72": generate_image_pollinations - ✅ Image generated: .\storage\ai_images\ai_image_1768575468_3070.png
+2026-01-16 23:57:48 | INFO | "./app\services\animation_video_generator.py:163": generate_animation_materials - 🎬 Converting 4 images to animations...
+2026-01-16 23:57:48 | INFO | "./app\services\animation_video_generator.py:167": generate_animation_materials - Creating animation 1/4: zoom_out
+2026-01-16 23:57:48 | INFO | "./app\services\ai_animation.py:36": create_ken_burns_effect - 🎬 Creating animation from image: zoom_out effect
+2026-01-16 23:57:53 | SUCCESS | "./app\services\ai_animation.py:135": create_ken_burns_effect - ✅ Animation created: .\storage\ai_animations\animation_1768575468.mp4
+2026-01-16 23:57:53 | INFO | "./app\services\animation_video_generator.py:167": generate_animation_materials - Creating animation 2/4: zoom_in
+2026-01-16 23:57:53 | INFO | "./app\services\ai_animation.py:36": create_ken_burns_effect - 🎬 Creating animation from image: zoom_in effect
+2026-01-16 23:58:02 | SUCCESS | "./app\services\ai_animation.py:135": create_ken_burns_effect - ✅ Animation created: .\storage\ai_animations\animation_1768575473.mp4
+2026-01-16 23:58:02 | INFO | "./app\services\animation_video_generator.py:167": generate_animation_materials - Creating animation 3/4: pan_left
+2026-01-16 23:58:02 | INFO | "./app\services\ai_animation.py:36": create_ken_burns_effect - 🎬 Creating animation from image: pan_left effect
+2026-01-16 23:58:03 | SUCCESS | "./app\services\ai_animation.py:135": create_ken_burns_effect - ✅ Animation created: .\storage\ai_animations\animation_1768575482.mp4
+2026-01-16 23:58:03 | INFO | "./app\services\animation_video_generator.py:167": generate_animation_materials - Creating animation 4/4: zoom_out
+2026-01-16 23:58:03 | INFO | "./app\services\ai_animation.py:36": create_ken_burns_effect - 🎬 Creating animation from image: zoom_out effect
+2026-01-16 23:58:12 | SUCCESS | "./app\services\ai_animation.py:135": create_ken_burns_effect - ✅ Animation created: .\storage\ai_animations\animation_1768575483.mp4
+2026-01-16 23:58:12 | SUCCESS | "./app\services\animation_video_generator.py:184": generate_animation_materials - ✅ Generated 4 animation materials
+2026-01-16 23:58:12 | INFO | "./app\services\task.py:323": start - start task: 6798ff36-bb97-43e8-8a98-1076f30b26ab, stop_at: video
+2026-01-16 23:58:12 | INFO | "./app\services\task.py:17": generate_script - 
+
+## generating video script
+2026-01-16 23:58:12 | DEBUG | "./app\services\task.py:35": generate_script - video script: 
+저 광활한 우주를 직접 탐험하는 꿈, 현실이 되고 있습니다. 억만 개의 별들이 촘촘히 박힌 밤하늘 너머, 인류는 이제 우주로의 문을 열고 있습니다. 상상조차 할 수 없었던 경험, 바로 눈앞에 펼쳐질 새로운 세상이 우리를 기다립니다. 영화 속 이야기가 아닙니다. 곧 우리는 지구 궤도를 벗어나 우주 정거장에서 하룻밤을 보내거나, 달 표면에 발자국을 남길 수 있을지도 모릅니다. 민간 우주 기업들의 끊임없는 도전 덕분에 우주여행은 더 이상 꿈이 아닌, 점차 가까워지는 현실이 되고 있습니다. 우주여행은 단순한 관광을 넘어섭니다. 무중력 상태에서의 신비로운 체험, 푸른 지구를 발아래 두는 황홀한 광경은 우리의 시야를 완전히 바꿔놓을 것입니다. 광활한 우주 속에서 인간이란 존재의 의미를 되새기며, 경이로운 순간들을 온몸으로 느껴보세요. 미래에는 화성 탐사나 소행성 채굴과 같은 더욱 대담한 우주 임무가 펼쳐질 것입니다. 인류의 지평선을 넓히는 이러한 여정들은 우리의 상상력을 자극하고, 미지의 세계에 대한 끊임없는 탐구심을 불러일으킵니다. 우주여행의 미래는 무한한 가능성으로 가득 차 있습니다. 지금 바로, 우주여행의 매혹적인 세계로 떠날 준비를 하세요. 상상 그 이상의 경험이 당신을 기다립니다. 이 신비로운 여정을 통해 우리는 우주의 경이로움 속에서 새로운 자신을 발견하게 될 것입니다.
+2026-01-16 23:58:12 | INFO | "./app\services\task.py:371": start - Calling generate_audio...
+2026-01-16 23:58:12 | INFO | "./app\services\task.py:93": generate_audio - 
+
+## generating audio
+2026-01-16 23:58:12 | INFO | "./app\services\task.py:101": generate_audio - no custom audio file provided, using TTS to generate audio.
+2026-01-16 23:58:12 | INFO | "./app\services\voice.py:1151": tts - TTS 텍스트 전처리: '저 광활한 우주를 직접 탐험하는 꿈, 현실이 되고 있습니다. 억만 개의 별들이 촘촘히 박힌...' -> '저 광활한 우주를 직접 탐험하는 꿈, 현실이 되고 있습니다. 억만 개의 별들이 촘촘히 박힌...'
+2026-01-16 23:58:12 | INFO | "./app\services\voice.py:1205": azure_tts_v1 - start, voice name: casual, try: 1
+2026-01-16 23:58:12 | INFO | "./app\services\voice.py:1224": azure_tts_v1 - Running asyncio.run(_do()) with 60s timeout
+2026-01-16 23:58:12 | DEBUG | "./app\services\voice.py:1208": _do - Creating Communicate object for casual
+2026-01-16 23:58:12 | ERROR | "./app\services\voice.py:1238": azure_tts_v1 - failed, error: Invalid voice 'casual'.
+2026-01-16 23:58:12 | INFO | "./app\services\voice.py:1205": azure_tts_v1 - start, voice name: casual, try: 2
+2026-01-16 23:58:12 | INFO | "./app\services\voice.py:1224": azure_tts_v1 - Running asyncio.run(_do()) with 60s timeout
+2026-01-16 23:58:12 | DEBUG | "./app\services\voice.py:1208": _do - Creating Communicate object for casual
+2026-01-16 23:58:12 | ERROR | "./app\services\voice.py:1238": azure_tts_v1 - failed, error: Invalid voice 'casual'.
+2026-01-16 23:58:12 | INFO | "./app\services\voice.py:1205": azure_tts_v1 - start, voice name: casual, try: 3
+2026-01-16 23:58:12 | INFO | "./app\services\voice.py:1224": azure_tts_v1 - Running asyncio.run(_do()) with 60s timeout
+2026-01-16 23:58:12 | DEBUG | "./app\services\voice.py:1208": _do - Creating Communicate object for casual
+2026-01-16 23:58:12 | ERROR | "./app\services\voice.py:1238": azure_tts_v1 - failed, error: Invalid voice 'casual'.
+2026-01-16 23:58:12 | ERROR | "./app\services\task.py:111": generate_audio - failed to generate audio:
+1. check if the language of the voice matches the language of the video script.
+2. check if the network is available. If you are in China, it is recommended to use a VPN and enable the global traffic mode.
+2026-01-16 23:58:12 | INFO | "./app\services\task.py:375": start - generate_audio returned: None, None

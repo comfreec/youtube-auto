@@ -4281,7 +4281,7 @@ with tab_animation:
                 try:
                     from uuid import uuid4
                     from app.models.schema import VideoParams
-                    from app.services import task, llm
+                    from app.services import task as tm, llm
                     from app.services.animation_video_generator import generate_animation_materials
                     
                     task_id = str(uuid4())
@@ -4303,7 +4303,7 @@ with tab_animation:
                         st.text(script)
                     
                     # 2. AI 이미지 생성 및 애니메이션 변환
-                    st.info(f"🎨 {anim_segment_count}개의 AI 이미지 생성 중...")
+                    st.info(f"🎨 {anim_segment_count}개의 AI 이미지 생성 및 애니메이션 변환 중...")
                     animation_materials = generate_animation_materials(
                         script=script,
                         segment_count=anim_segment_count,
@@ -4318,40 +4318,46 @@ with tab_animation:
                     
                     st.success(f"✅ {len(animation_materials)}개의 애니메이션 생성 완료")
                     
-                    # 3. VideoParams 설정
-                    st.info("🎬 최종 영상 생성 중...")
-                    params = VideoParams(
-                        video_subject=anim_subject,
-                        video_script=script,
-                        video_language="ko-KR",
-                        voice_name=anim_voice_value,
-                        bgm_type=anim_bgm_value,
-                        bgm_volume=0.2,
-                        subtitle_enabled=anim_subtitle,
-                        subtitle_position='bottom',
-                        video_source='local',  # 로컬 애니메이션 사용
-                        video_materials=animation_materials,  # AI 애니메이션 소재
-                        video_aspect=anim_aspect_value,
-                        video_concat_mode='sequential',
-                        video_clip_duration=anim_duration,
-                        video_count=len(animation_materials),
-                        font_size=60,
-                        stroke_width=1.5,
-                        n_threads=2,
-                        paragraph_number=anim_segment_count,
-                        use_segment_matching=False  # 이미 생성된 애니메이션 사용
-                    )
+                    # 3. VideoParams 설정 (일반 영상과 동일, 배경영상만 애니메이션 사용)
+                    st.info("🎬 최종 영상 생성 중 (음성, 자막, 배경음악 추가)...")
                     
-                    # 4. 영상 생성
-                    task.start(task_id, params, stop_at="video")
+                    # params 객체 복사 (일반 영상 설정 사용)
+                    anim_params = params.copy()
+                    
+                    # 애니메이션 전용 설정
+                    anim_params.video_subject = anim_subject
+                    anim_params.video_script = script
+                    anim_params.voice_name = anim_voice_value
+                    anim_params.bgm_type = anim_bgm_value
+                    anim_params.subtitle_enabled = anim_subtitle
+                    anim_params.video_aspect = VideoAspect(anim_aspect_value)
+                    
+                    # 배경영상을 AI 애니메이션으로 설정
+                    anim_params.video_source = 'local'
+                    anim_params.video_materials = animation_materials
+                    anim_params.use_segment_matching = False  # 이미 생성된 애니메이션 사용
+                    
+                    # 4. 일반 영상 생성 로직 사용
+                    tm.start(task_id, anim_params, stop_at="video")
                     
                     # 5. 생성된 파일 찾기
                     task_dir = utils.task_dir(task_id)
                     import glob
-                    video_files = glob.glob(os.path.join(task_dir, "final-*.mp4"))
                     
-                    if video_files:
-                        video_file = video_files[0]
+                    video_patterns = [
+                        os.path.join(task_dir, "final-*.mp4"),
+                        os.path.join(task_dir, "combined-*.mp4"),
+                        os.path.join(task_dir, "*.mp4")
+                    ]
+                    
+                    video_file = None
+                    for pattern in video_patterns:
+                        files = glob.glob(pattern)
+                        if files:
+                            video_file = files[0]
+                            break
+                    
+                    if video_file:
                         st.success("✅ AI 애니메이션 영상 생성 완료!")
                         
                         # 영상 미리보기
@@ -4368,10 +4374,16 @@ with tab_animation:
                             )
                     else:
                         st.error("❌ 영상 파일을 찾을 수 없습니다")
+                        st.warning(f"🔍 태스크 디렉토리: {task_dir}")
+                        all_files = glob.glob(os.path.join(task_dir, "*"))
+                        if all_files:
+                            st.info(f"📁 디렉토리 내 파일들: {[os.path.basename(f) for f in all_files]}")
                     
                 except Exception as e:
                     st.error(f"❌ 영상 생성 실패: {e}")
                     logger.error(f"Animation video generation failed: {e}")
+                    import traceback
+                    st.code(traceback.format_exc())
 
 # --- TAB 3: SETTINGS (Enhanced) ---
 with tab_settings:
