@@ -20386,3 +20386,1270 @@ Please retry in 17.480676423s. [links {
 2026-01-16 23:40:01 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 16: 1080x1920, current duration: 45.00s, remaining: 82.42s
 2026-01-16 23:40:06 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 17: 1080x1920, current duration: 48.00s, remaining: 79.42s
 2026-01-16 23:40:10 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 18: 1080x1920, current duration: 51.00s, remaining: 76.42s
+2026-01-16 23:40:15 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 19: 1080x1920, current duration: 54.00s, remaining: 73.42s
+2026-01-16 23:40:21 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 20: 1080x1920, current duration: 57.00s, remaining: 70.42s
+2026-01-16 23:40:27 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 21: 1080x1920, current duration: 60.00s, remaining: 67.42s
+2026-01-16 23:40:31 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 22: 1080x1920, current duration: 63.00s, remaining: 64.42s
+2026-01-16 23:40:36 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 23: 1080x1920, current duration: 66.00s, remaining: 61.42s
+2026-01-16 23:40:41 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 24: 1080x1920, current duration: 69.00s, remaining: 58.42s
+2026-01-16 23:40:46 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 25: 1080x1920, current duration: 72.00s, remaining: 55.42s
+2026-01-16 23:40:51 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 26: 1080x1920, current duration: 75.00s, remaining: 52.42s
+2026-01-16 23:40:56 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 27: 1080x1920, current duration: 78.00s, remaining: 49.42s
+2026-01-16 23:41:00 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 28: 1080x1920, current duration: 81.00s, remaining: 46.42s
+2026-01-16 23:41:05 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 29: 720x1280, current duration: 84.00s, remaining: 43.42s
+2026-01-16 23:41:06 | DEBUG | "./app\services\video.py:297": combine_videos - resizing clip, source: 720x1280, ratio: 0.56, target: 1080x1920, ratio: 0.56
+2026-01-16 23:41:14 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 30: 1080x1920, current duration: 87.00s, remaining: 40.42s
+2026-01-16 23:41:20 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 31: 1080x1920, current duration: 90.00s, remaining: 37.42s
+2026-01-16 23:41:25 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 32: 1080x1920, current duration: 93.00s, remaining: 34.42s
+2026-01-16 23:41:30 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 33: 1080x1920, current duration: 96.00s, remaining: 31.42s
+2026-01-16 23:41:35 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 34: 720x1280, current duration: 99.00s, remaining: 28.42s
+2026-01-16 23:41:35 | DEBUG | "./app\services\video.py:297": combine_videos - resizing clip, source: 720x1280, ratio: 0.56, target: 1080x1920, ratio: 0.56
+2026-01-16 23:41:43 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 35: 1080x1920, current duration: 102.00s, remaining: 25.42s
+2026-01-16 23:41:47 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 36: 1080x1920, current duration: 105.00s, remaining: 22.42s
+2026-01-16 23:41:51 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 37: 1080x1920, current duration: 108.00s, remaining: 19.42s
+2026-01-16 23:41:56 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 38: 1080x1920, current duration: 111.00s, remaining: 16.42s
+2026-01-16 23:42:00 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 39: 1080x1920, current duration: 114.00s, remaining: 13.42s
+2026-01-16 23:42:05 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 40: 720x1280, current duration: 117.00s, remaining: 10.42s
+2026-01-16 23:42:05 | DEBUG | "./app\services\video.py:297": combine_videos - resizing clip, source: 720x1280, ratio: 0.56, target: 1080x1920, ratio: 0.56
+2026-01-16 23:42:13 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 41: 720x1280, current duration: 120.00s, remaining: 7.42s
+2026-01-16 23:42:13 | DEBUG | "./app\services\video.py:297": combine_videos - resizing clip, source: 720x1280, ratio: 0.56, target: 1080x1920, ratio: 0.56
+2026-01-16 23:42:21 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 42: 1080x1920, current duration: 123.00s, remaining: 4.42s
+2026-01-16 23:42:25 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 43: 1080x1920, current duration: 126.00s, remaining: 1.42s
+2026-01-16 23:42:30 | INFO | "./app\services\video.py:404": combine_videos - starting clip merging process
+2026-01-16 23:42:30 | INFO | "./app\services\video.py:516": combine_videos - concatenating 43 clips using ffmpeg: .\storage\tasks\b5ce28e2-8795-4ef9-ae79-818143032bf0\concat_list.txt
+2026-01-16 23:42:30 | INFO | "./app\services\video.py:536": combine_videos - running ffmpeg command: C:\Python313\Lib\site-packages\imageio_ffmpeg\binaries\ffmpeg-win-x86_64-v7.1.exe -y -f concat -safe 0 -i .\storage\tasks\b5ce28e2-8795-4ef9-ae79-818143032bf0\concat_list.txt -c:v libx264 -preset medium -crf 23 -c:a aac -b:a 128k -r 30 -avoid_negative_ts make_zero -fflags +genpts -pix_fmt yuv420p -movflags +faststart -profile:v baseline -level 3.0 -r 30 -g 60 -keyint_min 30 -sc_threshold 0 .\storage\tasks\b5ce28e2-8795-4ef9-ae79-818143032bf0\combined-1.mp4
+2026-01-16 23:42:56 | INFO | "./app\services\video.py:579": combine_videos - ffmpeg concatenation completed successfully
+2026-01-16 23:42:56 | INFO | "./app\services\task.py:304": generate_final_videos - 
+
+## generating video: 1 => .\storage\tasks\b5ce28e2-8795-4ef9-ae79-818143032bf0\final-1.mp4
+2026-01-16 23:42:56 | INFO | "./app\services\video.py:709": generate_video - generating video: 1080 x 1920
+2026-01-16 23:42:56 | INFO | "./app\services\video.py:710": generate_video -   ① video: .\storage\tasks\b5ce28e2-8795-4ef9-ae79-818143032bf0\combined-1.mp4
+2026-01-16 23:42:56 | INFO | "./app\services\video.py:711": generate_video -   ② audio: .\storage\tasks\b5ce28e2-8795-4ef9-ae79-818143032bf0\audio.mp3
+2026-01-16 23:42:56 | INFO | "./app\services\video.py:712": generate_video -   ③ subtitle: 
+2026-01-16 23:42:56 | INFO | "./app\services\video.py:713": generate_video -   ④ output: .\storage\tasks\b5ce28e2-8795-4ef9-ae79-818143032bf0\final-1.mp4
+2026-01-16 23:42:56 | INFO | "./app\services\video.py:736": generate_video - Forced Korean font: C:/Windows/Fonts/malgun.ttf
+2026-01-16 23:42:56 | INFO | "./app\services\video.py:754": generate_video -   ⑤ font: C:/Windows/Fonts/malgun.ttf
+2026-01-16 23:42:56 | INFO | "./app\services\video.py:879": generate_video - Title overlay image created: .\storage\tasks\b5ce28e2-8795-4ef9-ae79-818143032bf0\final-1_title.png
+2026-01-16 23:42:56 | INFO | "./app\services\video.py:900": generate_video - writing final video (audio track)...
+2026-01-16 23:42:56 | INFO | "./app\services\video.py:902": generate_video - Exporting audio to .\storage\tasks\b5ce28e2-8795-4ef9-ae79-818143032bf0\final-1_temp_audio.m4a
+2026-01-16 23:43:01 | INFO | "./app\services\video.py:905": generate_video - Audio export successful
+2026-01-16 23:43:01 | INFO | "./app\services\video.py:910": generate_video - merging video, audio, and subtitles...
+2026-01-16 23:43:01 | INFO | "./app\services\video.py:954": generate_video - Running merge command: C:\Python313\Lib\site-packages\imageio_ffmpeg\binaries\ffmpeg-win-x86_64-v7.1.exe -y -i .\storage\tasks\b5ce28e2-8795-4ef9-ae79-818143032bf0\combined-1.mp4 -i .\storage\tasks\b5ce28e2-8795-4ef9-ae79-818143032bf0\final-1_temp_audio.m4a -i .\storage\tasks\b5ce28e2-8795-4ef9-ae79-818143032bf0\final-1_title.png -filter_complex [0:v][2:v]overlay=(W-w)/2:160[v_titled] -map [v_titled] -c:v libx264 -preset ultrafast -crf 23 -map 1:a -c:a copy -shortest .\storage\tasks\b5ce28e2-8795-4ef9-ae79-818143032bf0\final-1.mp4
+2026-01-16 23:43:15 | SUCCESS | "./app\services\task.py:438": start - task b5ce28e2-8795-4ef9-ae79-818143032bf0 finished, generated 1 videos.
+2026-01-16 23:43:16 | INFO | "./webui\Main.py:5349": <module> - 🔍 DEBUG: Auto-upload checkbox state: True
+2026-01-16 23:43:16 | INFO | "./webui\Main.py:5350": <module> - 🔍 DEBUG: Session state yt_auto_upload: True
+2026-01-16 23:43:16 | INFO | "./webui\Main.py:5351": <module> - 🔍 DEBUG: All session keys with 'upload': ['timer_auto_upload_main', 'yt_auto_upload', 'batch_auto_upload', 'bgm_uploader', 'longform_auto_upload_main']
+2026-01-16 23:43:16 | INFO | "./webui\Main.py:5354": <module> - ✅ 자동 업로드가 활성화되어 있습니다.
+2026-01-16 23:43:16 | INFO | "./webui\Main.py:5359": <module> - 🔍 Token file exists: True
+2026-01-16 23:43:16 | INFO | "./webui\Main.py:5360": <module> - 🔍 Client secrets file exists: True
+2026-01-16 23:43:16 | INFO | "./webui\Main.py:5363": <module> - DEBUG: task_params keys: ['video_subject', 'video_script', 'video_terms', 'video_aspect', 'video_concat_mode', 'video_transition_mode', 'video_clip_duration', 'video_count', 'video_source', 'video_materials', 'use_segment_matching', 'target_segment_count', 'custom_audio_file', 'video_language', 'voice_name', 'voice_volume', 'voice_rate', 'bgm_type', 'bgm_file', 'bgm_volume', 'subtitle_enabled', 'subtitle_position', 'custom_position', 'font_name', 'text_fore_color', 'text_background_color', 'font_size', 'stroke_color', 'stroke_width', 'n_threads', 'paragraph_number']
+2026-01-16 23:43:16 | INFO | "./webui\Main.py:5364": <module> - DEBUG: task_params type: <class 'app.models.schema.VideoParams'>
+2026-01-16 23:43:17 | INFO | "./webui\Main.py:5379": <module> - DEBUG: video_terms from task_params: habits, lifestyle, workout, exercise, time
+2026-01-16 23:43:17 | INFO | "./webui\Main.py:5380": <module> - DEBUG: video_language: ko-KR
+2026-01-16 23:43:17 | INFO | "./webui\Main.py:5397": <module> - 🇰🇷 Translating English terms to Korean: ['habits', 'lifestyle', 'workout', 'exercise', 'time']
+2026-01-16 23:43:17 | INFO | "./app\config\config.py:23": load_config - load config from file: ./config.toml
+2026-01-16 23:43:17 | INFO | "./app\config\config.py:52": reload - Config reloaded
+2026-01-16 23:43:17 | INFO | "./app\services\llm.py:19": _generate_response - llm provider: gemini
+2026-01-16 23:43:17 | INFO | "./app\services\llm.py:37": _generate_response - Found 5 Gemini API keys for rotation
+2026-01-16 23:43:17 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #1 (5 total)
+2026-01-16 23:43:17 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #1
+2026-01-16 23:43:21 | WARNING | "./app\services\llm.py:65": _generate_response - Gemini model gemini-2.5-flash-lite failed with key #1: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash-lite
+Please retry in 39.070020358s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash-lite"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 39
+}
+]
+2026-01-16 23:43:21 | WARNING | "./app\services\llm.py:67": _generate_response - 🚫 API key #1 quota exceeded, trying next key...
+2026-01-16 23:43:21 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #2 (5 total)
+2026-01-16 23:43:21 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #2
+2026-01-16 23:43:22 | SUCCESS | "./app\services\llm.py:62": _generate_response - ✅ Success with API key #2 and model gemini-2.5-flash-lite
+2026-01-16 23:43:22 | INFO | "./webui\Main.py:5401": <module> - 🇰🇷 Successfully translated tags: 습관, 생활 방식, 운동, 운동, 시간, 당뇨병 치료제의 종류는?
+2026-01-16 23:43:24 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 0%
+2026-01-16 23:43:25 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 1%
+2026-01-16 23:43:26 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 2%
+2026-01-16 23:43:27 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 3%
+2026-01-16 23:43:27 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 4%
+2026-01-16 23:43:28 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 5%
+2026-01-16 23:43:29 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 6%
+2026-01-16 23:43:29 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 7%
+2026-01-16 23:43:30 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 8%
+2026-01-16 23:43:31 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 9%
+2026-01-16 23:43:32 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 10%
+2026-01-16 23:43:32 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 11%
+2026-01-16 23:43:33 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 12%
+2026-01-16 23:43:34 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 13%
+2026-01-16 23:43:34 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 14%
+2026-01-16 23:43:35 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 15%
+2026-01-16 23:43:36 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 16%
+2026-01-16 23:43:37 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 17%
+2026-01-16 23:43:37 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 18%
+2026-01-16 23:43:38 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 19%
+2026-01-16 23:43:39 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 20%
+2026-01-16 23:43:39 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 21%
+2026-01-16 23:43:40 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 22%
+2026-01-16 23:43:41 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 23%
+2026-01-16 23:43:42 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 24%
+2026-01-16 23:43:42 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 25%
+2026-01-16 23:43:43 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 26%
+2026-01-16 23:43:44 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 27%
+2026-01-16 23:43:44 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 28%
+2026-01-16 23:43:45 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 29%
+2026-01-16 23:43:46 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 30%
+2026-01-16 23:43:47 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 31%
+2026-01-16 23:43:47 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 32%
+2026-01-16 23:43:48 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 33%
+2026-01-16 23:43:49 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 34%
+2026-01-16 23:43:49 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 35%
+2026-01-16 23:43:50 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 36%
+2026-01-16 23:43:51 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 37%
+2026-01-16 23:43:52 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 38%
+2026-01-16 23:43:52 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 39%
+2026-01-16 23:43:53 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 40%
+2026-01-16 23:43:54 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 41%
+2026-01-16 23:43:55 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 42%
+2026-01-16 23:43:55 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 43%
+2026-01-16 23:43:56 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 44%
+2026-01-16 23:43:57 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 45%
+2026-01-16 23:43:57 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 46%
+2026-01-16 23:43:58 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 47%
+2026-01-16 23:43:59 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 48%
+2026-01-16 23:44:00 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 49%
+2026-01-16 23:44:00 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 50%
+2026-01-16 23:44:01 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 51%
+2026-01-16 23:44:02 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 52%
+2026-01-16 23:44:02 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 53%
+2026-01-16 23:44:03 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 54%
+2026-01-16 23:44:04 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 55%
+2026-01-16 23:44:05 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 56%
+2026-01-16 23:44:05 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 57%
+2026-01-16 23:44:06 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 58%
+2026-01-16 23:44:07 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 59%
+2026-01-16 23:44:07 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 60%
+2026-01-16 23:44:08 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 61%
+2026-01-16 23:44:09 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 62%
+2026-01-16 23:44:10 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 63%
+2026-01-16 23:44:10 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 64%
+2026-01-16 23:44:11 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 65%
+2026-01-16 23:44:12 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 66%
+2026-01-16 23:44:12 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 67%
+2026-01-16 23:44:13 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 68%
+2026-01-16 23:44:14 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 69%
+2026-01-16 23:44:15 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 70%
+2026-01-16 23:44:15 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 71%
+2026-01-16 23:44:16 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 72%
+2026-01-16 23:44:17 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 72%
+2026-01-16 23:44:17 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 73%
+2026-01-16 23:44:18 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 74%
+2026-01-16 23:44:19 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 75%
+2026-01-16 23:44:20 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 76%
+2026-01-16 23:44:20 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 77%
+2026-01-16 23:44:21 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 78%
+2026-01-16 23:44:22 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 79%
+2026-01-16 23:44:22 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 80%
+2026-01-16 23:44:23 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 81%
+2026-01-16 23:44:24 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 82%
+2026-01-16 23:44:25 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 83%
+2026-01-16 23:44:25 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 84%
+2026-01-16 23:44:26 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 85%
+2026-01-16 23:44:27 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 86%
+2026-01-16 23:44:27 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 87%
+2026-01-16 23:44:28 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 88%
+2026-01-16 23:44:29 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 89%
+2026-01-16 23:44:30 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 90%
+2026-01-16 23:44:30 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 91%
+2026-01-16 23:44:31 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 92%
+2026-01-16 23:44:32 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 93%
+2026-01-16 23:44:32 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 94%
+2026-01-16 23:44:33 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 95%
+2026-01-16 23:44:34 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 96%
+2026-01-16 23:44:35 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 97%
+2026-01-16 23:44:35 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 98%
+2026-01-16 23:44:36 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 99%
+2026-01-16 23:44:38 | SUCCESS | "./app\utils\youtube.py:89": upload_video - Video uploaded successfully! Video ID: 3HL0Bmjuel0
+2026-01-16 23:44:38 | INFO | "./app\utils\youtube.py:92": upload_video - 업로드 검증 중... (30초 대기)
+2026-01-16 23:45:08 | WARNING | "./app\utils\youtube.py:116": upload_video - ⚠️ 업로드 검증 실패 (하지만 업로드는 성공): <HttpError 403 when requesting https://youtube.googleapis.com/youtube/v3/videos?part=snippet%2Cstatus&id=3HL0Bmjuel0&alt=json returned "Request had insufficient authentication scopes.". Details: "[{'message': 'Insufficient Permission', 'domain': 'global', 'reason': 'insufficientPermissions'}]">
+2026-01-16 23:45:08 | INFO | "./app\services\task.py:323": start - start task: 939706a4-9576-44f0-ac09-4ad20e87d556, stop_at: video
+2026-01-16 23:45:08 | INFO | "./app\services\task.py:17": generate_script - 
+
+## generating video script
+2026-01-16 23:45:08 | DEBUG | "./app\services\task.py:35": generate_script - video script: 
+Blood sugar control is truly crucial for type 2 diabetes. Diabetes medications can be broadly categorized into those that promote insulin secretion, improve insulin resistance, or inhibit glucose absorption. Oral medications alone come in a wide variety. Metformin is the most basic and commonly used, reducing glucose production in the liver and increasing tissue insulin sensitivity. Sulfonylureas stimulate the pancreas to release more insulin. DPP-4 inhibitors prevent the breakdown of the naturally occurring GLP-1 hormone in our bodies, thereby promoting insulin secretion and suppressing glucagon secretion to lower blood sugar. Additionally, SGLT-2 inhibitors play a remarkable role in effectively lowering blood sugar by preventing the reabsorption of glucose in the kidneys, allowing it to be excreted in urine. GLP-1 receptor agonists act similarly to our body's own GLP-1, increasing insulin secretion and slowing gastric emptying to aid in the slower absorption of glucose. They even offer the potential for weight loss, bringing hope to many. Among injectable medications, insulin therapy is the most representative. Depending on their action time, various types of insulin exist, including ultra-rapid-acting, rapid-acting, intermediate-acting, and long-acting, which are meticulously adjusted to suit the patient's condition and lifestyle. They can be used relatively conveniently with devices like insulin pens, and are essential not only for type 1 diabetes patients but also for type 2 diabetes patients when oral medications are insufficient for blood sugar control. Diabetes treatment should be personalized based on the individual's condition and the progression of the disease. It is important to establish an optimal treatment plan that goes beyond simply lowering blood sugar levels, considering additional benefits such as preventing cardiovascular disease or managing weight. We hope you maintain a healthy life through consistent management and close communication with your doctor.
+2026-01-16 23:45:08 | INFO | "./app\services\task.py:46": generate_terms - 
+
+## generating video terms
+2026-01-16 23:45:08 | DEBUG | "./app\services\task.py:60": generate_terms - video terms: [
+    "insulin secretion",
+    "insulin resistance",
+    "sulfonylureas"
+]
+2026-01-16 23:45:08 | INFO | "./app\services\task.py:371": start - Calling generate_audio...
+2026-01-16 23:45:08 | INFO | "./app\services\task.py:93": generate_audio - 
+
+## generating audio
+2026-01-16 23:45:08 | INFO | "./app\services\task.py:101": generate_audio - no custom audio file provided, using TTS to generate audio.
+2026-01-16 23:45:08 | INFO | "./app\services\voice.py:1151": tts - TTS 텍스트 전처리: 'Blood sugar control is truly crucial for type 2 di...' -> 'Blood sugar control is truly crucial for type 2 di...'
+2026-01-16 23:45:08 | INFO | "./app\services\voice.py:1205": azure_tts_v1 - start, voice name: en-US-AndrewNeural, try: 1
+2026-01-16 23:45:08 | INFO | "./app\services\voice.py:1224": azure_tts_v1 - Running asyncio.run(_do()) with 60s timeout
+2026-01-16 23:45:08 | DEBUG | "./app\services\voice.py:1208": _do - Creating Communicate object for en-US-AndrewNeural
+2026-01-16 23:45:08 | DEBUG | "./app\services\voice.py:1211": _do - Opening file .\storage\tasks\939706a4-9576-44f0-ac09-4ad20e87d556\audio.mp3 for writing
+2026-01-16 23:45:08 | DEBUG | "./app\services\voice.py:1213": _do - Starting communicate.stream()
+2026-01-16 23:45:34 | DEBUG | "./app\services\voice.py:1221": _do - communicate.stream() finished
+2026-01-16 23:45:34 | INFO | "./app\services\voice.py:1229": azure_tts_v1 - asyncio.run(_do()) finished
+2026-01-16 23:45:34 | INFO | "./app\services\voice.py:1235": azure_tts_v1 - completed, output file: .\storage\tasks\939706a4-9576-44f0-ac09-4ad20e87d556\audio.mp3
+2026-01-16 23:45:34 | INFO | "./app\services\task.py:375": start - generate_audio returned: .\storage\tasks\939706a4-9576-44f0-ac09-4ad20e87d556\audio.mp3, 126
+2026-01-16 23:45:34 | INFO | "./app\services\task.py:141": generate_subtitle - 
+
+## generating subtitle
+2026-01-16 23:45:34 | INFO | "./app\services\task.py:147": generate_subtitle - 
+
+## generating subtitle, provider: edge
+2026-01-16 23:45:34 | WARNING | "./app\services\voice.py:1693": create_subtitle - failed, sub_items len: 8, script_lines len: 32
+2026-01-16 23:45:34 | WARNING | "./app\services\task.py:159": generate_subtitle - subtitle file not found or empty, fallback to whisper
+2026-01-16 23:45:34 | WARNING | "./app\services\task.py:163": generate_subtitle - Whisper subtitle generation skipped to prevent system hang.
+2026-01-16 23:45:34 | INFO | "./app\services\task.py:200": get_video_materials - 
+
+## 🎯 Using segment-based video matching
+2026-01-16 23:45:34 | INFO | "./app\services\script_segment_matcher.py:170": match_segments_to_videos - Matching script to videos: duration=126s, target_segments=10
+2026-01-16 23:45:34 | INFO | "./app\services\script_segment_matcher.py:59": split_script_into_segments - Split script into 10 segments
+2026-01-16 23:45:34 | DEBUG | "./app\services\script_segment_matcher.py:61": split_script_into_segments - Segment 1: Blood sugar control is truly crucial for type 2 diabetes. Diabetes medications can be broadly catego...
+2026-01-16 23:45:34 | DEBUG | "./app\services\script_segment_matcher.py:61": split_script_into_segments - Segment 2: Oral medications alone come in a wide variety. Metformin is the most basic and commonly used, reduci...
+2026-01-16 23:45:34 | DEBUG | "./app\services\script_segment_matcher.py:61": split_script_into_segments - Segment 3: Sulfonylureas stimulate the pancreas to release more insulin. DPP-4 inhibitors prevent the breakdown...
+2026-01-16 23:45:34 | DEBUG | "./app\services\script_segment_matcher.py:61": split_script_into_segments - Segment 4: Additionally, SGLT-2 inhibitors play a remarkable role in effectively lowering blood sugar by preven...
+2026-01-16 23:45:34 | DEBUG | "./app\services\script_segment_matcher.py:61": split_script_into_segments - Segment 5: They even offer the potential for weight loss, bringing hope to many. Among injectable medications, ...
+2026-01-16 23:45:34 | DEBUG | "./app\services\script_segment_matcher.py:61": split_script_into_segments - Segment 6: Depending on their action time, various types of insulin exist, including ultra-rapid-acting, rapid-...
+2026-01-16 23:45:34 | DEBUG | "./app\services\script_segment_matcher.py:61": split_script_into_segments - Segment 7: They can be used relatively conveniently with devices like insulin pens, and are essential not only ...
+2026-01-16 23:45:34 | DEBUG | "./app\services\script_segment_matcher.py:61": split_script_into_segments - Segment 8: Diabetes treatment should be personalized based on the individual's condition and the progression of...
+2026-01-16 23:45:34 | DEBUG | "./app\services\script_segment_matcher.py:61": split_script_into_segments - Segment 9: It is important to establish an optimal treatment plan that goes beyond simply lowering blood sugar ...
+2026-01-16 23:45:34 | DEBUG | "./app\services\script_segment_matcher.py:61": split_script_into_segments - Segment 10: We hope you maintain a healthy life through consistent management and close communication with your ...
+2026-01-16 23:45:34 | INFO | "./app\services\llm.py:331": generate_terms - Starting enhanced script-content matching keyword generation for subject: 
+2026-01-16 23:45:34 | INFO | "./app\services\llm.py:369": generate_terms - Generating script-content-matched keywords using advanced LLM analysis...
+2026-01-16 23:45:34 | INFO | "./app\config\config.py:23": load_config - load config from file: ./config.toml
+2026-01-16 23:45:34 | INFO | "./app\config\config.py:52": reload - Config reloaded
+2026-01-16 23:45:34 | INFO | "./app\services\llm.py:19": _generate_response - llm provider: gemini
+2026-01-16 23:45:34 | INFO | "./app\services\llm.py:37": _generate_response - Found 5 Gemini API keys for rotation
+2026-01-16 23:45:34 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #1 (5 total)
+2026-01-16 23:45:34 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #1
+2026-01-16 23:45:35 | SUCCESS | "./app\services\llm.py:62": _generate_response - ✅ Success with API key #1 and model gemini-2.5-flash-lite
+2026-01-16 23:45:35 | INFO | "./app\services\llm.py:371": generate_terms - LLM keyword response: diabetes, blood sugar, medicine
+2026-01-16 23:45:35 | INFO | "./app\services\llm.py:410": generate_terms - Script-matched valid terms: ['diabetes', 'blood sugar', 'medicine']
+2026-01-16 23:45:35 | INFO | "./app\services\llm.py:415": generate_terms - Final script-content-matched keywords: ['diabetes', 'blood sugar', 'medicine']
+2026-01-16 23:45:35 | INFO | "./app\services\script_segment_matcher.py:85": generate_segment_keywords - Generated keywords for segment: ['diabetes', 'blood sugar', 'medicine']
+2026-01-16 23:45:35 | INFO | "./app\services\script_segment_matcher.py:193": match_segments_to_videos - Segment 1/10: keywords=['diabetes', 'blood sugar', 'medicine'], duration=12.6s
+2026-01-16 23:45:35 | INFO | "./app\services\llm.py:331": generate_terms - Starting enhanced script-content matching keyword generation for subject: 
+2026-01-16 23:45:35 | INFO | "./app\services\llm.py:369": generate_terms - Generating script-content-matched keywords using advanced LLM analysis...
+2026-01-16 23:45:35 | INFO | "./app\config\config.py:23": load_config - load config from file: ./config.toml
+2026-01-16 23:45:35 | INFO | "./app\config\config.py:52": reload - Config reloaded
+2026-01-16 23:45:35 | INFO | "./app\services\llm.py:19": _generate_response - llm provider: gemini
+2026-01-16 23:45:35 | INFO | "./app\services\llm.py:37": _generate_response - Found 5 Gemini API keys for rotation
+2026-01-16 23:45:35 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #1 (5 total)
+2026-01-16 23:45:35 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #1
+2026-01-16 23:45:36 | WARNING | "./app\services\llm.py:65": _generate_response - Gemini model gemini-2.5-flash-lite failed with key #1: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash-lite
+Please retry in 24.41309526s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash-lite"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 24
+}
+]
+2026-01-16 23:45:36 | WARNING | "./app\services\llm.py:67": _generate_response - 🚫 API key #1 quota exceeded, trying next key...
+2026-01-16 23:45:36 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #2 (5 total)
+2026-01-16 23:45:36 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #2
+2026-01-16 23:45:36 | SUCCESS | "./app\services\llm.py:62": _generate_response - ✅ Success with API key #2 and model gemini-2.5-flash-lite
+2026-01-16 23:45:36 | INFO | "./app\services\llm.py:371": generate_terms - LLM keyword response: pills, metformin, insulin resistance
+2026-01-16 23:45:36 | INFO | "./app\services\llm.py:410": generate_terms - Script-matched valid terms: ['pills', 'insulin resistance']
+2026-01-16 23:45:36 | WARNING | "./app\services\llm.py:422": generate_terms - LLM failed. Using enhanced script content analysis fallback...
+2026-01-16 23:45:36 | INFO | "./app\services\llm.py:1183": _generate_enhanced_script_keywords - Performing enhanced script content analysis for: ''
+2026-01-16 23:45:36 | INFO | "./app\services\llm.py:1329": _generate_enhanced_script_keywords - Enhanced script analysis final keywords: ['lifestyle', 'people', 'modern']
+2026-01-16 23:45:36 | INFO | "./app\services\script_segment_matcher.py:85": generate_segment_keywords - Generated keywords for segment: ['lifestyle', 'people', 'modern']
+2026-01-16 23:45:36 | INFO | "./app\services\script_segment_matcher.py:193": match_segments_to_videos - Segment 2/10: keywords=['lifestyle', 'people', 'modern'], duration=12.6s
+2026-01-16 23:45:36 | INFO | "./app\services\llm.py:331": generate_terms - Starting enhanced script-content matching keyword generation for subject: 
+2026-01-16 23:45:36 | INFO | "./app\services\llm.py:369": generate_terms - Generating script-content-matched keywords using advanced LLM analysis...
+2026-01-16 23:45:36 | INFO | "./app\config\config.py:23": load_config - load config from file: ./config.toml
+2026-01-16 23:45:36 | INFO | "./app\config\config.py:52": reload - Config reloaded
+2026-01-16 23:45:36 | INFO | "./app\services\llm.py:19": _generate_response - llm provider: gemini
+2026-01-16 23:45:36 | INFO | "./app\services\llm.py:37": _generate_response - Found 5 Gemini API keys for rotation
+2026-01-16 23:45:36 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #1 (5 total)
+2026-01-16 23:45:36 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #1
+2026-01-16 23:45:37 | WARNING | "./app\services\llm.py:65": _generate_response - Gemini model gemini-2.5-flash-lite failed with key #1: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash-lite
+Please retry in 23.205847983s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash-lite"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 23
+}
+]
+2026-01-16 23:45:37 | WARNING | "./app\services\llm.py:67": _generate_response - 🚫 API key #1 quota exceeded, trying next key...
+2026-01-16 23:45:37 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #2 (5 total)
+2026-01-16 23:45:37 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #2
+2026-01-16 23:45:37 | WARNING | "./app\services\llm.py:65": _generate_response - Gemini model gemini-2.5-flash-lite failed with key #2: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash-lite
+Please retry in 22.90904216s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash-lite"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 22
+}
+]
+2026-01-16 23:45:37 | WARNING | "./app\services\llm.py:67": _generate_response - 🚫 API key #2 quota exceeded, trying next key...
+2026-01-16 23:45:37 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #3 (5 total)
+2026-01-16 23:45:37 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #3
+2026-01-16 23:45:38 | SUCCESS | "./app\services\llm.py:62": _generate_response - ✅ Success with API key #3 and model gemini-2.5-flash-lite
+2026-01-16 23:45:38 | INFO | "./app\services\llm.py:371": generate_terms - LLM keyword response: Pancreas, Insulin Release, Blood Sugar
+2026-01-16 23:45:38 | INFO | "./app\services\llm.py:410": generate_terms - Script-matched valid terms: ['pancreas', 'insulin release', 'blood sugar']
+2026-01-16 23:45:38 | INFO | "./app\services\llm.py:415": generate_terms - Final script-content-matched keywords: ['pancreas', 'insulin release', 'blood sugar']
+2026-01-16 23:45:38 | INFO | "./app\services\script_segment_matcher.py:85": generate_segment_keywords - Generated keywords for segment: ['pancreas', 'insulin release', 'blood sugar']
+2026-01-16 23:45:38 | INFO | "./app\services\script_segment_matcher.py:193": match_segments_to_videos - Segment 3/10: keywords=['pancreas', 'insulin release', 'blood sugar'], duration=12.6s
+2026-01-16 23:45:38 | INFO | "./app\services\llm.py:331": generate_terms - Starting enhanced script-content matching keyword generation for subject: 
+2026-01-16 23:45:38 | INFO | "./app\services\llm.py:369": generate_terms - Generating script-content-matched keywords using advanced LLM analysis...
+2026-01-16 23:45:38 | INFO | "./app\config\config.py:23": load_config - load config from file: ./config.toml
+2026-01-16 23:45:38 | INFO | "./app\config\config.py:52": reload - Config reloaded
+2026-01-16 23:45:38 | INFO | "./app\services\llm.py:19": _generate_response - llm provider: gemini
+2026-01-16 23:45:38 | INFO | "./app\services\llm.py:37": _generate_response - Found 5 Gemini API keys for rotation
+2026-01-16 23:45:38 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #1 (5 total)
+2026-01-16 23:45:38 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #1
+2026-01-16 23:45:38 | WARNING | "./app\services\llm.py:65": _generate_response - Gemini model gemini-2.5-flash-lite failed with key #1: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash-lite
+Please retry in 21.611957135s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash-lite"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 21
+}
+]
+2026-01-16 23:45:38 | WARNING | "./app\services\llm.py:67": _generate_response - 🚫 API key #1 quota exceeded, trying next key...
+2026-01-16 23:45:38 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #2 (5 total)
+2026-01-16 23:45:38 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #2
+2026-01-16 23:45:39 | WARNING | "./app\services\llm.py:65": _generate_response - Gemini model gemini-2.5-flash-lite failed with key #2: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash-lite
+Please retry in 21.34934698s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash-lite"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 21
+}
+]
+2026-01-16 23:45:39 | WARNING | "./app\services\llm.py:67": _generate_response - 🚫 API key #2 quota exceeded, trying next key...
+2026-01-16 23:45:39 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #3 (5 total)
+2026-01-16 23:45:39 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #3
+2026-01-16 23:45:40 | SUCCESS | "./app\services\llm.py:62": _generate_response - ✅ Success with API key #3 and model gemini-2.5-flash-lite
+2026-01-16 23:45:40 | INFO | "./app\services\llm.py:371": generate_terms - LLM keyword response: kidney, urine, glucose
+2026-01-16 23:45:40 | INFO | "./app\services\llm.py:410": generate_terms - Script-matched valid terms: ['kidney', 'urine', 'glucose']
+2026-01-16 23:45:40 | INFO | "./app\services\llm.py:415": generate_terms - Final script-content-matched keywords: ['kidney', 'urine', 'glucose']
+2026-01-16 23:45:40 | INFO | "./app\services\script_segment_matcher.py:85": generate_segment_keywords - Generated keywords for segment: ['kidney', 'urine', 'glucose']
+2026-01-16 23:45:40 | INFO | "./app\services\script_segment_matcher.py:193": match_segments_to_videos - Segment 4/10: keywords=['kidney', 'urine', 'glucose'], duration=12.6s
+2026-01-16 23:45:40 | INFO | "./app\services\llm.py:331": generate_terms - Starting enhanced script-content matching keyword generation for subject: 
+2026-01-16 23:45:40 | INFO | "./app\services\llm.py:369": generate_terms - Generating script-content-matched keywords using advanced LLM analysis...
+2026-01-16 23:45:40 | INFO | "./app\config\config.py:23": load_config - load config from file: ./config.toml
+2026-01-16 23:45:40 | INFO | "./app\config\config.py:52": reload - Config reloaded
+2026-01-16 23:45:40 | INFO | "./app\services\llm.py:19": _generate_response - llm provider: gemini
+2026-01-16 23:45:40 | INFO | "./app\services\llm.py:37": _generate_response - Found 5 Gemini API keys for rotation
+2026-01-16 23:45:40 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #1 (5 total)
+2026-01-16 23:45:40 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #1
+2026-01-16 23:45:40 | WARNING | "./app\services\llm.py:65": _generate_response - Gemini model gemini-2.5-flash-lite failed with key #1: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash-lite
+Please retry in 20.164650256s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash-lite"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 20
+}
+]
+2026-01-16 23:45:40 | WARNING | "./app\services\llm.py:67": _generate_response - 🚫 API key #1 quota exceeded, trying next key...
+2026-01-16 23:45:40 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #2 (5 total)
+2026-01-16 23:45:40 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #2
+2026-01-16 23:45:40 | WARNING | "./app\services\llm.py:65": _generate_response - Gemini model gemini-2.5-flash-lite failed with key #2: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash-lite
+Please retry in 19.905029006s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash-lite"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 19
+}
+]
+2026-01-16 23:45:40 | WARNING | "./app\services\llm.py:67": _generate_response - 🚫 API key #2 quota exceeded, trying next key...
+2026-01-16 23:45:40 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #3 (5 total)
+2026-01-16 23:45:40 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #3
+2026-01-16 23:45:41 | SUCCESS | "./app\services\llm.py:62": _generate_response - ✅ Success with API key #3 and model gemini-2.5-flash-lite
+2026-01-16 23:45:41 | INFO | "./app\services\llm.py:371": generate_terms - LLM keyword response: weight loss, injectable medication, insulin therapy
+2026-01-16 23:45:41 | INFO | "./app\services\llm.py:410": generate_terms - Script-matched valid terms: ['weight loss', 'injectable medication']
+2026-01-16 23:45:41 | WARNING | "./app\services\llm.py:422": generate_terms - LLM failed. Using enhanced script content analysis fallback...
+2026-01-16 23:45:41 | INFO | "./app\services\llm.py:1183": _generate_enhanced_script_keywords - Performing enhanced script content analysis for: ''
+2026-01-16 23:45:41 | INFO | "./app\services\llm.py:1329": _generate_enhanced_script_keywords - Enhanced script analysis final keywords: ['lifestyle', 'people', 'modern']
+2026-01-16 23:45:41 | INFO | "./app\services\script_segment_matcher.py:85": generate_segment_keywords - Generated keywords for segment: ['lifestyle', 'people', 'modern']
+2026-01-16 23:45:41 | INFO | "./app\services\script_segment_matcher.py:193": match_segments_to_videos - Segment 5/10: keywords=['lifestyle', 'people', 'modern'], duration=12.6s
+2026-01-16 23:45:41 | INFO | "./app\services\llm.py:331": generate_terms - Starting enhanced script-content matching keyword generation for subject: 
+2026-01-16 23:45:41 | INFO | "./app\services\llm.py:369": generate_terms - Generating script-content-matched keywords using advanced LLM analysis...
+2026-01-16 23:45:41 | INFO | "./app\config\config.py:23": load_config - load config from file: ./config.toml
+2026-01-16 23:45:41 | INFO | "./app\config\config.py:52": reload - Config reloaded
+2026-01-16 23:45:41 | INFO | "./app\services\llm.py:19": _generate_response - llm provider: gemini
+2026-01-16 23:45:41 | INFO | "./app\services\llm.py:37": _generate_response - Found 5 Gemini API keys for rotation
+2026-01-16 23:45:41 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #1 (5 total)
+2026-01-16 23:45:41 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #1
+2026-01-16 23:45:41 | WARNING | "./app\services\llm.py:65": _generate_response - Gemini model gemini-2.5-flash-lite failed with key #1: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash-lite
+Please retry in 18.752820131s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash-lite"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 18
+}
+]
+2026-01-16 23:45:41 | WARNING | "./app\services\llm.py:67": _generate_response - 🚫 API key #1 quota exceeded, trying next key...
+2026-01-16 23:45:41 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #2 (5 total)
+2026-01-16 23:45:41 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #2
+2026-01-16 23:45:41 | WARNING | "./app\services\llm.py:65": _generate_response - Gemini model gemini-2.5-flash-lite failed with key #2: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash-lite
+Please retry in 18.485022533s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash-lite"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 18
+}
+]
+2026-01-16 23:45:41 | WARNING | "./app\services\llm.py:67": _generate_response - 🚫 API key #2 quota exceeded, trying next key...
+2026-01-16 23:45:41 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #3 (5 total)
+2026-01-16 23:45:41 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #3
+2026-01-16 23:45:43 | SUCCESS | "./app\services\llm.py:62": _generate_response - ✅ Success with API key #3 and model gemini-2.5-flash-lite
+2026-01-16 23:45:43 | INFO | "./app\services\llm.py:371": generate_terms - LLM keyword response: insulin vials, syringe, diabetes management
+2026-01-16 23:45:43 | INFO | "./app\services\llm.py:410": generate_terms - Script-matched valid terms: ['insulin vials', 'syringe', 'diabetes management']
+2026-01-16 23:45:43 | INFO | "./app\services\llm.py:415": generate_terms - Final script-content-matched keywords: ['insulin vials', 'syringe', 'diabetes management']
+2026-01-16 23:45:43 | INFO | "./app\services\script_segment_matcher.py:85": generate_segment_keywords - Generated keywords for segment: ['insulin vials', 'syringe', 'diabetes management']
+2026-01-16 23:45:43 | INFO | "./app\services\script_segment_matcher.py:193": match_segments_to_videos - Segment 6/10: keywords=['insulin vials', 'syringe', 'diabetes management'], duration=12.6s
+2026-01-16 23:45:43 | INFO | "./app\services\llm.py:331": generate_terms - Starting enhanced script-content matching keyword generation for subject: 
+2026-01-16 23:45:43 | INFO | "./app\services\llm.py:369": generate_terms - Generating script-content-matched keywords using advanced LLM analysis...
+2026-01-16 23:45:43 | INFO | "./app\config\config.py:23": load_config - load config from file: ./config.toml
+2026-01-16 23:45:43 | INFO | "./app\config\config.py:52": reload - Config reloaded
+2026-01-16 23:45:43 | INFO | "./app\services\llm.py:19": _generate_response - llm provider: gemini
+2026-01-16 23:45:43 | INFO | "./app\services\llm.py:37": _generate_response - Found 5 Gemini API keys for rotation
+2026-01-16 23:45:43 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #1 (5 total)
+2026-01-16 23:45:43 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #1
+2026-01-16 23:45:44 | WARNING | "./app\services\llm.py:65": _generate_response - Gemini model gemini-2.5-flash-lite failed with key #1: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash-lite
+Please retry in 16.35632916s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash-lite"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 16
+}
+]
+2026-01-16 23:45:44 | WARNING | "./app\services\llm.py:67": _generate_response - 🚫 API key #1 quota exceeded, trying next key...
+2026-01-16 23:45:44 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #2 (5 total)
+2026-01-16 23:45:44 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #2
+2026-01-16 23:45:44 | WARNING | "./app\services\llm.py:65": _generate_response - Gemini model gemini-2.5-flash-lite failed with key #2: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash-lite
+Please retry in 16.056975263s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash-lite"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 16
+}
+]
+2026-01-16 23:45:44 | WARNING | "./app\services\llm.py:67": _generate_response - 🚫 API key #2 quota exceeded, trying next key...
+2026-01-16 23:45:44 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #3 (5 total)
+2026-01-16 23:45:44 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #3
+2026-01-16 23:45:45 | SUCCESS | "./app\services\llm.py:62": _generate_response - ✅ Success with API key #3 and model gemini-2.5-flash-lite
+2026-01-16 23:45:45 | INFO | "./app\services\llm.py:371": generate_terms - LLM keyword response: insulin pen, diabetes patient, blood sugar control
+2026-01-16 23:45:45 | INFO | "./app\services\llm.py:410": generate_terms - Script-matched valid terms: ['insulin pen', 'diabetes patient']
+2026-01-16 23:45:45 | WARNING | "./app\services\llm.py:422": generate_terms - LLM failed. Using enhanced script content analysis fallback...
+2026-01-16 23:45:45 | INFO | "./app\services\llm.py:1183": _generate_enhanced_script_keywords - Performing enhanced script content analysis for: ''
+2026-01-16 23:45:45 | INFO | "./app\services\llm.py:1329": _generate_enhanced_script_keywords - Enhanced script analysis final keywords: ['lifestyle', 'people', 'modern']
+2026-01-16 23:45:45 | INFO | "./app\services\script_segment_matcher.py:85": generate_segment_keywords - Generated keywords for segment: ['lifestyle', 'people', 'modern']
+2026-01-16 23:45:45 | INFO | "./app\services\script_segment_matcher.py:193": match_segments_to_videos - Segment 7/10: keywords=['lifestyle', 'people', 'modern'], duration=12.6s
+2026-01-16 23:45:45 | INFO | "./app\services\llm.py:331": generate_terms - Starting enhanced script-content matching keyword generation for subject: 
+2026-01-16 23:45:45 | INFO | "./app\services\llm.py:369": generate_terms - Generating script-content-matched keywords using advanced LLM analysis...
+2026-01-16 23:45:45 | INFO | "./app\config\config.py:23": load_config - load config from file: ./config.toml
+2026-01-16 23:45:45 | INFO | "./app\config\config.py:52": reload - Config reloaded
+2026-01-16 23:45:45 | INFO | "./app\services\llm.py:19": _generate_response - llm provider: gemini
+2026-01-16 23:45:45 | INFO | "./app\services\llm.py:37": _generate_response - Found 5 Gemini API keys for rotation
+2026-01-16 23:45:45 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #1 (5 total)
+2026-01-16 23:45:45 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #1
+2026-01-16 23:45:45 | WARNING | "./app\services\llm.py:65": _generate_response - Gemini model gemini-2.5-flash-lite failed with key #1: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash-lite
+Please retry in 14.795047229s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash-lite"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 14
+}
+]
+2026-01-16 23:45:45 | WARNING | "./app\services\llm.py:67": _generate_response - 🚫 API key #1 quota exceeded, trying next key...
+2026-01-16 23:45:45 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #2 (5 total)
+2026-01-16 23:45:45 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #2
+2026-01-16 23:45:45 | WARNING | "./app\services\llm.py:65": _generate_response - Gemini model gemini-2.5-flash-lite failed with key #2: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash-lite
+Please retry in 14.526990988s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash-lite"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 14
+}
+]
+2026-01-16 23:45:45 | WARNING | "./app\services\llm.py:67": _generate_response - 🚫 API key #2 quota exceeded, trying next key...
+2026-01-16 23:45:45 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #3 (5 total)
+2026-01-16 23:45:45 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #3
+2026-01-16 23:45:46 | SUCCESS | "./app\services\llm.py:62": _generate_response - ✅ Success with API key #3 and model gemini-2.5-flash-lite
+2026-01-16 23:45:46 | INFO | "./app\services\llm.py:371": generate_terms - LLM keyword response: Diabetes treatment, Personalized medicine, Disease progression
+2026-01-16 23:45:46 | INFO | "./app\services\llm.py:410": generate_terms - Script-matched valid terms: ['diabetes treatment', 'personalized medicine', 'disease progression']
+2026-01-16 23:45:46 | INFO | "./app\services\llm.py:415": generate_terms - Final script-content-matched keywords: ['diabetes treatment', 'personalized medicine', 'disease progression']
+2026-01-16 23:45:46 | INFO | "./app\services\script_segment_matcher.py:85": generate_segment_keywords - Generated keywords for segment: ['diabetes treatment', 'personalized medicine', 'disease progression']
+2026-01-16 23:45:46 | INFO | "./app\services\script_segment_matcher.py:193": match_segments_to_videos - Segment 8/10: keywords=['diabetes treatment', 'personalized medicine', 'disease progression'], duration=12.6s
+2026-01-16 23:45:46 | INFO | "./app\services\llm.py:331": generate_terms - Starting enhanced script-content matching keyword generation for subject: 
+2026-01-16 23:45:46 | INFO | "./app\services\llm.py:369": generate_terms - Generating script-content-matched keywords using advanced LLM analysis...
+2026-01-16 23:45:46 | INFO | "./app\config\config.py:23": load_config - load config from file: ./config.toml
+2026-01-16 23:45:46 | INFO | "./app\config\config.py:52": reload - Config reloaded
+2026-01-16 23:45:46 | INFO | "./app\services\llm.py:19": _generate_response - llm provider: gemini
+2026-01-16 23:45:46 | INFO | "./app\services\llm.py:37": _generate_response - Found 5 Gemini API keys for rotation
+2026-01-16 23:45:46 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #1 (5 total)
+2026-01-16 23:45:46 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #1
+2026-01-16 23:45:47 | WARNING | "./app\services\llm.py:65": _generate_response - Gemini model gemini-2.5-flash-lite failed with key #1: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash-lite
+Please retry in 13.375810721s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash-lite"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 13
+}
+]
+2026-01-16 23:45:47 | WARNING | "./app\services\llm.py:67": _generate_response - 🚫 API key #1 quota exceeded, trying next key...
+2026-01-16 23:45:47 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #2 (5 total)
+2026-01-16 23:45:47 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #2
+2026-01-16 23:45:47 | WARNING | "./app\services\llm.py:65": _generate_response - Gemini model gemini-2.5-flash-lite failed with key #2: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash-lite
+Please retry in 13.088237624s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash-lite"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 13
+}
+]
+2026-01-16 23:45:47 | WARNING | "./app\services\llm.py:67": _generate_response - 🚫 API key #2 quota exceeded, trying next key...
+2026-01-16 23:45:47 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #3 (5 total)
+2026-01-16 23:45:47 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #3
+2026-01-16 23:45:48 | SUCCESS | "./app\services\llm.py:62": _generate_response - ✅ Success with API key #3 and model gemini-2.5-flash-lite
+2026-01-16 23:45:48 | INFO | "./app\services\llm.py:371": generate_terms - LLM keyword response: treatment plan, blood sugar, cardiovascular disease
+2026-01-16 23:45:48 | INFO | "./app\services\llm.py:410": generate_terms - Script-matched valid terms: ['treatment plan', 'blood sugar', 'cardiovascular disease']
+2026-01-16 23:45:48 | INFO | "./app\services\llm.py:415": generate_terms - Final script-content-matched keywords: ['treatment plan', 'blood sugar', 'cardiovascular disease']
+2026-01-16 23:45:48 | INFO | "./app\services\script_segment_matcher.py:85": generate_segment_keywords - Generated keywords for segment: ['treatment plan', 'blood sugar', 'cardiovascular disease']
+2026-01-16 23:45:48 | INFO | "./app\services\script_segment_matcher.py:193": match_segments_to_videos - Segment 9/10: keywords=['treatment plan', 'blood sugar', 'cardiovascular disease'], duration=12.6s
+2026-01-16 23:45:48 | INFO | "./app\services\llm.py:331": generate_terms - Starting enhanced script-content matching keyword generation for subject: 
+2026-01-16 23:45:48 | INFO | "./app\services\llm.py:369": generate_terms - Generating script-content-matched keywords using advanced LLM analysis...
+2026-01-16 23:45:48 | INFO | "./app\config\config.py:23": load_config - load config from file: ./config.toml
+2026-01-16 23:45:48 | INFO | "./app\config\config.py:52": reload - Config reloaded
+2026-01-16 23:45:48 | INFO | "./app\services\llm.py:19": _generate_response - llm provider: gemini
+2026-01-16 23:45:48 | INFO | "./app\services\llm.py:37": _generate_response - Found 5 Gemini API keys for rotation
+2026-01-16 23:45:48 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #1 (5 total)
+2026-01-16 23:45:48 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #1
+2026-01-16 23:45:48 | WARNING | "./app\services\llm.py:65": _generate_response - Gemini model gemini-2.5-flash-lite failed with key #1: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash-lite
+Please retry in 11.967636991s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash-lite"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 11
+}
+]
+2026-01-16 23:45:48 | WARNING | "./app\services\llm.py:67": _generate_response - 🚫 API key #1 quota exceeded, trying next key...
+2026-01-16 23:45:48 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #2 (5 total)
+2026-01-16 23:45:48 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #2
+2026-01-16 23:45:48 | WARNING | "./app\services\llm.py:65": _generate_response - Gemini model gemini-2.5-flash-lite failed with key #2: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash-lite
+Please retry in 11.680586074s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash-lite"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 11
+}
+]
+2026-01-16 23:45:48 | WARNING | "./app\services\llm.py:67": _generate_response - 🚫 API key #2 quota exceeded, trying next key...
+2026-01-16 23:45:48 | INFO | "./app\services\llm.py:42": _generate_response - Trying Gemini API key #3 (5 total)
+2026-01-16 23:45:48 | INFO | "./app\services\llm.py:58": _generate_response - Using Gemini model: gemini-2.5-flash-lite with API key #3
+2026-01-16 23:45:49 | SUCCESS | "./app\services\llm.py:62": _generate_response - ✅ Success with API key #3 and model gemini-2.5-flash-lite
+2026-01-16 23:45:49 | INFO | "./app\services\llm.py:371": generate_terms - LLM keyword response: Healthy life, Doctor consultation, Patient communication
+2026-01-16 23:45:49 | INFO | "./app\services\llm.py:410": generate_terms - Script-matched valid terms: ['healthy life', 'patient communication']
+2026-01-16 23:45:49 | WARNING | "./app\services\llm.py:422": generate_terms - LLM failed. Using enhanced script content analysis fallback...
+2026-01-16 23:45:49 | INFO | "./app\services\llm.py:1183": _generate_enhanced_script_keywords - Performing enhanced script content analysis for: ''
+2026-01-16 23:45:49 | INFO | "./app\services\llm.py:1329": _generate_enhanced_script_keywords - Enhanced script analysis final keywords: ['lifestyle', 'people', 'modern']
+2026-01-16 23:45:49 | INFO | "./app\services\script_segment_matcher.py:85": generate_segment_keywords - Generated keywords for segment: ['lifestyle', 'people', 'modern']
+2026-01-16 23:45:49 | INFO | "./app\services\script_segment_matcher.py:193": match_segments_to_videos - Segment 10/10: keywords=['lifestyle', 'people', 'modern'], duration=12.6s
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:657": download_videos_by_segments - 
+
+## Downloading videos by segments: 10 segments
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:673": download_videos_by_segments - 
+📍 Segment 1/10
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:674": download_videos_by_segments -    Keywords: ['diabetes', 'blood sugar', 'medicine']
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:675": download_videos_by_segments -    Required duration: 12.6s
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:682": download_videos_by_segments -    🔍 Searching for: 'diabetes'
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:298": search_videos_pexels - searching videos: https://api.pexels.com/videos/search?query=diabetes&per_page=20&orientation=portrait, with proxies: {}
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:691": download_videos_by_segments -    ✅ Found 20 videos for 'diabetes'
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/8965057/8965057-hd_1080_1920_30fps.mp4
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-0ddfbecfc0d72c91cedd2590f03014be.mp4
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-0ddfbecfc0d72c91cedd2590f03014be.mp4 (3s)
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/6941892/6941892-hd_1080_1920_30fps.mp4
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-3da514b55575d5cc6ca2df4785b20263.mp4
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-3da514b55575d5cc6ca2df4785b20263.mp4 (3s)
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/6297782/6297782-hd_1080_1920_24fps.mp4
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-34fbf52fb00d9ac4a382a350196d54e8.mp4
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-34fbf52fb00d9ac4a382a350196d54e8.mp4 (3s)
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/6941903/6941903-hd_1080_1920_30fps.mp4
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-b2c578574069027a9b53a00cbbb6dd50.mp4
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-b2c578574069027a9b53a00cbbb6dd50.mp4 (3s)
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/6823854/6823854-hd_1080_1920_30fps.mp4
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-3828266e41f7872ea17f4b7a9f466d2a.mp4
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-3828266e41f7872ea17f4b7a9f466d2a.mp4 (3s)
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:760": download_videos_by_segments -    📊 Segment 1 complete: 5 videos, 15.0s/12.6s
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:673": download_videos_by_segments - 
+📍 Segment 2/10
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:674": download_videos_by_segments -    Keywords: ['lifestyle', 'people', 'modern']
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:675": download_videos_by_segments -    Required duration: 12.6s
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:682": download_videos_by_segments -    🔍 Searching for: 'lifestyle'
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:298": search_videos_pexels - searching videos: https://api.pexels.com/videos/search?query=lifestyle&per_page=20&orientation=portrait, with proxies: {}
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:691": download_videos_by_segments -    ✅ Found 14 videos for 'lifestyle'
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/35287270/14949473_1080_1920_25fps.mp4
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-e21e9fbc4803fec3d1ef8e7ecec2f106.mp4
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-e21e9fbc4803fec3d1ef8e7ecec2f106.mp4 (3s)
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/35313961/14961403_1080_1920_50fps.mp4
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-56cfe68931a57adb5a4d7febd116e10e.mp4
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-56cfe68931a57adb5a4d7febd116e10e.mp4 (3s)
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/8056102/8056102-hd_1080_1920_30fps.mp4
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-46ee5a086fa08e875d01ad08fe481c27.mp4
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-46ee5a086fa08e875d01ad08fe481c27.mp4 (3s)
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/35287269/14949460_1080_1920_25fps.mp4
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-e13aaee28b52288e4efec70dd82be5fb.mp4
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-e13aaee28b52288e4efec70dd82be5fb.mp4 (3s)
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/35315356/14961848_1080_1920_50fps.mp4
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-41f3c00311bbfc996a91ef7ae0189335.mp4
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-41f3c00311bbfc996a91ef7ae0189335.mp4 (3s)
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:760": download_videos_by_segments -    📊 Segment 2 complete: 5 videos, 15.0s/12.6s
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:673": download_videos_by_segments - 
+📍 Segment 3/10
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:674": download_videos_by_segments -    Keywords: ['pancreas', 'insulin release', 'blood sugar']
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:675": download_videos_by_segments -    Required duration: 12.6s
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:682": download_videos_by_segments -    🔍 Searching for: 'pancreas'
+2026-01-16 23:45:49 | INFO | "./app\services\material.py:298": search_videos_pexels - searching videos: https://api.pexels.com/videos/search?query=pancreas&per_page=20&orientation=portrait, with proxies: {}
+2026-01-16 23:45:51 | INFO | "./app\services\material.py:691": download_videos_by_segments -    ✅ Found 18 videos for 'pancreas'
+2026-01-16 23:45:51 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/27765636/12219551_1080_1920_30fps.mp4
+2026-01-16 23:45:59 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-aa40892633f8fa426c1d14c2f72796b5.mp4 (3s)
+2026-01-16 23:45:59 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/28122561/12305232_1080_1920_60fps.mp4
+2026-01-16 23:46:04 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-747ed900d82488cf4092c06ccd2ab627.mp4 (3s)
+2026-01-16 23:46:04 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/8783838/8783838-hd_1080_1920_24fps.mp4
+2026-01-16 23:46:05 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-760dd071ec3f2907fb91fa0b51ce5701.mp4 (3s)
+2026-01-16 23:46:05 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/34550101/14640398_1080_1920_50fps.mp4
+2026-01-16 23:46:09 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-793a0a40af69d3e123fcbc1b29a53e13.mp4 (3s)
+2026-01-16 23:46:09 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/27637593/12191069_1080_1920_30fps.mp4
+2026-01-16 23:46:13 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-716eab25275590367276e9e72271446e.mp4 (3s)
+2026-01-16 23:46:13 | INFO | "./app\services\material.py:760": download_videos_by_segments -    📊 Segment 3 complete: 5 videos, 15.0s/12.6s
+2026-01-16 23:46:13 | INFO | "./app\services\material.py:673": download_videos_by_segments - 
+📍 Segment 4/10
+2026-01-16 23:46:13 | INFO | "./app\services\material.py:674": download_videos_by_segments -    Keywords: ['kidney', 'urine', 'glucose']
+2026-01-16 23:46:13 | INFO | "./app\services\material.py:675": download_videos_by_segments -    Required duration: 12.6s
+2026-01-16 23:46:13 | INFO | "./app\services\material.py:682": download_videos_by_segments -    🔍 Searching for: 'kidney'
+2026-01-16 23:46:13 | INFO | "./app\services\material.py:298": search_videos_pexels - searching videos: https://api.pexels.com/videos/search?query=kidney&per_page=20&orientation=portrait, with proxies: {}
+2026-01-16 23:46:13 | INFO | "./app\services\material.py:691": download_videos_by_segments -    ✅ Found 19 videos for 'kidney'
+2026-01-16 23:46:13 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/27349444/12120912_1080_1920_30fps.mp4
+2026-01-16 23:46:18 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-364ab72a65c05ed43a15079f11a9e70f.mp4 (3s)
+2026-01-16 23:46:18 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/27637593/12191069_1080_1920_30fps.mp4
+2026-01-16 23:46:18 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-716eab25275590367276e9e72271446e.mp4
+2026-01-16 23:46:18 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-716eab25275590367276e9e72271446e.mp4 (3s)
+2026-01-16 23:46:18 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/28191069/12322492_1080_1920_30fps.mp4
+2026-01-16 23:46:23 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-9bebc4748c07ac7672d1cdceccf75709.mp4 (3s)
+2026-01-16 23:46:23 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/5839050/5839050-hd_1080_1920_24fps.mp4
+2026-01-16 23:46:24 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-4059718ff26b3fd7ae41d9bb17027f09.mp4 (3s)
+2026-01-16 23:46:24 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/20509688/20509688-hd_1080_1920_30fps.mp4
+2026-01-16 23:46:26 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-2ecedf5c37362253887e1f2ef743ed83.mp4 (3s)
+2026-01-16 23:46:26 | INFO | "./app\services\material.py:760": download_videos_by_segments -    📊 Segment 4 complete: 5 videos, 15.0s/12.6s
+2026-01-16 23:46:26 | INFO | "./app\services\material.py:673": download_videos_by_segments - 
+📍 Segment 5/10
+2026-01-16 23:46:26 | INFO | "./app\services\material.py:674": download_videos_by_segments -    Keywords: ['lifestyle', 'people', 'modern']
+2026-01-16 23:46:26 | INFO | "./app\services\material.py:675": download_videos_by_segments -    Required duration: 12.6s
+2026-01-16 23:46:26 | INFO | "./app\services\material.py:682": download_videos_by_segments -    🔍 Searching for: 'lifestyle'
+2026-01-16 23:46:26 | INFO | "./app\services\material.py:298": search_videos_pexels - searching videos: https://api.pexels.com/videos/search?query=lifestyle&per_page=20&orientation=portrait, with proxies: {}
+2026-01-16 23:46:26 | INFO | "./app\services\material.py:691": download_videos_by_segments -    ✅ Found 14 videos for 'lifestyle'
+2026-01-16 23:46:26 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/35313961/14961403_1080_1920_50fps.mp4
+2026-01-16 23:46:26 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-56cfe68931a57adb5a4d7febd116e10e.mp4
+2026-01-16 23:46:26 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-56cfe68931a57adb5a4d7febd116e10e.mp4 (3s)
+2026-01-16 23:46:26 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/35302763/14957210_1080_1920_50fps.mp4
+2026-01-16 23:46:26 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-c10c2c37c819504f67ffc3c47c7e2d0c.mp4
+2026-01-16 23:46:26 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-c10c2c37c819504f67ffc3c47c7e2d0c.mp4 (3s)
+2026-01-16 23:46:26 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/8056102/8056102-hd_1080_1920_30fps.mp4
+2026-01-16 23:46:26 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-46ee5a086fa08e875d01ad08fe481c27.mp4
+2026-01-16 23:46:26 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-46ee5a086fa08e875d01ad08fe481c27.mp4 (3s)
+2026-01-16 23:46:26 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/35313954/14961296_1080_1920_50fps.mp4
+2026-01-16 23:46:26 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-8ba56dccc55b0f07f1e8f2e65d0ca0ec.mp4
+2026-01-16 23:46:26 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-8ba56dccc55b0f07f1e8f2e65d0ca0ec.mp4 (3s)
+2026-01-16 23:46:26 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/35313951/14961312_1080_1920_50fps.mp4
+2026-01-16 23:46:26 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-e68808f46b8ca03748dbee2c72a4db5e.mp4
+2026-01-16 23:46:26 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-e68808f46b8ca03748dbee2c72a4db5e.mp4 (3s)
+2026-01-16 23:46:26 | INFO | "./app\services\material.py:760": download_videos_by_segments -    📊 Segment 5 complete: 5 videos, 15.0s/12.6s
+2026-01-16 23:46:26 | INFO | "./app\services\material.py:673": download_videos_by_segments - 
+📍 Segment 6/10
+2026-01-16 23:46:26 | INFO | "./app\services\material.py:674": download_videos_by_segments -    Keywords: ['insulin vials', 'syringe', 'diabetes management']
+2026-01-16 23:46:26 | INFO | "./app\services\material.py:675": download_videos_by_segments -    Required duration: 12.6s
+2026-01-16 23:46:26 | INFO | "./app\services\material.py:682": download_videos_by_segments -    🔍 Searching for: 'insulin vials'
+2026-01-16 23:46:26 | INFO | "./app\services\material.py:298": search_videos_pexels - searching videos: https://api.pexels.com/videos/search?query=insulin+vials&per_page=20&orientation=portrait, with proxies: {}
+2026-01-16 23:46:27 | INFO | "./app\services\material.py:691": download_videos_by_segments -    ✅ Found 16 videos for 'insulin vials'
+2026-01-16 23:46:27 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/5893876/5893876-hd_1080_1920_30fps.mp4
+2026-01-16 23:46:28 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-9b33c5abfcb5486b02a88dc07a6cb259.mp4 (3s)
+2026-01-16 23:46:28 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/6942242/6942242-hd_1080_1920_30fps.mp4
+2026-01-16 23:46:28 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-22ea7e2ba76c8211881c29d67af55f13.mp4
+2026-01-16 23:46:28 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-22ea7e2ba76c8211881c29d67af55f13.mp4 (3s)
+2026-01-16 23:46:28 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/5863150/5863150-hd_1080_1920_29fps.mp4
+2026-01-16 23:46:29 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-d9700cc81f9b6f02d06d8330dae1dfbf.mp4 (3s)
+2026-01-16 23:46:29 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/6824057/6824057-hd_1080_1920_30fps.mp4
+2026-01-16 23:46:29 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-83f3f208089985010cb49071d86c6ac7.mp4
+2026-01-16 23:46:29 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-83f3f208089985010cb49071d86c6ac7.mp4 (3s)
+2026-01-16 23:46:29 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/7230311/7230311-hd_1080_1920_25fps.mp4
+2026-01-16 23:46:30 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-b8753882625d4915c5d43923d8e9823e.mp4 (3s)
+2026-01-16 23:46:30 | INFO | "./app\services\material.py:760": download_videos_by_segments -    📊 Segment 6 complete: 5 videos, 15.0s/12.6s
+2026-01-16 23:46:30 | INFO | "./app\services\material.py:673": download_videos_by_segments - 
+📍 Segment 7/10
+2026-01-16 23:46:30 | INFO | "./app\services\material.py:674": download_videos_by_segments -    Keywords: ['lifestyle', 'people', 'modern']
+2026-01-16 23:46:30 | INFO | "./app\services\material.py:675": download_videos_by_segments -    Required duration: 12.6s
+2026-01-16 23:46:30 | INFO | "./app\services\material.py:682": download_videos_by_segments -    🔍 Searching for: 'lifestyle'
+2026-01-16 23:46:30 | INFO | "./app\services\material.py:298": search_videos_pexels - searching videos: https://api.pexels.com/videos/search?query=lifestyle&per_page=20&orientation=portrait, with proxies: {}
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:691": download_videos_by_segments -    ✅ Found 14 videos for 'lifestyle'
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/8056102/8056102-hd_1080_1920_30fps.mp4
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-46ee5a086fa08e875d01ad08fe481c27.mp4
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-46ee5a086fa08e875d01ad08fe481c27.mp4 (3s)
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/35315444/14961837_1080_1920_50fps.mp4
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-71f26df73abd1d8ce181b2673d5f5ac4.mp4
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-71f26df73abd1d8ce181b2673d5f5ac4.mp4 (3s)
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/35313954/14961296_1080_1920_50fps.mp4
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-8ba56dccc55b0f07f1e8f2e65d0ca0ec.mp4
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-8ba56dccc55b0f07f1e8f2e65d0ca0ec.mp4 (3s)
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/35313951/14961312_1080_1920_50fps.mp4
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-e68808f46b8ca03748dbee2c72a4db5e.mp4
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-e68808f46b8ca03748dbee2c72a4db5e.mp4 (3s)
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/35315446/14961798_1080_1920_50fps.mp4
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-fd708b427f46b35bb098d6af90c7e2b8.mp4
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-fd708b427f46b35bb098d6af90c7e2b8.mp4 (3s)
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:760": download_videos_by_segments -    📊 Segment 7 complete: 5 videos, 15.0s/12.6s
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:673": download_videos_by_segments - 
+📍 Segment 8/10
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:674": download_videos_by_segments -    Keywords: ['diabetes treatment', 'personalized medicine', 'disease progression']
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:675": download_videos_by_segments -    Required duration: 12.6s
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:682": download_videos_by_segments -    🔍 Searching for: 'diabetes treatment'
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:298": search_videos_pexels - searching videos: https://api.pexels.com/videos/search?query=diabetes+treatment&per_page=20&orientation=portrait, with proxies: {}
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:691": download_videos_by_segments -    ✅ Found 20 videos for 'diabetes treatment'
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/6297782/6297782-hd_1080_1920_24fps.mp4
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-34fbf52fb00d9ac4a382a350196d54e8.mp4
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-34fbf52fb00d9ac4a382a350196d54e8.mp4 (3s)
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/6823847/6823847-hd_1080_1920_30fps.mp4
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-0e2f9fbf5a0aea0c7d0d7b86445b307f.mp4
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-0e2f9fbf5a0aea0c7d0d7b86445b307f.mp4 (3s)
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/7579910/7579910-hd_1080_1920_25fps.mp4
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-3dfe4a37eff33262bf448c2dc018d1d4.mp4
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-3dfe4a37eff33262bf448c2dc018d1d4.mp4 (3s)
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/6823855/6823855-hd_1080_1920_30fps.mp4
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-4ad1fe2e5237dac10069da62936c0c79.mp4
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-4ad1fe2e5237dac10069da62936c0c79.mp4 (3s)
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/8670956/8670956-hd_1080_1920_25fps.mp4
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-e30b46d056f06b588d1ce6e257bb05cd.mp4
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-e30b46d056f06b588d1ce6e257bb05cd.mp4 (3s)
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:760": download_videos_by_segments -    📊 Segment 8 complete: 5 videos, 15.0s/12.6s
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:673": download_videos_by_segments - 
+📍 Segment 9/10
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:674": download_videos_by_segments -    Keywords: ['treatment plan', 'blood sugar', 'cardiovascular disease']
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:675": download_videos_by_segments -    Required duration: 12.6s
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:682": download_videos_by_segments -    🔍 Searching for: 'treatment plan'
+2026-01-16 23:46:31 | INFO | "./app\services\material.py:298": search_videos_pexels - searching videos: https://api.pexels.com/videos/search?query=treatment+plan&per_page=20&orientation=portrait, with proxies: {}
+2026-01-16 23:46:32 | INFO | "./app\services\material.py:691": download_videos_by_segments -    ✅ Found 18 videos for 'treatment plan'
+2026-01-16 23:46:32 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/31653942/13486204_1080_1920_30fps.mp4
+2026-01-16 23:46:32 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-2d9c13ca6ebbbe4194709d35dc865291.mp4
+2026-01-16 23:46:32 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-2d9c13ca6ebbbe4194709d35dc865291.mp4 (3s)
+2026-01-16 23:46:32 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/30978292/13242385_1080_1920_30fps.mp4
+2026-01-16 23:46:35 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-6f04da792e37c2af64b560af03232c9a.mp4 (3s)
+2026-01-16 23:46:35 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/5659276/5659276-hd_1080_1920_30fps.mp4
+2026-01-16 23:46:35 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-01244e079ef2c2db1b0969e0b1428766.mp4
+2026-01-16 23:46:35 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-01244e079ef2c2db1b0969e0b1428766.mp4 (3s)
+2026-01-16 23:46:35 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/5659272/5659272-hd_1080_1920_30fps.mp4
+2026-01-16 23:46:36 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-807c1c7b6dc1ab17e39987f00438568d.mp4 (3s)
+2026-01-16 23:46:36 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/4772530/4772530-hd_1080_1920_24fps.mp4
+2026-01-16 23:46:36 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-926067754a12c295cdb730f035d38646.mp4
+2026-01-16 23:46:36 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-926067754a12c295cdb730f035d38646.mp4 (3s)
+2026-01-16 23:46:36 | INFO | "./app\services\material.py:760": download_videos_by_segments -    📊 Segment 9 complete: 5 videos, 15.0s/12.6s
+2026-01-16 23:46:36 | INFO | "./app\services\material.py:673": download_videos_by_segments - 
+📍 Segment 10/10
+2026-01-16 23:46:36 | INFO | "./app\services\material.py:674": download_videos_by_segments -    Keywords: ['lifestyle', 'people', 'modern']
+2026-01-16 23:46:36 | INFO | "./app\services\material.py:675": download_videos_by_segments -    Required duration: 12.6s
+2026-01-16 23:46:36 | INFO | "./app\services\material.py:682": download_videos_by_segments -    🔍 Searching for: 'lifestyle'
+2026-01-16 23:46:36 | INFO | "./app\services\material.py:298": search_videos_pexels - searching videos: https://api.pexels.com/videos/search?query=lifestyle&per_page=20&orientation=portrait, with proxies: {}
+2026-01-16 23:46:36 | INFO | "./app\services\material.py:691": download_videos_by_segments -    ✅ Found 14 videos for 'lifestyle'
+2026-01-16 23:46:36 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/35313952/14961379_1080_1920_50fps.mp4
+2026-01-16 23:46:36 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-f26c0efcf41299630486c74c1ffc1650.mp4
+2026-01-16 23:46:36 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-f26c0efcf41299630486c74c1ffc1650.mp4 (3s)
+2026-01-16 23:46:36 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/35287269/14949460_1080_1920_25fps.mp4
+2026-01-16 23:46:36 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-e13aaee28b52288e4efec70dd82be5fb.mp4
+2026-01-16 23:46:36 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-e13aaee28b52288e4efec70dd82be5fb.mp4 (3s)
+2026-01-16 23:46:36 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/35313961/14961403_1080_1920_50fps.mp4
+2026-01-16 23:46:36 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-56cfe68931a57adb5a4d7febd116e10e.mp4
+2026-01-16 23:46:36 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-56cfe68931a57adb5a4d7febd116e10e.mp4 (3s)
+2026-01-16 23:46:36 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/35315356/14961848_1080_1920_50fps.mp4
+2026-01-16 23:46:36 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-41f3c00311bbfc996a91ef7ae0189335.mp4
+2026-01-16 23:46:36 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-41f3c00311bbfc996a91ef7ae0189335.mp4 (3s)
+2026-01-16 23:46:36 | INFO | "./app\services\material.py:740": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/35309342/14959586_1080_1920_24fps.mp4
+2026-01-16 23:46:36 | INFO | "./app\services\material.py:409": save_video - video already exists: .\storage\cache_videos/vid-e29d693f99135663301276ccbf4f945d.mp4
+2026-01-16 23:46:36 | INFO | "./app\services\material.py:746": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-e29d693f99135663301276ccbf4f945d.mp4 (3s)
+2026-01-16 23:46:36 | INFO | "./app\services\material.py:760": download_videos_by_segments -    📊 Segment 10 complete: 5 videos, 15.0s/12.6s
+2026-01-16 23:46:36 | SUCCESS | "./app\services\material.py:762": download_videos_by_segments - 
+✅ All segments processed: 10 segments
+2026-01-16 23:46:36 | SUCCESS | "./app\services\task.py:230": get_video_materials - ✅ Segment-based matching complete: 50 videos
+2026-01-16 23:46:36 | DEBUG | "./app\services\task.py:232": get_video_materials - Segment results: 10 segments processed
+2026-01-16 23:46:36 | INFO | "./app\services\task.py:275": generate_final_videos - 
+
+## combining video: 1 => .\storage\tasks\939706a4-9576-44f0-ac09-4ad20e87d556\combined-1.mp4
+2026-01-16 23:46:36 | INFO | "./app\services\video.py:219": combine_videos - audio duration: 125.52 seconds
+2026-01-16 23:46:36 | INFO | "./app\services\video.py:243": combine_videos - maximum clip duration: 3 seconds
+2026-01-16 23:46:36 | INFO | "./app\services\video.py:244": combine_videos - video transition mode: VideoTransitionMode.none
+2026-01-16 23:46:59 | DEBUG | "./app\services\video.py:270": combine_videos - total subclipped items: 177
+2026-01-16 23:46:59 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 1: 1080x1920, current duration: 0.00s, remaining: 125.52s
+2026-01-16 23:47:04 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 2: 1080x1920, current duration: 3.00s, remaining: 122.52s
+2026-01-16 23:47:09 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 3: 1080x1920, current duration: 6.00s, remaining: 119.52s
+2026-01-16 23:47:15 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 4: 1080x1920, current duration: 9.00s, remaining: 116.52s
+2026-01-16 23:47:19 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 5: 1080x1920, current duration: 12.00s, remaining: 113.52s
+2026-01-16 23:47:24 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 6: 1080x1920, current duration: 15.00s, remaining: 110.52s
+2026-01-16 23:47:29 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 7: 1080x1920, current duration: 18.00s, remaining: 107.52s
+2026-01-16 23:47:34 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 8: 1080x1920, current duration: 21.00s, remaining: 104.52s
+2026-01-16 23:47:39 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 9: 1080x1920, current duration: 24.00s, remaining: 101.52s
+2026-01-16 23:47:43 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 10: 1080x1920, current duration: 27.00s, remaining: 98.52s
+2026-01-16 23:47:50 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 11: 1080x1920, current duration: 30.00s, remaining: 95.52s
+2026-01-16 23:47:55 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 12: 1080x1920, current duration: 33.00s, remaining: 92.52s
+2026-01-16 23:48:02 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 13: 1080x1920, current duration: 36.00s, remaining: 89.52s
+2026-01-16 23:48:08 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 14: 1080x1920, current duration: 39.00s, remaining: 86.52s
+2026-01-16 23:48:12 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 15: 1080x1920, current duration: 42.00s, remaining: 83.52s
+2026-01-16 23:48:16 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 16: 1080x1920, current duration: 45.00s, remaining: 80.52s
+2026-01-16 23:48:22 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 17: 1080x1920, current duration: 48.00s, remaining: 77.52s
+2026-01-16 23:48:30 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 18: 1080x1920, current duration: 51.00s, remaining: 74.52s
+2026-01-16 23:48:35 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 19: 1080x1920, current duration: 54.00s, remaining: 71.52s
+2026-01-16 23:48:43 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 20: 1080x1920, current duration: 57.00s, remaining: 68.52s
+2026-01-16 23:48:48 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 21: 1080x1920, current duration: 60.00s, remaining: 65.52s
+2026-01-16 23:48:54 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 22: 1080x1920, current duration: 63.00s, remaining: 62.52s
+2026-01-16 23:49:00 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 23: 1080x1920, current duration: 66.00s, remaining: 59.52s
+2026-01-16 23:49:07 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 24: 1080x1920, current duration: 69.00s, remaining: 56.52s
+2026-01-16 23:49:13 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 25: 1080x1920, current duration: 72.00s, remaining: 53.52s
+2026-01-16 23:49:18 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 26: 1080x1920, current duration: 75.00s, remaining: 50.52s
+2026-01-16 23:49:23 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 27: 1080x1920, current duration: 78.00s, remaining: 47.52s
+2026-01-16 23:49:28 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 28: 1080x1920, current duration: 81.00s, remaining: 44.52s
+2026-01-16 23:49:33 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 29: 1080x1920, current duration: 84.00s, remaining: 41.52s
+2026-01-16 23:49:38 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 30: 1080x1920, current duration: 87.00s, remaining: 38.52s
+2026-01-16 23:49:42 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 31: 1080x1920, current duration: 90.00s, remaining: 35.52s
+2026-01-16 23:49:48 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 32: 1080x1920, current duration: 93.00s, remaining: 32.52s
+2026-01-16 23:49:52 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 33: 1080x1920, current duration: 96.00s, remaining: 29.52s
+2026-01-16 23:49:56 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 34: 1080x1920, current duration: 99.00s, remaining: 26.52s
+2026-01-16 23:50:00 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 35: 1080x1920, current duration: 102.00s, remaining: 23.52s
+2026-01-16 23:50:05 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 36: 1080x1920, current duration: 105.00s, remaining: 20.52s
+2026-01-16 23:50:11 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 37: 1080x1920, current duration: 108.00s, remaining: 17.52s
+2026-01-16 23:50:16 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 38: 1080x1920, current duration: 111.00s, remaining: 14.52s
+2026-01-16 23:50:20 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 39: 1080x1920, current duration: 114.00s, remaining: 11.52s
+2026-01-16 23:50:25 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 40: 1080x1920, current duration: 117.00s, remaining: 8.52s
+2026-01-16 23:50:29 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 41: 1080x1920, current duration: 120.00s, remaining: 5.52s
+2026-01-16 23:50:34 | DEBUG | "./app\services\video.py:287": combine_videos - processing clip 42: 1080x1920, current duration: 123.00s, remaining: 2.52s
+2026-01-16 23:50:38 | INFO | "./app\services\video.py:404": combine_videos - starting clip merging process
+2026-01-16 23:50:38 | INFO | "./app\services\video.py:516": combine_videos - concatenating 42 clips using ffmpeg: .\storage\tasks\939706a4-9576-44f0-ac09-4ad20e87d556\concat_list.txt
+2026-01-16 23:50:38 | INFO | "./app\services\video.py:536": combine_videos - running ffmpeg command: C:\Python313\Lib\site-packages\imageio_ffmpeg\binaries\ffmpeg-win-x86_64-v7.1.exe -y -f concat -safe 0 -i .\storage\tasks\939706a4-9576-44f0-ac09-4ad20e87d556\concat_list.txt -c:v libx264 -preset medium -crf 23 -c:a aac -b:a 128k -r 30 -avoid_negative_ts make_zero -fflags +genpts -pix_fmt yuv420p -movflags +faststart -profile:v baseline -level 3.0 -r 30 -g 60 -keyint_min 30 -sc_threshold 0 .\storage\tasks\939706a4-9576-44f0-ac09-4ad20e87d556\combined-1.mp4
+2026-01-16 23:51:08 | INFO | "./app\services\video.py:579": combine_videos - ffmpeg concatenation completed successfully
+2026-01-16 23:51:08 | INFO | "./app\services\task.py:304": generate_final_videos - 
+
+## generating video: 1 => .\storage\tasks\939706a4-9576-44f0-ac09-4ad20e87d556\final-1.mp4
+2026-01-16 23:51:08 | INFO | "./app\services\video.py:709": generate_video - generating video: 1080 x 1920
+2026-01-16 23:51:08 | INFO | "./app\services\video.py:710": generate_video -   ① video: .\storage\tasks\939706a4-9576-44f0-ac09-4ad20e87d556\combined-1.mp4
+2026-01-16 23:51:08 | INFO | "./app\services\video.py:711": generate_video -   ② audio: .\storage\tasks\939706a4-9576-44f0-ac09-4ad20e87d556\audio.mp3
+2026-01-16 23:51:08 | INFO | "./app\services\video.py:712": generate_video -   ③ subtitle: 
+2026-01-16 23:51:08 | INFO | "./app\services\video.py:713": generate_video -   ④ output: .\storage\tasks\939706a4-9576-44f0-ac09-4ad20e87d556\final-1.mp4
+2026-01-16 23:51:08 | INFO | "./app\services\video.py:736": generate_video - Forced Korean font: C:/Windows/Fonts/malgun.ttf
+2026-01-16 23:51:08 | INFO | "./app\services\video.py:754": generate_video -   ⑤ font: C:/Windows/Fonts/malgun.ttf
+2026-01-16 23:51:08 | INFO | "./app\services\video.py:879": generate_video - Title overlay image created: .\storage\tasks\939706a4-9576-44f0-ac09-4ad20e87d556\final-1_title.png
+2026-01-16 23:51:08 | INFO | "./app\services\video.py:900": generate_video - writing final video (audio track)...
+2026-01-16 23:51:08 | INFO | "./app\services\video.py:902": generate_video - Exporting audio to .\storage\tasks\939706a4-9576-44f0-ac09-4ad20e87d556\final-1_temp_audio.m4a
+2026-01-16 23:51:15 | INFO | "./app\services\video.py:905": generate_video - Audio export successful
+2026-01-16 23:51:15 | INFO | "./app\services\video.py:910": generate_video - merging video, audio, and subtitles...
+2026-01-16 23:51:15 | INFO | "./app\services\video.py:954": generate_video - Running merge command: C:\Python313\Lib\site-packages\imageio_ffmpeg\binaries\ffmpeg-win-x86_64-v7.1.exe -y -i .\storage\tasks\939706a4-9576-44f0-ac09-4ad20e87d556\combined-1.mp4 -i .\storage\tasks\939706a4-9576-44f0-ac09-4ad20e87d556\final-1_temp_audio.m4a -i .\storage\tasks\939706a4-9576-44f0-ac09-4ad20e87d556\final-1_title.png -filter_complex [0:v][2:v]overlay=(W-w)/2:160[v_titled] -map [v_titled] -c:v libx264 -preset ultrafast -crf 23 -map 1:a -c:a copy -shortest .\storage\tasks\939706a4-9576-44f0-ac09-4ad20e87d556\final-1.mp4
+2026-01-16 23:51:29 | SUCCESS | "./app\services\task.py:438": start - task 939706a4-9576-44f0-ac09-4ad20e87d556 finished, generated 1 videos.
+2026-01-16 23:51:30 | INFO | "./webui\Main.py:5349": <module> - 🔍 DEBUG: Auto-upload checkbox state: True
+2026-01-16 23:51:30 | INFO | "./webui\Main.py:5350": <module> - 🔍 DEBUG: Session state yt_auto_upload: True
+2026-01-16 23:51:30 | INFO | "./webui\Main.py:5351": <module> - 🔍 DEBUG: All session keys with 'upload': ['timer_auto_upload_main', 'yt_auto_upload', 'batch_auto_upload', 'bgm_uploader', 'longform_auto_upload_main']
+2026-01-16 23:51:30 | INFO | "./webui\Main.py:5354": <module> - ✅ 자동 업로드가 활성화되어 있습니다.
+2026-01-16 23:51:30 | INFO | "./webui\Main.py:5359": <module> - 🔍 Token file exists: True
+2026-01-16 23:51:30 | INFO | "./webui\Main.py:5360": <module> - 🔍 Client secrets file exists: True
+2026-01-16 23:51:30 | INFO | "./webui\Main.py:5363": <module> - DEBUG: task_params keys: ['video_subject', 'video_script', 'video_terms', 'video_aspect', 'video_concat_mode', 'video_transition_mode', 'video_clip_duration', 'video_count', 'video_source', 'video_materials', 'use_segment_matching', 'target_segment_count', 'custom_audio_file', 'video_language', 'voice_name', 'voice_volume', 'voice_rate', 'bgm_type', 'bgm_file', 'bgm_volume', 'subtitle_enabled', 'subtitle_position', 'custom_position', 'font_name', 'text_fore_color', 'text_background_color', 'font_size', 'stroke_color', 'stroke_width', 'n_threads', 'paragraph_number']
+2026-01-16 23:51:30 | INFO | "./webui\Main.py:5364": <module> - DEBUG: task_params type: <class 'app.models.schema.VideoParams'>
+2026-01-16 23:51:30 | INFO | "./webui\Main.py:5379": <module> - DEBUG: video_terms from task_params: insulin secretion, insulin resistance, sulfonylureas
+2026-01-16 23:51:30 | INFO | "./webui\Main.py:5380": <module> - DEBUG: video_language: en-US
+2026-01-16 23:51:30 | INFO | "./webui\Main.py:5416": <module> - 🇺🇸 Using English tags: insulin secretion, insulin resistance, sulfonylureas, What are the types of diabetes medications?
+2026-01-16 23:51:33 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 0%
+2026-01-16 23:51:33 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 1%
+2026-01-16 23:51:34 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 2%
+2026-01-16 23:51:35 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 3%
+2026-01-16 23:51:36 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 4%
+2026-01-16 23:51:36 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 5%
+2026-01-16 23:51:37 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 5%
+2026-01-16 23:51:38 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 6%
+2026-01-16 23:51:39 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 7%
+2026-01-16 23:51:39 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 8%
+2026-01-16 23:51:40 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 9%
+2026-01-16 23:51:41 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 10%
+2026-01-16 23:51:42 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 11%
+2026-01-16 23:51:42 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 11%
+2026-01-16 23:51:43 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 12%
+2026-01-16 23:51:44 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 13%
+2026-01-16 23:51:45 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 14%
+2026-01-16 23:51:45 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 15%
+2026-01-16 23:51:46 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 16%
+2026-01-16 23:51:47 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 17%
+2026-01-16 23:51:48 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 17%
+2026-01-16 23:51:48 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 18%
+2026-01-16 23:51:49 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 19%
+2026-01-16 23:51:50 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 20%
+2026-01-16 23:51:51 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 21%
+2026-01-16 23:51:51 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 22%
+2026-01-16 23:51:52 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 23%
+2026-01-16 23:51:53 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 23%
+2026-01-16 23:51:54 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 24%
+2026-01-16 23:51:54 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 25%
+2026-01-16 23:51:55 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 26%
+2026-01-16 23:51:56 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 27%
+2026-01-16 23:51:57 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 28%
+2026-01-16 23:51:57 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 29%
+2026-01-16 23:51:58 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 29%
+2026-01-16 23:51:59 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 30%
+2026-01-16 23:52:00 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 31%
+2026-01-16 23:52:01 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 32%
+2026-01-16 23:52:01 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 33%
+2026-01-16 23:52:02 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 34%
+2026-01-16 23:52:03 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 35%
+2026-01-16 23:52:04 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 35%
+2026-01-16 23:52:04 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 36%
+2026-01-16 23:52:05 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 37%
+2026-01-16 23:52:06 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 38%
+2026-01-16 23:52:07 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 39%
+2026-01-16 23:52:07 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 40%
+2026-01-16 23:52:08 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 40%
+2026-01-16 23:52:09 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 41%
+2026-01-16 23:52:10 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 42%
+2026-01-16 23:52:10 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 43%
+2026-01-16 23:52:11 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 44%
+2026-01-16 23:52:12 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 45%
+2026-01-16 23:52:13 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 46%
+2026-01-16 23:52:13 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 46%
+2026-01-16 23:52:14 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 47%
+2026-01-16 23:52:15 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 48%
+2026-01-16 23:52:16 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 49%
+2026-01-16 23:52:16 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 50%
+2026-01-16 23:52:17 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 51%
+2026-01-16 23:52:18 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 52%
+2026-01-16 23:52:19 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 52%
+2026-01-16 23:52:19 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 53%
+2026-01-16 23:52:20 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 54%
+2026-01-16 23:52:21 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 55%
+2026-01-16 23:52:22 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 56%
+2026-01-16 23:52:22 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 57%
+2026-01-16 23:52:23 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 58%
+2026-01-16 23:52:24 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 58%
+2026-01-16 23:52:25 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 59%
+2026-01-16 23:52:25 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 60%
+2026-01-16 23:52:26 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 61%
+2026-01-16 23:52:27 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 62%
+2026-01-16 23:52:28 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 63%
+2026-01-16 23:52:28 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 64%
+2026-01-16 23:52:29 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 64%
+2026-01-16 23:52:30 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 65%
+2026-01-16 23:52:31 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 66%
+2026-01-16 23:52:31 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 67%
+2026-01-16 23:52:32 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 68%
+2026-01-16 23:52:33 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 69%
+2026-01-16 23:52:34 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 70%
+2026-01-16 23:52:34 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 70%
+2026-01-16 23:52:35 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 71%
+2026-01-16 23:52:36 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 72%
+2026-01-16 23:52:37 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 73%
+2026-01-16 23:52:37 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 74%
+2026-01-16 23:52:38 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 75%
+2026-01-16 23:52:39 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 75%
+2026-01-16 23:52:40 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 76%
+2026-01-16 23:52:40 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 77%
+2026-01-16 23:52:41 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 78%
+2026-01-16 23:52:42 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 79%
+2026-01-16 23:52:43 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 80%
+2026-01-16 23:52:43 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 81%
+2026-01-16 23:52:44 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 81%
+2026-01-16 23:52:45 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 82%
+2026-01-16 23:52:46 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 83%
+2026-01-16 23:52:46 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 84%
+2026-01-16 23:52:47 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 85%
+2026-01-16 23:52:48 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 86%
+2026-01-16 23:52:49 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 87%
+2026-01-16 23:52:49 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 87%
+2026-01-16 23:52:50 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 88%
+2026-01-16 23:52:51 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 89%
+2026-01-16 23:52:52 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 90%
+2026-01-16 23:52:53 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 91%
+2026-01-16 23:52:53 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 92%
+2026-01-16 23:52:54 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 93%
+2026-01-16 23:52:55 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 93%
+2026-01-16 23:52:55 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 94%
+2026-01-16 23:52:56 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 95%
+2026-01-16 23:52:57 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 96%
+2026-01-16 23:52:58 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 97%
+2026-01-16 23:52:58 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 98%
+2026-01-16 23:52:59 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 99%
+2026-01-16 23:53:00 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 99%
+2026-01-16 23:53:02 | SUCCESS | "./app\utils\youtube.py:89": upload_video - Video uploaded successfully! Video ID: Yq3bQ4jsYRo
+2026-01-16 23:53:02 | INFO | "./app\utils\youtube.py:92": upload_video - 업로드 검증 중... (30초 대기)
+2026-01-16 23:53:32 | WARNING | "./app\utils\youtube.py:116": upload_video - ⚠️ 업로드 검증 실패 (하지만 업로드는 성공): <HttpError 403 when requesting https://youtube.googleapis.com/youtube/v3/videos?part=snippet%2Cstatus&id=Yq3bQ4jsYRo&alt=json returned "Request had insufficient authentication scopes.". Details: "[{'message': 'Insufficient Permission', 'domain': 'global', 'reason': 'insufficientPermissions'}]">
+2026-01-16 23:53:32 | INFO | "./webui\Main.py:5475": <module> - Updated video list with 2 new videos. Total: 3
