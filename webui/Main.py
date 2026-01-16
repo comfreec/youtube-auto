@@ -2204,7 +2204,9 @@ with tab_main:
                             font_size=params.font_size,
                             stroke_color=params.stroke_color,
                             stroke_width=params.stroke_width,
-                            n_threads=params.n_threads
+                            n_threads=params.n_threads,
+                            use_segment_matching=True,  # 세그먼트 기반 배경영상 매칭 활성화
+                            target_segment_count=None  # 자동 계산
                         )
                         
                         # Add longform-specific attributes
@@ -3694,7 +3696,9 @@ def generate_single_video(title: str, video_type: str, language: str, duration: 
             'font_size': 60,
             'stroke_width': 1.5,
             'n_threads': 2,
-            'paragraph_number': 1 if video_type == 'shorts' else 4
+            'paragraph_number': 1 if video_type == 'shorts' else 4,
+            'use_segment_matching': True,  # 세그먼트 기반 배경영상 매칭 활성화
+            'target_segment_count': None  # 자동 계산
         }
         
         params = VideoParams(**params_dict)
