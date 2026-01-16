@@ -82,6 +82,10 @@ class VideoParams(BaseModel):
         None  # Materials used to generate the video
     )
     
+    # 세그먼트 기반 배경영상 매칭 옵션
+    use_segment_matching: Optional[bool] = True  # 대본 세그먼트별 배경영상 매칭 활성화
+    target_segment_count: Optional[int] = None  # 목표 세그먼트 개수 (None이면 자동 계산)
+    
     custom_audio_file: Optional[str] = None  # Custom audio file path, will ignore video_script and disable subtitle
     video_language: Optional[str] = ""  # auto detect
 

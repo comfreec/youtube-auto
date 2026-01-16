@@ -53,6 +53,8 @@ def generate_single_video(title: str, video_type: str, language: str, duration: 
             'video_count': 1,  # 일반 영상과 동일하게 1개만 생성
             'video_source': 'pexels',  # 픽셀즈 사용
             'video_materials': None,
+            'use_segment_matching': True,  # 세그먼트 기반 배경영상 매칭 활성화
+            'target_segment_count': None,  # 자동 계산
             'custom_audio_file': None,
             'video_language': language,
             'voice_name': 'ko-KR-InJoonNeural' if language == 'ko-KR' else 'en-US-JennyNeural',

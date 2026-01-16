@@ -223,6 +223,25 @@ class BatchVideoProcessor:
             eng_params['language'] = 'en-US'
             eng_params['english_title'] = eng_title  # 영어 제목 추가
             
+            # 한국어 버전과 동일한 배경영상 사용 (일관성 유지)
+            ko_materials = ko_result.get('materials', [])
+            if ko_materials:
+                logger.info(f"🎬 Reusing {len(ko_materials)} background videos from Korean version for English version")
+                # materials를 MaterialInfo 형식으로 변환
+                from app.models.schema import MaterialInfo
+                material_infos = []
+                for mat_path in ko_materials:
+                    mat_info = MaterialInfo()
+                    mat_info.url = mat_path  # 로컬 파일 경로
+                    mat_info.provider = "local"
+                    material_infos.append(mat_info)
+                
+                eng_params['video_source'] = 'local'  # 로컬 소스 사용
+                eng_params['video_materials'] = material_infos
+                eng_params['use_segment_matching'] = False  # 이미 다운로드된 영상 사용
+            else:
+                logger.warning("⚠️ No materials found in Korean version, English version will download its own")
+            
             try:
                 if video_type == 'shorts':
                     eng_result = await self._process_shorts_video(eng_title, eng_params, youtube_service)

@@ -176,7 +176,7 @@ def generate_subtitle(task_id, params, video_script, sub_maker, audio_file):
     return subtitle_path
 
 
-def get_video_materials(task_id, params, video_terms, audio_duration, script=None):
+def get_video_materials(task_id, params, video_terms, audio_duration, video_script=None):
     if params.video_source == "local":
         logger.info("\n\n## preprocess local materials")
         if not params.video_materials:
@@ -193,23 +193,64 @@ def get_video_materials(task_id, params, video_terms, audio_duration, script=Non
             return None
         return [material_info.url for material_info in materials]
     else:
-        logger.info(f"\n\n## downloading videos from {params.video_source}")
-        downloaded_videos = material.download_videos(
-            task_id=task_id,
-            search_terms=video_terms,
-            source=params.video_source,
-            video_aspect=params.video_aspect,
-            video_contact_mode=params.video_concat_mode,
-            audio_duration=audio_duration * params.video_count,
-            max_clip_duration=params.video_clip_duration,
-        )
-        if not downloaded_videos:
-            sm.state.update_task(task_id, state=const.TASK_STATE_FAILED)
-            logger.error(
-                "failed to download videos, maybe the network is not available. if you are in China, please use a VPN."
+        # 세그먼트 기반 매칭 사용 여부 확인
+        use_segment_matching = getattr(params, 'use_segment_matching', True)  # 기본값 True로 복원
+        
+        if use_segment_matching and video_script:  # video_script가 있을 때만 세그먼트 매칭 사용
+            logger.info(f"\n\n## 🎯 Using segment-based video matching")
+            from app.services.script_segment_matcher import get_matcher
+            
+            # 대본을 세그먼트로 분할하고 각 세그먼트에 맞는 키워드 생성
+            matcher = get_matcher()
+            target_segment_count = getattr(params, 'target_segment_count', None)
+            segment_infos = matcher.match_segments_to_videos(
+                script=video_script,
+                video_duration=audio_duration,
+                target_segment_count=target_segment_count
             )
-            return None
-        return downloaded_videos
+            
+            # 세그먼트별로 영상 다운로드
+            segment_results = material.download_videos_by_segments(
+                task_id=task_id,
+                segment_infos=segment_infos,
+                source=params.video_source,
+                video_aspect=params.video_aspect,
+                max_clip_duration=params.video_clip_duration,
+            )
+            
+            # 세그먼트별 영상을 순서대로 합쳐서 반환
+            downloaded_videos = []
+            for seg_result in segment_results:
+                downloaded_videos.extend(seg_result['video_paths'])
+            
+            if not downloaded_videos:
+                logger.warning("⚠️ Segment-based matching failed, falling back to traditional method")
+                use_segment_matching = False
+            else:
+                logger.success(f"✅ Segment-based matching complete: {len(downloaded_videos)} videos")
+                # 세그먼트 정보는 로그로만 기록 (저장 기능은 선택적)
+                logger.debug(f"Segment results: {len(segment_results)} segments processed")
+                return downloaded_videos
+        
+        # 기존 방식 (폴백 또는 세그먼트 매칭 비활성화 시)
+        if not use_segment_matching:
+            logger.info(f"\n\n## downloading videos from {params.video_source} (traditional method)")
+            downloaded_videos = material.download_videos(
+                task_id=task_id,
+                search_terms=video_terms,
+                source=params.video_source,
+                video_aspect=params.video_aspect,
+                video_contact_mode=params.video_concat_mode,
+                audio_duration=audio_duration * params.video_count,
+                max_clip_duration=params.video_clip_duration,
+            )
+            if not downloaded_videos:
+                sm.state.update_task(task_id, state=const.TASK_STATE_FAILED)
+                logger.error(
+                    "failed to download videos, maybe the network is not available. if you are in China, please use a VPN."
+                )
+                return None
+            return downloaded_videos
 
 
 def generate_final_videos(

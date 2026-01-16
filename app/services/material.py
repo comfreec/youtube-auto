@@ -1,7 +1,7 @@
 import os
 import random
 import concurrent.futures
-from typing import List
+from typing import List, Dict
 from urllib.parse import urlencode
 
 import requests
@@ -632,3 +632,132 @@ if __name__ == "__main__":
     download_videos(
         "test123", ["Money Exchange Medium"], audio_duration=100, source="pixabay"
     )
+
+
+def download_videos_by_segments(
+    task_id: str,
+    segment_infos: List[Dict],
+    source: str = "pexels",
+    video_aspect: VideoAspect = VideoAspect.portrait,
+    max_clip_duration: int = 5,
+) -> List[Dict]:
+    """
+    세그먼트별로 배경영상 다운로드
+    
+    Args:
+        task_id: 작업 ID
+        segment_infos: 세그먼트 정보 리스트 [{'segment': str, 'keywords': List[str], 'duration': float}, ...]
+        source: 영상 소스 ('pexels' 또는 'pixabay')
+        video_aspect: 영상 비율
+        max_clip_duration: 최대 클립 길이
+        
+    Returns:
+        세그먼트별 영상 경로 리스트 [{'segment_index': int, 'video_paths': List[str], 'duration': float}, ...]
+    """
+    logger.info(f"\n\n## Downloading videos by segments: {len(segment_infos)} segments")
+    
+    search_videos = search_videos_pexels if source == "pexels" else search_videos_pixabay
+    material_directory = config.app.get("material_directory", "").strip()
+    if material_directory == "task":
+        material_directory = utils.task_dir(task_id)
+    elif material_directory and not os.path.isdir(material_directory):
+        material_directory = ""
+    
+    segment_results = []
+    
+    for seg_info in segment_infos:
+        seg_idx = seg_info['index']
+        keywords = seg_info['keywords']
+        required_duration = seg_info['duration']
+        
+        logger.info(f"\n📍 Segment {seg_idx + 1}/{len(segment_infos)}")
+        logger.info(f"   Keywords: {keywords}")
+        logger.info(f"   Required duration: {required_duration:.1f}s")
+        
+        # 이 세그먼트를 위한 영상 검색
+        valid_video_items = []
+        valid_video_urls = []
+        
+        for keyword in keywords:
+            logger.info(f"   🔍 Searching for: '{keyword}'")
+            
+            video_items = search_videos(
+                search_term=keyword,
+                minimum_duration=max_clip_duration,
+                video_aspect=video_aspect,
+            )
+            
+            if video_items:
+                logger.info(f"   ✅ Found {len(video_items)} videos for '{keyword}'")
+                # 중복 제거하며 추가
+                for item in video_items:
+                    if item.url not in valid_video_urls:
+                        valid_video_items.append(item)
+                        valid_video_urls.append(item.url)
+                
+                # 충분한 영상을 찾았으면 중단
+                total_found_duration = sum(min(item.duration, max_clip_duration) for item in valid_video_items)
+                if total_found_duration >= required_duration * 1.5:  # 1.5배 여유
+                    break
+            else:
+                logger.warning(f"   ❌ No videos found for '{keyword}'")
+        
+        # 영상이 없으면 번역 시도
+        if not valid_video_items:
+            logger.warning(f"   ⚠️ No videos found for segment {seg_idx + 1}, trying translation...")
+            try:
+                from app.services import llm
+                for keyword in keywords:
+                    translated = llm.translate_to_english(keyword)
+                    if translated and translated != keyword:
+                        logger.info(f"   🌐 Translated '{keyword}' to '{translated}'")
+                        video_items = search_videos(
+                            search_term=translated,
+                            minimum_duration=max_clip_duration,
+                            video_aspect=video_aspect,
+                        )
+                        if video_items:
+                            for item in video_items:
+                                if item.url not in valid_video_urls:
+                                    valid_video_items.append(item)
+                                    valid_video_urls.append(item.url)
+                            break
+            except Exception as e:
+                logger.error(f"   ❌ Translation failed: {e}")
+        
+        # 영상 다운로드
+        video_paths = []
+        total_duration = 0.0
+        
+        # 랜덤 셔플로 다양성 확보
+        random.shuffle(valid_video_items)
+        
+        for item in valid_video_items:
+            if total_duration >= required_duration:
+                break
+            
+            try:
+                logger.info(f"   📥 Downloading: {item.url}")
+                path = save_video(video_url=item.url, save_dir=material_directory)
+                if path:
+                    video_paths.append(path)
+                    clip_duration = min(max_clip_duration, item.duration)
+                    total_duration += clip_duration
+                    logger.info(f"   ✅ Saved: {path} ({clip_duration}s)")
+            except Exception as e:
+                logger.error(f"   ❌ Download failed: {e}")
+        
+        segment_result = {
+            'segment_index': seg_idx,
+            'segment_text': seg_info['segment'],
+            'keywords': keywords,
+            'video_paths': video_paths,
+            'required_duration': required_duration,
+            'actual_duration': total_duration
+        }
+        segment_results.append(segment_result)
+        
+        logger.info(f"   📊 Segment {seg_idx + 1} complete: {len(video_paths)} videos, {total_duration:.1f}s/{required_duration:.1f}s")
+    
+    logger.success(f"\n✅ All segments processed: {len(segment_results)} segments")
+    return segment_results
