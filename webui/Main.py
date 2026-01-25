@@ -1158,6 +1158,38 @@ if "video_terms" not in st.session_state:
 if "ui_language" not in st.session_state:
     st.session_state["ui_language"] = config.ui.get("language", system_locale)
 
+# 쇼츠 최적화 기본 설정 적용 (페이지 첫 로드 시)
+if "shorts_optimization_applied" not in st.session_state:
+    # 쇼츠 최적화 설정 자동 적용
+    if config.app.get("pexels_api_keys"):
+        st.session_state["settings_video_source"] = 0
+    elif config.app.get("pixabay_api_keys"):
+        st.session_state["settings_video_source"] = 1
+    else:
+        st.session_state["settings_video_source"] = 2
+    
+    st.session_state["settings_video_aspect"] = 0  # Portrait
+    st.session_state["settings_video_concat"] = 0  # Sequential - 자막과 영상 매칭
+    st.session_state["settings_video_transition"] = 1  # Shuffle
+    st.session_state["settings_clip_duration"] = 3
+    st.session_state["settings_video_count"] = 1
+    st.session_state["settings_voice_rate"] = 1.3  # 초고속 템포
+    st.session_state["settings_voice_volume"] = 1.0
+    st.session_state["settings_bgm_type"] = 1
+    st.session_state["settings_bgm_volume"] = 0.05
+    st.session_state["settings_subtitle_enabled"] = True
+    st.session_state["settings_subtitle_position"] = 2
+    st.session_state["settings_font_color"] = "#FFFFFF"
+    st.session_state["settings_stroke_color"] = "#000000"
+    st.session_state["settings_font_size"] = 50
+    st.session_state["settings_stroke_width"] = 3.0
+    
+    config.ui["font_size"] = 50
+    config.ui["text_fore_color"] = "#FFFFFF"
+    
+    # 한 번만 적용되도록 플래그 설정
+    st.session_state["shorts_optimization_applied"] = True
+
 # 로케일 로드 (유지)
 locales = utils.load_locales(i18n_dir)
 
@@ -1293,9 +1325,8 @@ params = VideoParams(video_subject="")
 uploaded_files = None
 
 # Premium Tab Design
-tab_main, tab_animation, tab_settings, tab_analytics = st.tabs([
-    "🎬 영상 생성",
-    "🎨 AI 애니메이션",
+tab_main, tab_settings, tab_analytics = st.tabs([
+    "🎬 영상 생성", 
     "⚙️ 고급 설정", 
     "📊 분석 & 관리"
 ])
@@ -1530,11 +1561,11 @@ with tab_main:
                     st.session_state["settings_video_source"] = 2
                 
                 st.session_state["settings_video_aspect"] = 0  # Portrait
-                st.session_state["settings_video_concat"] = 1  # Random
+                st.session_state["settings_video_concat"] = 0  # Sequential - 자막과 영상 매칭
                 st.session_state["settings_video_transition"] = 1  # Shuffle
                 st.session_state["settings_clip_duration"] = 3
                 st.session_state["settings_video_count"] = 1
-                st.session_state["settings_voice_rate"] = 1.2
+                st.session_state["settings_voice_rate"] = 1.3
                 st.session_state["settings_voice_volume"] = 1.0
                 st.session_state["settings_bgm_type"] = 1
                 st.session_state["settings_bgm_volume"] = 0.05
@@ -1549,7 +1580,7 @@ with tab_main:
                 config.ui["text_fore_color"] = "#FFFFFF"
                 
                 st.success("✅ 쇼츠 최적화 설정 완료!")
-                st.info("📱 9:16 세로 비율, 빠른 템포, 큰 자막으로 설정되었습니다")
+                st.info("📱 9:16 세로 비율, 초고속 템포(1.3배속), 큰 자막, 자막-영상 매칭으로 설정되었습니다")
                 time.sleep(1)
                 st.rerun()
             
@@ -2205,9 +2236,7 @@ with tab_main:
                             font_size=params.font_size,
                             stroke_color=params.stroke_color,
                             stroke_width=params.stroke_width,
-                            n_threads=params.n_threads,
-                            use_segment_matching=True,  # 세그먼트 기반 배경영상 매칭 활성화
-                            target_segment_count=None  # 자동 계산
+                            n_threads=params.n_threads
                         )
                         
                         # Add longform-specific attributes
@@ -3697,9 +3726,7 @@ def generate_single_video(title: str, video_type: str, language: str, duration: 
             'font_size': 60,
             'stroke_width': 1.5,
             'n_threads': 2,
-            'paragraph_number': 1 if video_type == 'shorts' else 4,
-            'use_segment_matching': True,  # 세그먼트 기반 배경영상 매칭 활성화
-            'target_segment_count': None  # 자동 계산
+            'paragraph_number': 1 if video_type == 'shorts' else 4
         }
         
         params = VideoParams(**params_dict)
@@ -4053,7 +4080,7 @@ def generate_single_video(title: str, video_type: str, language: str, duration: 
                                     st.error("❌ 인증 필요 (설정에서 YouTube 인증을 완료해주세요)")
                                     st.session_state[f"upload_requested_{i}"] = False
 
-# --- TAB 4: ANALYTICS & MANAGEMENT ---
+# --- TAB 3: ANALYTICS & MANAGEMENT ---
 with tab_analytics:
     st.markdown("### 📊 **영상 분석 & 관리**")
     
@@ -4170,222 +4197,7 @@ with tab_analytics:
                 except Exception as e:
                     st.error(f"복원 실패: {e}")
 
-# --- TAB 2: AI ANIMATION ---
-with tab_animation:
-    st.markdown("### 🎨 **AI 애니메이션 영상 생성**")
-    st.markdown("*AI가 생성한 이미지로 독특한 애니메이션 영상을 만드세요*")
-    
-    st.markdown("""
-    <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); 
-                padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem;">
-        <h4 style="color: #667eea; margin-bottom: 0.5rem;">✨ AI 애니메이션이란?</h4>
-        <p style="margin: 0; color: #a0a0a0;">
-            픽셀즈 영상 대신 <strong>AI가 생성한 이미지</strong>를 사용하여 애니메이션 영상을 만듭니다.<br>
-            대본의 각 장면마다 AI가 이미지를 생성하고, 줌/팬 효과를 추가하여 역동적인 영상을 제작합니다.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Animation Video Configuration
-    with st.container(border=True):
-        st.markdown("#### 📝 **영상 기획**")
-        
-        anim_subject = st.text_input(
-            "영상 주제",
-            placeholder="예: 우주 여행의 신비로운 세계",
-            key="anim_subject",
-            help="AI가 이 주제를 바탕으로 대본과 이미지를 생성합니다"
-        )
-        
-        col_anim1, col_anim2 = st.columns(2)
-        with col_anim1:
-            anim_style = st.selectbox(
-                "🎨 이미지 스타일",
-                options=[
-                    "cinematic (영화 같은)",
-                    "anime (애니메이션)",
-                    "cartoon (만화)",
-                    "realistic (사실적)",
-                    "fantasy (판타지)",
-                    "scifi (공상과학)"
-                ],
-                key="anim_style",
-                help="생성될 이미지의 스타일을 선택하세요"
-            )
-            anim_style_value = anim_style.split(" ")[0]
-        
-        with col_anim2:
-            anim_segment_count = st.number_input(
-                "🎬 장면 개수",
-                min_value=3,
-                max_value=10,
-                value=5,
-                key="anim_segment_count",
-                help="생성할 이미지/장면의 개수"
-            )
-        
-        col_anim3, col_anim4 = st.columns(2)
-        with col_anim3:
-            anim_duration = st.number_input(
-                "⏱️ 장면당 시간 (초)",
-                min_value=3.0,
-                max_value=10.0,
-                value=5.0,
-                step=0.5,
-                key="anim_duration",
-                help="각 장면이 표시되는 시간"
-            )
-        
-        with col_anim4:
-            anim_aspect = st.selectbox(
-                "📐 영상 비율",
-                options=["9:16 (쇼츠)", "16:9 (일반)"],
-                key="anim_aspect"
-            )
-            anim_aspect_value = "9:16" if "9:16" in anim_aspect else "16:9"
-    
-    # Voice and Subtitle Settings
-    with st.container(border=True):
-        st.markdown("#### 🎤 **음성 및 자막 설정**")
-        
-        col_voice1, col_voice2 = st.columns(2)
-        with col_voice1:
-            anim_voice = st.selectbox(
-                "🎙️ 음성 선택",
-                options=["casual (캐주얼)", "professional (전문적)", "friendly (친근한)"],
-                key="anim_voice"
-            )
-            anim_voice_value = anim_voice.split(" ")[0]
-        
-        with col_voice2:
-            anim_subtitle = st.checkbox(
-                "📝 자막 활성화",
-                value=True,
-                key="anim_subtitle"
-            )
-        
-        anim_bgm = st.selectbox(
-            "🎵 배경음악",
-            options=["random (랜덤)", "none (없음)"],
-            key="anim_bgm"
-        )
-        anim_bgm_value = anim_bgm.split(" ")[0]
-    
-    # Generate Button
-    st.markdown("---")
-    if st.button("🎨 AI 애니메이션 영상 생성", use_container_width=True, type="primary", key="generate_animation"):
-        if not anim_subject:
-            st.error("❌ 영상 주제를 입력해주세요")
-        else:
-            with st.spinner("🎨 AI 애니메이션 영상 생성 중..."):
-                try:
-                    from uuid import uuid4
-                    from app.models.schema import VideoParams
-                    from app.services import task as tm, llm
-                    from app.services.animation_video_generator import generate_animation_materials
-                    
-                    task_id = str(uuid4())
-                    
-                    # 1. 대본 생성
-                    st.info("📝 대본 생성 중...")
-                    script = llm.generate_script(
-                        video_subject=anim_subject,
-                        language="ko-KR",
-                        paragraph_number=anim_segment_count
-                    )
-                    
-                    if not script:
-                        st.error("❌ 대본 생성 실패")
-                        st.stop()
-                    
-                    st.success(f"✅ 대본 생성 완료")
-                    with st.expander("📄 생성된 대본 보기"):
-                        st.text(script)
-                    
-                    # 2. AI 이미지 생성 및 애니메이션 변환
-                    st.info(f"🎨 {anim_segment_count}개의 AI 이미지 생성 및 애니메이션 변환 중...")
-                    animation_materials = generate_animation_materials(
-                        script=script,
-                        segment_count=anim_segment_count,
-                        style=anim_style_value,
-                        duration_per_segment=anim_duration,
-                        aspect_ratio=anim_aspect_value
-                    )
-                    
-                    if not animation_materials:
-                        st.error("❌ 애니메이션 생성 실패")
-                        st.stop()
-                    
-                    st.success(f"✅ {len(animation_materials)}개의 애니메이션 생성 완료")
-                    
-                    # 3. VideoParams 설정 (일반 영상과 동일, 배경영상만 애니메이션 사용)
-                    st.info("🎬 최종 영상 생성 중 (음성, 자막, 배경음악 추가)...")
-                    
-                    # params 객체 복사 (일반 영상 설정 사용)
-                    anim_params = params.copy()
-                    
-                    # 애니메이션 전용 설정
-                    anim_params.video_subject = anim_subject
-                    anim_params.video_script = script
-                    anim_params.voice_name = anim_voice_value
-                    anim_params.bgm_type = anim_bgm_value
-                    anim_params.subtitle_enabled = anim_subtitle
-                    anim_params.video_aspect = VideoAspect(anim_aspect_value)
-                    
-                    # 배경영상을 AI 애니메이션으로 설정
-                    anim_params.video_source = 'local'
-                    anim_params.video_materials = animation_materials
-                    anim_params.use_segment_matching = False  # 이미 생성된 애니메이션 사용
-                    
-                    # 4. 일반 영상 생성 로직 사용
-                    tm.start(task_id, anim_params, stop_at="video")
-                    
-                    # 5. 생성된 파일 찾기
-                    task_dir = utils.task_dir(task_id)
-                    import glob
-                    
-                    video_patterns = [
-                        os.path.join(task_dir, "final-*.mp4"),
-                        os.path.join(task_dir, "combined-*.mp4"),
-                        os.path.join(task_dir, "*.mp4")
-                    ]
-                    
-                    video_file = None
-                    for pattern in video_patterns:
-                        files = glob.glob(pattern)
-                        if files:
-                            video_file = files[0]
-                            break
-                    
-                    if video_file:
-                        st.success("✅ AI 애니메이션 영상 생성 완료!")
-                        
-                        # 영상 미리보기
-                        st.video(video_file)
-                        
-                        # 다운로드 버튼
-                        with open(video_file, "rb") as f:
-                            st.download_button(
-                                label="📥 영상 다운로드",
-                                data=f,
-                                file_name=f"ai_animation_{task_id}.mp4",
-                                mime="video/mp4",
-                                use_container_width=True
-                            )
-                    else:
-                        st.error("❌ 영상 파일을 찾을 수 없습니다")
-                        st.warning(f"🔍 태스크 디렉토리: {task_dir}")
-                        all_files = glob.glob(os.path.join(task_dir, "*"))
-                        if all_files:
-                            st.info(f"📁 디렉토리 내 파일들: {[os.path.basename(f) for f in all_files]}")
-                    
-                except Exception as e:
-                    st.error(f"❌ 영상 생성 실패: {e}")
-                    logger.error(f"Animation video generation failed: {e}")
-                    import traceback
-                    st.code(traceback.format_exc())
-
-# --- TAB 3: SETTINGS (Enhanced) ---
+# --- TAB 2: SETTINGS (Enhanced) ---
 with tab_settings:
     st.markdown("### ⚙️ **고급 설정 및 커스터마이징**")
     st.markdown("*전문가급 영상을 위한 세밀한 설정을 조정하세요*")
@@ -4541,6 +4353,7 @@ with tab_settings:
                 ("🔵 Azure TTS V2", "azure-tts-v2"),
                 ("🚀 SiliconFlow TTS", "siliconflow"),
                 ("🤖 Google Gemini TTS", "gemini-tts"),
+                ("🆓 Google TTS (무료, 고품질)", "gtts"),
             ]
 
             saved_tts_server = config.ui.get("tts_server", "azure-tts-v1")
@@ -4567,6 +4380,8 @@ with tab_settings:
                 filtered_voices = voice.get_siliconflow_voices()
             elif selected_tts_server == "gemini-tts":
                 filtered_voices = voice.get_gemini_voices()
+            elif selected_tts_server == "gtts":
+                filtered_voices = voice.get_gtts_voices()
             else:
                 all_voices = voice.get_all_azure_voices(filter_locals=["ko-KR"])
                 for v in all_voices:
@@ -5439,19 +5254,19 @@ if start_button:
                                 eng_subject = "Motivational Content"
                         eng_params.video_subject = eng_subject
                     
-                    # 영어 음성 설정 - 더 다양한 옵션 제공
+                    # 영어 음성 설정 - gTTS 우선, Azure TTS 폴백
                     english_voices = [
-                        "en-US-AndrewNeural",      # 남성, 자연스러운 목소리
-                        "en-US-BrianNeural",       # 남성, 깊은 목소리  
-                        "en-US-ChristopherNeural", # 남성, 전문적인 목소리
-                        "en-US-AriaNeural",        # 여성, 친근한 목소리
-                        "en-US-JennyNeural",       # 여성, 명확한 목소리
-                        "en-US-MichelleNeural"     # 여성, 따뜻한 목소리
+                        "gtts:en-English",             # 무료 Google TTS (영어)
+                        "en-US-AndrewNeural",          # 남성, 자연스러운 목소리
+                        "en-US-BrianNeural",           # 남성, 깊은 목소리  
+                        "en-US-ChristopherNeural",     # 남성, 전문적인 목소리
+                        "en-US-AriaNeural",            # 여성, 친근한 목소리
+                        "en-US-JennyNeural",           # 여성, 명확한 목소리
+                        "en-US-MichelleNeural"         # 여성, 따뜻한 목소리
                     ]
                     
-                    # 랜덤하게 영어 음성 선택 (다양성 제공)
-                    import random
-                    selected_voice = random.choice(english_voices)
+                    # gTTS 영어 음성을 우선 사용 (할당량 절약)
+                    selected_voice = "gtts:en-English"  # 기본적으로 무료 gTTS 사용
                     eng_params.voice_name = selected_voice
                     eng_params.video_language = "en-US"
                     
@@ -5482,7 +5297,7 @@ if start_button:
                     
                     st.success(f"✅ 글로벌 버전 준비 완료!")
                     st.info(f"📝 영어 주제: {eng_subject}")
-                    st.info(f"🎵 영어 음성: {selected_voice.replace('Neural', '').replace('en-US-', '')}")
+                    st.info(f"🎵 영어 음성: Google TTS (무료)")
                     st.info(f"🏷️ 영어 키워드: {eng_params.video_terms[:50]}{'...' if len(eng_params.video_terms) > 50 else ''}")
                 else:
                     st.warning("⚠️ 모든 영어 버전 생성 방법이 실패하여 글로벌 버전 생성을 건너뜁니다")

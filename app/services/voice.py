@@ -12,6 +12,9 @@ from edge_tts.submaker import mktimestamp
 from loguru import logger
 from moviepy.video.tools import subtitles
 from moviepy.audio.io.AudioFileClip import AudioFileClip
+from gtts import gTTS
+import tempfile
+import time
 
 from app.config import config
 from app.utils import utils
@@ -73,6 +76,80 @@ def get_gemini_voices() -> list[str]:
     return [
         f"gemini:{voice}-{gender}"
         for voice, gender in voices_with_gender
+    ]
+
+
+def get_gtts_voices() -> list[str]:
+    """
+    Google TTS(gTTS) 음성 목록 반환
+    
+    Returns:
+        음성 목록, 형식: ["gtts:ko-KR-한국어", "gtts:en-US-English", ...]
+    """
+    # gTTS 지원 언어 목록 (주요 언어들)
+    voices_with_lang = [
+        ("ko", "한국어"),
+        ("en", "English"),
+        ("ja", "日本語"),
+        ("zh", "中文"),
+        ("es", "Español"),
+        ("fr", "Français"),
+        ("de", "Deutsch"),
+        ("it", "Italiano"),
+        ("pt", "Português"),
+        ("ru", "Русский"),
+        ("ar", "العربية"),
+        ("hi", "हिन्दी"),
+        ("th", "ไทย"),
+        ("vi", "Tiếng Việt"),
+        ("id", "Bahasa Indonesia"),
+        ("ms", "Bahasa Melayu"),
+        ("tr", "Türkçe"),
+        ("pl", "Polski"),
+        ("nl", "Nederlands"),
+        ("sv", "Svenska"),
+        ("da", "Dansk"),
+        ("no", "Norsk"),
+        ("fi", "Suomi"),
+        ("cs", "Čeština"),
+        ("sk", "Slovenčina"),
+        ("hu", "Magyar"),
+        ("ro", "Română"),
+        ("bg", "Български"),
+        ("hr", "Hrvatski"),
+        ("sr", "Српски"),
+        ("sl", "Slovenščina"),
+        ("et", "Eesti"),
+        ("lv", "Latviešu"),
+        ("lt", "Lietuvių"),
+        ("mt", "Malti"),
+        ("cy", "Cymraeg"),
+        ("ga", "Gaeilge"),
+        ("is", "Íslenska"),
+        ("mk", "Македонски"),
+        ("sq", "Shqip"),
+        ("eu", "Euskera"),
+        ("gl", "Galego"),
+        ("ca", "Català"),
+        ("af", "Afrikaans"),
+        ("sw", "Kiswahili"),
+        ("bn", "বাংলা"),
+        ("gu", "ગુજરાતી"),
+        ("kn", "ಕನ್ನಡ"),
+        ("ml", "മലയാളം"),
+        ("ta", "தமிழ்"),
+        ("te", "తెలుగు"),
+        ("ur", "اردو"),
+        ("ne", "नेपाली"),
+        ("si", "සිංහල"),
+        ("my", "မြန်မာ"),
+        ("km", "ខ្មែរ"),
+        ("lo", "ລາວ"),
+    ]
+    
+    return [
+        f"gtts:{lang}-{name}"
+        for lang, name in voices_with_lang
     ]
 
 
@@ -1150,38 +1227,81 @@ def tts(
     processed_text = preprocess_tts_text(text)
     logger.info(f"TTS 텍스트 전처리: '{text[:50]}...' -> '{processed_text[:50]}...'")
     
-    if is_azure_v2_voice(voice_name):
-        return azure_tts_v2(processed_text, voice_name, voice_file)
-    elif is_siliconflow_voice(voice_name):
-        # 从voice_name中提取模型和声音
-        # 格式: siliconflow:model:voice-Gender
-        parts = voice_name.split(":")
-        if len(parts) >= 3:
-            model = parts[1]
-            # 移除性别后缀，例如 "alex-Male" -> "alex"
-            voice_with_gender = parts[2]
-            voice = voice_with_gender.split("-")[0]
-            # 构建完整的voice参数，格式为 "model:voice"
-            full_voice = f"{model}:{voice}"
-            return siliconflow_tts(
-                processed_text, model, full_voice, voice_rate, voice_file, voice_volume
-            )
-        else:
-            logger.error(f"Invalid siliconflow voice name format: {voice_name}")
+    # TTS 폴백 시스템: 기존 TTS 먼저 시도, 실패 시 gTTS로 전환
+    def try_primary_tts():
+        """기존 TTS 서비스 시도"""
+        try:
+            if is_azure_v2_voice(voice_name):
+                return azure_tts_v2(processed_text, voice_name, voice_file)
+            elif is_siliconflow_voice(voice_name):
+                # 从voice_name中提取模型和声音
+                # 格式: siliconflow:model:voice-Gender
+                parts = voice_name.split(":")
+                if len(parts) >= 3:
+                    model = parts[1]
+                    # 移除性别后缀，例如 "alex-Male" -> "alex"
+                    voice_with_gender = parts[2]
+                    voice = voice_with_gender.split("-")[0]
+                    # 构建完整的voice参数，格式为 "model:voice"
+                    full_voice = f"{model}:{voice}"
+                    return siliconflow_tts(
+                        processed_text, model, full_voice, voice_rate, voice_file, voice_volume
+                    )
+                else:
+                    logger.error(f"Invalid siliconflow voice name format: {voice_name}")
+                    return None
+            elif is_gemini_voice(voice_name):
+                # 从voice_name中提取声音名称
+                # 格式: gemini:voice-Gender
+                parts = voice_name.split(":")
+                if len(parts) >= 2:
+                    # 移除性别后缀，例如 "Zephyr-Female" -> "Zephyr"
+                    voice_with_gender = parts[1]
+                    voice = voice_with_gender.split("-")[0]
+                    return gemini_tts(processed_text, voice, voice_rate, voice_file, voice_volume)
+                else:
+                    logger.error(f"Invalid gemini voice name format: {voice_name}")
+                    return None
+            else:
+                return azure_tts_v1(processed_text, voice_name, voice_rate, voice_file)
+        except Exception as e:
+            logger.warning(f"Primary TTS failed: {str(e)}")
             return None
-    elif is_gemini_voice(voice_name):
-        # 从voice_name中提取声音名称
-        # 格式: gemini:voice-Gender
-        parts = voice_name.split(":")
-        if len(parts) >= 2:
-            # 移除性别后缀，例如 "Zephyr-Female" -> "Zephyr"
-            voice_with_gender = parts[1]
-            voice = voice_with_gender.split("-")[0]
-            return gemini_tts(processed_text, voice, voice_rate, voice_file, voice_volume)
-        else:
-            logger.error(f"Invalid gemini voice name format: {voice_name}")
+    
+    def try_fallback_gtts():
+        """폴백 gTTS 시도"""
+        try:
+            # 언어 감지 및 gTTS 음성 매핑
+            fallback_voice = "gtts:ko-한국어"  # 기본값
+            
+            # 기존 음성에서 언어 추출하여 적절한 gTTS 음성 선택
+            if "en-" in voice_name.lower() or "english" in voice_name.lower():
+                fallback_voice = "gtts:en-English"
+            elif "ja-" in voice_name.lower() or "japanese" in voice_name.lower():
+                fallback_voice = "gtts:ja-日本語"
+            elif "zh-" in voice_name.lower() or "chinese" in voice_name.lower():
+                fallback_voice = "gtts:zh-中文"
+            elif "ko-" in voice_name.lower() or "korean" in voice_name.lower():
+                fallback_voice = "gtts:ko-한국어"
+            
+            logger.info(f"Falling back to gTTS: {fallback_voice}")
+            return gtts_synthesize(processed_text, fallback_voice, voice_file)
+        except Exception as e:
+            logger.error(f"Fallback gTTS also failed: {str(e)}")
             return None
-    return azure_tts_v1(processed_text, voice_name, voice_rate, voice_file)
+    
+    # gTTS 음성인 경우 직접 처리
+    if is_gtts_voice(voice_name):
+        return gtts_synthesize(processed_text, voice_name, voice_file)
+    
+    # 기존 TTS 먼저 시도
+    result = try_primary_tts()
+    if result is not None:
+        return result
+    
+    # 기존 TTS 실패 시 gTTS로 폴백
+    logger.warning(f"Primary TTS failed for voice '{voice_name}', trying gTTS fallback...")
+    return try_fallback_gtts()
 
 
 def convert_rate_to_percent(rate: float) -> str:
@@ -1722,14 +1842,17 @@ def _get_audio_duration_from_mp3(mp3_file: str) -> float:
         logger.error(f"Failed to get audio duration from MP3: {str(e)}")
         return 0.0
 
-def get_audio_duration( target: Union[str, submaker.SubMaker]) -> float:
+def get_audio_duration(target: Union[str, submaker.SubMaker, 'GTTSSubMaker']) -> float:
     """
     获取音频时长
     如果是SubMaker对象，则从SubMaker中获取时长
+    如果是GTTSSubMaker对象，则从GTTSSubMaker中获取时长
     如果是MP3文件，则从MP3文件中获取时长
     """
     if isinstance(target, submaker.SubMaker):
         return _get_audio_duration_from_submaker(target)
+    elif hasattr(target, 'offset') and hasattr(target, 'subs'):  # GTTSSubMaker 객체
+        return get_audio_duration_gtts(target)
     elif isinstance(target, str) and target.endswith(".mp3"):
         return _get_audio_duration_from_mp3(target)
     else:
@@ -1805,3 +1928,125 @@ if __name__ == "__main__":
         loop.run_until_complete(_do())
     finally:
         loop.close()
+
+
+class GTTSSubMaker:
+    """gTTS용 SubMaker 클래스 - edge_tts SubMaker와 호환"""
+    
+    def __init__(self):
+        self.offset = []
+        self.subs = []
+        
+    def create_sub(self, text: str, audio_duration: float):
+        """텍스트와 오디오 길이를 기반으로 자막 생성"""
+        sentences = utils.split_string_by_punctuations(text)
+        if not sentences:
+            return
+            
+        # 각 문장의 길이에 비례하여 시간 할당
+        total_chars = sum(len(s.strip()) for s in sentences)
+        if total_chars == 0:
+            return
+            
+        current_time = 0.0
+        
+        for sentence in sentences:
+            sentence = sentence.strip()
+            if not sentence:
+                continue
+                
+            # 문장 길이에 비례한 시간 계산
+            sentence_duration = (len(sentence) / total_chars) * audio_duration
+            start_time = current_time
+            end_time = current_time + sentence_duration
+            
+            # offset 형식: (시작시간, 끝시간) - 10,000,000 단위 (100ns)
+            start_offset = int(start_time * 10000000)
+            end_offset = int(end_time * 10000000)
+            
+            self.offset.append((start_offset, end_offset))
+            self.subs.append(sentence)
+            
+            current_time = end_time
+
+
+def is_gtts_voice(voice_name: str) -> bool:
+    """gTTS 음성인지 확인"""
+    return voice_name.startswith("gtts:")
+
+
+def gtts_synthesize(text: str, voice_name: str, voice_file: str) -> Union[GTTSSubMaker, None]:
+    """
+    gTTS를 사용하여 음성 합성
+    
+    Args:
+        text: 합성할 텍스트
+        voice_name: 음성 이름 (예: "gtts:ko-한국어")
+        voice_file: 출력 음성 파일 경로
+        
+    Returns:
+        GTTSSubMaker 객체 또는 None
+    """
+    try:
+        # voice_name에서 언어 코드 추출 (예: "gtts:ko-한국어" -> "ko")
+        if not voice_name.startswith("gtts:"):
+            logger.error(f"Invalid gTTS voice name: {voice_name}")
+            return None
+            
+        lang_part = voice_name.replace("gtts:", "").split("-")[0]
+        
+        # 텍스트 전처리
+        text = text.strip()
+        if not text:
+            logger.error("Empty text for gTTS synthesis")
+            return None
+            
+        logger.info(f"gTTS synthesis started - Language: {lang_part}, Text length: {len(text)}")
+        
+        # gTTS 객체 생성 및 음성 합성
+        tts = gTTS(text=text, lang=lang_part, slow=False)
+        
+        # 임시 파일에 저장 후 최종 파일로 이동
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as temp_file:
+            temp_path = temp_file.name
+            
+        tts.save(temp_path)
+        
+        # 파일 이동
+        import shutil
+        shutil.move(temp_path, voice_file)
+        
+        # 오디오 길이 측정
+        audio_duration = _get_audio_duration_from_mp3(voice_file)
+        logger.info(f"gTTS synthesis completed - Duration: {audio_duration}s")
+        
+        # SubMaker 객체 생성
+        sub_maker = GTTSSubMaker()
+        sub_maker.create_sub(text, audio_duration)
+        
+        return sub_maker
+        
+    except Exception as e:
+        logger.error(f"gTTS synthesis failed: {str(e)}")
+        return None
+
+
+def get_audio_duration_gtts(target: Union[str, GTTSSubMaker]) -> float:
+    """
+    gTTS용 오디오 길이 가져오기
+    
+    Args:
+        target: 파일 경로 또는 GTTSSubMaker 객체
+        
+    Returns:
+        오디오 길이 (초)
+    """
+    if isinstance(target, GTTSSubMaker):
+        if target.offset:
+            return target.offset[-1][1] / 10000000
+        return 0.0
+    elif isinstance(target, str):
+        return _get_audio_duration_from_mp3(target)
+    else:
+        return 0.0
+
