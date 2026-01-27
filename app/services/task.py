@@ -143,6 +143,34 @@ def generate_subtitle(task_id, params, video_script, sub_maker, audio_file):
         return ""
 
     subtitle_path = path.join(utils.task_dir(task_id), "subtitle.srt")
+    
+    # 영어 버전이고 한국어 task_id가 있는 경우 한국어 자막을 번역
+    if getattr(params, 'is_english_version', False) and getattr(params, 'korean_task_id', None):
+        korean_task_id = params.korean_task_id
+        korean_subtitle_path = path.join(utils.task_dir(korean_task_id), "subtitle.srt")
+        
+        logger.info(f"English version detected, translating Korean subtitle: {korean_subtitle_path}")
+        
+        if os.path.exists(korean_subtitle_path):
+            try:
+                from app.services import voice
+                success = voice.translate_subtitle_file(
+                    korean_subtitle_path=korean_subtitle_path,
+                    english_subtitle_path=subtitle_path,
+                    english_script=video_script
+                )
+                
+                if success and os.path.exists(subtitle_path):
+                    logger.info(f"Successfully translated Korean subtitle to English: {subtitle_path}")
+                    return subtitle_path
+                else:
+                    logger.warning("Subtitle translation failed, falling back to normal generation")
+            except Exception as e:
+                logger.error(f"Subtitle translation failed: {str(e)}, falling back to normal generation")
+        else:
+            logger.warning(f"Korean subtitle file not found: {korean_subtitle_path}, falling back to normal generation")
+    
+    # 기존 자막 생성 로직
     subtitle_provider = config.app.get("subtitle_provider", "edge").strip().lower()
     logger.info(f"\n\n## generating subtitle, provider: {subtitle_provider}")
 
@@ -151,6 +179,7 @@ def generate_subtitle(task_id, params, video_script, sub_maker, audio_file):
         subtitle_fallback = True
     else:
         if subtitle_provider == "edge":
+            from app.services import voice
             voice.create_subtitle(
                 text=video_script, sub_maker=sub_maker, subtitle_file=subtitle_path
             )
@@ -159,12 +188,27 @@ def generate_subtitle(task_id, params, video_script, sub_maker, audio_file):
                 logger.warning("subtitle file not found or empty, fallback to whisper")
 
     if subtitle_provider == "whisper" or subtitle_fallback:
-        # Whisper fallback disabled for stability
-        logger.warning("Whisper subtitle generation skipped to prevent system hang.")
-        return ""
-        # subtitle.create(audio_file=audio_file, subtitle_file=subtitle_path)
-        # logger.info("\n\n## correcting subtitle")
-        # subtitle.correct(subtitle_file=subtitle_path, video_script=video_script)
+        # Whisper fallback enabled for better subtitle generation
+        logger.info("Using Whisper for subtitle generation...")
+        try:
+            subtitle.create(audio_file=audio_file, subtitle_file=subtitle_path)
+            logger.info("\n\n## correcting subtitle")
+            subtitle.correct(subtitle_file=subtitle_path, video_script=video_script)
+        except Exception as e:
+            logger.error(f"Whisper subtitle generation failed: {str(e)}")
+            # Create simple subtitle from script as fallback
+            logger.info("Creating simple subtitle from script...")
+            try:
+                from app.services import voice
+                # Try to create subtitle using script timing estimation
+                voice.create_simple_subtitle_from_script(
+                    text=video_script, 
+                    subtitle_file=subtitle_path,
+                    audio_duration=None  # Will be calculated from audio file
+                )
+            except Exception as e2:
+                logger.error(f"Simple subtitle creation also failed: {str(e2)}")
+                return ""
 
     subtitle_lines = subtitle.file_to_subtitles(subtitle_path)
     if not subtitle_lines:
@@ -309,6 +353,53 @@ def generate_final_videos(
             output_file=final_video_path,
             params=params,
         )
+
+        # 쿠팡파트너스 오버레이 적용 (데이터가 있고 비어있지 않은 경우에만)
+        if (hasattr(params, 'coupang_overlay_data') and 
+            params.coupang_overlay_data is not None and 
+            isinstance(params.coupang_overlay_data, list) and 
+            len(params.coupang_overlay_data) > 0):
+            try:
+                from app.services.product_overlay import get_overlay_manager
+                from moviepy.editor import VideoFileClip
+                
+                logger.info(f"쿠팡파트너스 오버레이 적용 시작: {len(params.coupang_overlay_data)}개 제품")
+                sm.state.update_task(task_id, progress=_progress + 5, message=f"제품 오버레이 적용 중 ({index}/{params.video_count})...")
+                
+                overlay_manager = get_overlay_manager()
+                
+                # 영상 길이 확인
+                with VideoFileClip(final_video_path) as clip:
+                    video_duration = clip.duration
+                
+                # 오버레이가 적용된 영상 경로
+                overlay_output_path = path.join(utils.task_dir(task_id), f"final-{index}-overlay.mp4")
+                
+                # 오버레이 적용
+                result_path = overlay_manager.add_product_overlays_to_video(
+                    video_path=final_video_path,
+                    output_path=overlay_output_path,
+                    product_overlays=params.coupang_overlay_data,
+                    video_duration=video_duration
+                )
+                
+                # 오버레이가 성공적으로 적용되었으면 원본을 교체
+                if result_path != final_video_path and path.exists(result_path):
+                    import shutil
+                    shutil.move(result_path, final_video_path)
+                    logger.info(f"쿠팡파트너스 오버레이 적용 완료: {final_video_path}")
+                    sm.state.update_task(task_id, progress=_progress + 8, message=f"제품 오버레이 적용 완료 ({index}/{params.video_count})")
+                else:
+                    logger.warning(f"쿠팡파트너스 오버레이 적용 실패, 원본 영상 유지: {final_video_path}")
+                    
+            except Exception as e:
+                logger.error(f"쿠팡파트너스 오버레이 적용 중 오류: {str(e)}")
+                # 오류가 발생해도 원본 영상은 유지
+                sm.state.update_task(task_id, progress=_progress + 8, message=f"영상 {index} 준비 완료 (오버레이 적용 실패)")
+        else:
+            # 쿠팡 오버레이가 없는 경우 진행률 업데이트
+            logger.info("쿠팡파트너스 오버레이 없음 - 일반 영상으로 진행")
+            sm.state.update_task(task_id, progress=_progress + 8, message=f"영상 {index} 준비 완료")
 
         _progress += 50 / params.video_count / 2
         sm.state.update_task(task_id, progress=_progress, message=f"영상 {index} 준비 완료.")

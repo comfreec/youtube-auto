@@ -40,6 +40,151 @@ st.set_page_config(
     menu_items=None  # 완전히 메뉴 제거
 )
 
+# PWA 요소 추가
+def add_pwa_elements():
+    """PWA 요소를 HTML에 추가"""
+    pwa_html = """
+    <!-- PWA 메타 태그 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AI영상">
+    <meta name="application-name" content="AI영상">
+    <meta name="theme-color" content="#667eea">
+    
+    <!-- PWA 매니페스트 -->
+    <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiQUkg7JiB7IOB7IOd7ISxIiwic2hvcnRfbmFtZSI6IkFJ7JiB7IOBIiwiZGVzY3JpcHRpb24iOiJBSeuhnCDsnpDrj5kg7JiB7IOB7J2EIOyDneyEsO2VmOuKlCDrqqjrsJTsnbwg7JWxIiwic3RhcnRfdXJsIjoiLyIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMwZjBmMjMiLCJ0aGVtZV9jb2xvciI6IiM2NjdlZWEifQ==">
+    
+    <!-- PWA 설치 및 서비스 워커 JavaScript -->
+    <script>
+    // PWA 설치 프롬프트
+    let deferredPrompt;
+    
+    window.addEventListener('beforeinstallprompt', (e) => {
+        console.log('PWA 설치 프롬프트 준비됨');
+        e.preventDefault();
+        deferredPrompt = e;
+        showInstallButton();
+    });
+    
+    function showInstallButton() {
+        const installBanner = document.createElement('div');
+        installBanner.id = 'install-banner';
+        installBanner.innerHTML = `
+            <div style="
+                position: fixed; 
+                bottom: 20px; 
+                left: 20px; 
+                right: 20px; 
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                color: white; 
+                padding: 1rem; 
+                border-radius: 12px; 
+                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            ">
+                <div>
+                    <div style="font-weight: bold; margin-bottom: 0.25rem;">📱 앱으로 설치</div>
+                    <div style="font-size: 0.9rem; opacity: 0.9;">홈 화면에 추가하여 앱처럼 사용하세요!</div>
+                </div>
+                <div>
+                    <button onclick="installPWA()" style="
+                        background: rgba(255,255,255,0.2); 
+                        border: 1px solid rgba(255,255,255,0.3); 
+                        color: white; 
+                        padding: 0.5rem 1rem; 
+                        border-radius: 8px; 
+                        margin-right: 0.5rem;
+                        cursor: pointer;
+                    ">설치</button>
+                    <button onclick="closeInstallBanner()" style="
+                        background: transparent; 
+                        border: none; 
+                        color: white; 
+                        font-size: 1.2rem;
+                        cursor: pointer;
+                    ">×</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(installBanner);
+    }
+    
+    function installPWA() {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('PWA 설치 승인됨');
+                } else {
+                    console.log('PWA 설치 거부됨');
+                }
+                deferredPrompt = null;
+                closeInstallBanner();
+            });
+        }
+    }
+    
+    function closeInstallBanner() {
+        const banner = document.getElementById('install-banner');
+        if (banner) {
+            banner.remove();
+        }
+    }
+    
+    // 앱 설치 완료 감지
+    window.addEventListener('appinstalled', (evt) => {
+        console.log('PWA 설치 완료!');
+        closeInstallBanner();
+    });
+    
+    // 서비스 워커 등록 (간단 버전)
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            const swCode = `
+                const CACHE_NAME = 'ai-video-v1';
+                self.addEventListener('install', e => {
+                    console.log('SW 설치');
+                    self.skipWaiting();
+                });
+                self.addEventListener('activate', e => {
+                    console.log('SW 활성화');
+                    e.waitUntil(clients.claim());
+                });
+                self.addEventListener('fetch', e => {
+                    if (e.request.method === 'GET') {
+                        e.respondWith(
+                            caches.match(e.request).then(response => {
+                                return response || fetch(e.request);
+                            })
+                        );
+                    }
+                });
+            `;
+            
+            const blob = new Blob([swCode], { type: 'application/javascript' });
+            const swUrl = URL.createObjectURL(blob);
+            
+            navigator.serviceWorker.register(swUrl)
+                .then(registration => {
+                    console.log('서비스 워커 등록 성공');
+                })
+                .catch(error => {
+                    console.log('서비스 워커 등록 실패:', error);
+                });
+        });
+    }
+    </script>
+    """
+    st.markdown(pwa_html, unsafe_allow_html=True)
+
+# PWA 요소 추가
+add_pwa_elements()
+
 # IMMEDIATE MENU HIDING - 페이지 로딩 즉시 적용
 immediate_hide_css = """
 <style>
@@ -1173,8 +1318,10 @@ if "shorts_optimization_applied" not in st.session_state:
     st.session_state["settings_video_transition"] = 1  # Shuffle
     st.session_state["settings_clip_duration"] = 3
     st.session_state["settings_video_count"] = 1
-    st.session_state["settings_voice_rate"] = 1.3  # 초고속 템포
+    st.session_state["settings_voice_rate"] = 1.2  # 최적화된 템포
     st.session_state["settings_voice_volume"] = 1.0
+    st.session_state["settings_korean_speed_boost"] = 1.4  # 한국어 1.4배속
+    st.session_state["settings_english_speed_boost"] = 1.2  # 영어 1.2배속
     st.session_state["settings_bgm_type"] = 1
     st.session_state["settings_bgm_volume"] = 0.05
     st.session_state["settings_subtitle_enabled"] = True
@@ -1206,8 +1353,71 @@ with col_title:
 
 with col_status:
     st.markdown("### 🚀 시스템 상태")
-    st.success("✅ Gemini 2.5 Flash 활성화")
-    st.info("🔥 고속 생성 모드 준비완료")
+    
+    # 할당량 체크 상태 관리
+    if "quota_check_expanded" not in st.session_state:
+        st.session_state["quota_check_expanded"] = False
+    
+    # 할당량 체크 버튼
+    col_check_btn, col_close_btn = st.columns([0.7, 0.3])
+    
+    with col_check_btn:
+        if st.button("🔍 API 할당량 체크", use_container_width=True, key="quota_check_btn"):
+            st.session_state["quota_check_expanded"] = True
+    
+    with col_close_btn:
+        if st.session_state["quota_check_expanded"]:
+            if st.button("❌ 닫기", use_container_width=True, key="quota_close_btn"):
+                st.session_state["quota_check_expanded"] = False
+                st.rerun()
+    
+    # 할당량 정보 표시 (펼쳐진 상태일 때만)
+    if st.session_state["quota_check_expanded"]:
+        with st.spinner("API 할당량 확인 중..."):
+            try:
+                from app.services import llm
+                quota_status = llm.check_api_quota_status()
+                
+                st.markdown("#### 📊 API 할당량 상태")
+                
+                # Gemini API 키들 상태
+                st.markdown("**🤖 Gemini API 키 상태:**")
+                available_gemini = 0
+                for key_info in quota_status["gemini_keys"]:
+                    if key_info["available"]:
+                        available_gemini += 1
+                        st.success(f"키 #{key_info['key_num']}: {key_info['status']} ({key_info['key_preview']})")
+                    elif "미설정" in key_info["status"]:
+                        st.info(f"키 #{key_info['key_num']}: {key_info['status']}")
+                    else:
+                        st.error(f"키 #{key_info['key_num']}: {key_info['status']} ({key_info['key_preview']})")
+                
+                # DeepSeek API 키 상태
+                st.markdown("**🔧 DeepSeek API 키 상태:**")
+                deepseek_info = quota_status["deepseek_status"]
+                if deepseek_info["available"]:
+                    st.success(f"DeepSeek: {deepseek_info['status']} ({deepseek_info['key_preview']})")
+                elif "미설정" in deepseek_info["status"]:
+                    st.info(f"DeepSeek: {deepseek_info['status']}")
+                else:
+                    st.error(f"DeepSeek: {deepseek_info['status']} ({deepseek_info['key_preview']})")
+                
+                # 전체 요약
+                total_available = quota_status["total_available"]
+                if total_available > 0:
+                    st.success(f"✅ 총 {total_available}개 API 키 사용 가능")
+                    if available_gemini > 0:
+                        st.info(f"🤖 Gemini: {available_gemini}/5개 키 활성화")
+                else:
+                    st.error("❌ 사용 가능한 API 키가 없습니다!")
+                    st.warning("💡 config.toml에서 API 키를 설정하거나 할당량을 확인하세요")
+                
+            except Exception as e:
+                st.error(f"❌ 할당량 체크 실패: {str(e)}")
+    else:
+        # 기본 상태 표시 (접혀진 상태일 때)
+        st.success("✅ Gemini 2.5 Flash 활성화")
+        st.info("🔥 고속 생성 모드 준비완료")
 
 support_locales = [
     "ko-KR",
@@ -1565,8 +1775,10 @@ with tab_main:
                 st.session_state["settings_video_transition"] = 1  # Shuffle
                 st.session_state["settings_clip_duration"] = 3
                 st.session_state["settings_video_count"] = 1
-                st.session_state["settings_voice_rate"] = 1.3
+                st.session_state["settings_voice_rate"] = 1.2
                 st.session_state["settings_voice_volume"] = 1.0
+                st.session_state["settings_korean_speed_boost"] = 1.4  # 한국어 1.4배속
+                st.session_state["settings_english_speed_boost"] = 1.2  # 영어 1.2배속
                 st.session_state["settings_bgm_type"] = 1
                 st.session_state["settings_bgm_volume"] = 0.05
                 st.session_state["settings_subtitle_enabled"] = True
@@ -1580,7 +1792,7 @@ with tab_main:
                 config.ui["text_fore_color"] = "#FFFFFF"
                 
                 st.success("✅ 쇼츠 최적화 설정 완료!")
-                st.info("📱 9:16 세로 비율, 초고속 템포(1.3배속), 큰 자막, 자막-영상 매칭으로 설정되었습니다")
+                st.info("📱 9:16 세로 비율, 최적화된 템포(1.2배속), 큰 자막, 자막-영상 매칭으로 설정되었습니다")
                 time.sleep(1)
                 st.rerun()
             
@@ -1617,6 +1829,80 @@ with tab_main:
                     key="yt_auto_upload",
                     help="영상 생성 완료 후 자동으로 YouTube에 업로드합니다."
                 )
+            
+            # 쿠팡파트너스 섹션 추가
+            st.markdown("---")
+            st.markdown("#### 🛒 **쿠팡파트너스 연동**")
+            
+            col_coupang_enable, col_coupang_links = st.columns([0.3, 0.7])
+            
+            with col_coupang_enable:
+                enable_coupang = st.checkbox(
+                    "🛍️ 제품 오버레이 활성화",
+                    value=False,
+                    key="enable_coupang_overlay",
+                    help="영상에 쿠팡 제품 이미지를 오버레이로 추가합니다"
+                )
+            
+            with col_coupang_links:
+                if enable_coupang:
+                    coupang_links = st.text_area(
+                        "쿠팡 제품 링크 (한 줄에 하나씩)",
+                        placeholder="https://coupa.ng/xxxxx\nhttps://www.coupang.com/vp/products/xxxxx\n\n최대 3개까지 추가 가능합니다",
+                        height=100,
+                        key="coupang_links_input",
+                        help="쿠팡 제품 링크를 한 줄에 하나씩 입력하세요. 단축링크(coupa.ng)와 일반링크 모두 지원합니다."
+                    )
+                    
+                    # 링크 검증 및 미리보기
+                    if coupang_links.strip():
+                        links_list = [link.strip() for link in coupang_links.split('\n') if link.strip()]
+                        
+                        if len(links_list) > 3:
+                            st.warning("⚠️ 최대 3개까지만 처리됩니다. 처음 3개 링크만 사용됩니다.")
+                            links_list = links_list[:3]
+                        
+                        # 링크 형식 검증
+                        valid_links = []
+                        for link in links_list:
+                            if 'coupang.com' in link or 'coupa.ng' in link:
+                                valid_links.append(link)
+                            else:
+                                st.error(f"❌ 유효하지 않은 쿠팡 링크: {link}")
+                        
+                        if valid_links:
+                            st.success(f"✅ {len(valid_links)}개의 유효한 쿠팡 링크가 설정되었습니다")
+                            
+                            # 제품 정보 미리보기 (선택사항)
+                            if st.button("🔍 제품 정보 미리보기", key="preview_products"):
+                                with st.spinner("제품 정보를 가져오는 중..."):
+                                    try:
+                                        from app.services.coupang_partners import get_coupang_manager
+                                        coupang_manager = get_coupang_manager()
+                                        
+                                        for i, link in enumerate(valid_links[:2]):  # 최대 2개만 미리보기
+                                            product_info = coupang_manager.extract_product_info_from_coupang_url(link)
+                                            
+                                            col_preview_img, col_preview_info = st.columns([0.3, 0.7])
+                                            
+                                            with col_preview_img:
+                                                if product_info.get('image_url'):
+                                                    st.image(product_info['image_url'], width=100)
+                                                else:
+                                                    st.write("🖼️ 이미지 없음")
+                                            
+                                            with col_preview_info:
+                                                st.write(f"**{product_info.get('name', '제품명 없음')}**")
+                                                st.write(f"💰 {product_info.get('price', '가격 정보 없음')}")
+                                                st.write(f"⭐ {product_info.get('rating', '평점 정보 없음')}")
+                                            
+                                            if i < len(valid_links) - 1:
+                                                st.markdown("---")
+                                    
+                                    except Exception as e:
+                                        st.error(f"❌ 제품 정보 가져오기 실패: {str(e)}")
+                else:
+                    st.info("💡 제품 오버레이를 활성화하면 쿠팡 제품 링크를 추가할 수 있습니다")
             
             # Main generation button
             start_button = st.button(
@@ -4275,12 +4561,12 @@ with tab_settings:
             col_concat, col_trans = st.columns(2)
             with col_concat:
                 video_concat_modes = [
-                    ("📋 순차 연결", "sequential"),
-                    ("🎲 무작위 연결 (추천)", "random"),
+                    ("📋 순차 연결 (쇼츠 최적화)", "sequential"),
+                    ("🎲 무작위 연결", "random"),
                 ]
                 selected_index = st.selectbox(
                     "영상 연결 방식",
-                    index=1,
+                    index=0,
                     options=range(len(video_concat_modes)),
                     format_func=lambda x: video_concat_modes[x][0],
                     key="settings_video_concat"
@@ -4454,9 +4740,37 @@ with tab_settings:
                 params.voice_rate = st.selectbox(
                     "⚡ 음성 속도", 
                     options=[0.8, 0.9, 1.0, 1.1, 1.2, 1.3], 
-                    index=2, 
+                    index=5, 
                     key="settings_voice_rate",
-                    help="쇼츠용은 1.1~1.2 추천"
+                    help="쇼츠 최적화: 1.2배 속도 (최적화된 템포)"
+                )
+            
+            # 언어별 속도 미세 조정
+            st.markdown("##### 🌍 언어별 속도 미세 조정")
+            col_ko_speed, col_en_speed = st.columns(2)
+            
+            with col_ko_speed:
+                if "settings_korean_speed_boost" not in st.session_state:
+                    st.session_state["settings_korean_speed_boost"] = 1.4
+                
+                korean_speed = st.selectbox(
+                    "🇰🇷 한국어 추가 속도",
+                    options=[1.0, 1.1, 1.2, 1.3, 1.4, 1.5],
+                    index=5,  # 1.5 기본값
+                    key="settings_korean_speed_boost",
+                    help="한국어 gTTS는 느려서 1.5배속 추천"
+                )
+            
+            with col_en_speed:
+                if "settings_english_speed_boost" not in st.session_state:
+                    st.session_state["settings_english_speed_boost"] = 1.2
+                
+                english_speed = st.selectbox(
+                    "🇺🇸 영어 추가 속도",
+                    options=[1.0, 1.1, 1.2, 1.3, 1.4, 1.5],
+                    index=2,  # 1.2 기본값
+                    key="settings_english_speed_boost",
+                    help="영어도 1.2배속으로 쇼츠 최적화"
                 )
 
             st.markdown("#### 🎵 배경음악 설정")
@@ -5169,10 +5483,35 @@ if start_button:
     # Prepare generation tasks
     tasks_to_run = []
     
+    # 쿠팡파트너스 오버레이 데이터 준비
+    coupang_overlay_data = None
+    if st.session_state.get("enable_coupang_overlay", False):
+        coupang_links_input = st.session_state.get("coupang_links_input", "")
+        if coupang_links_input.strip():
+            try:
+                from app.services.coupang_partners import get_coupang_manager
+                
+                # 링크 파싱
+                links_list = [link.strip() for link in coupang_links_input.split('\n') if link.strip()]
+                valid_links = [link for link in links_list if 'coupang.com' in link or 'coupa.ng' in link][:3]
+                
+                if valid_links:
+                    st.info(f"🛒 {len(valid_links)}개 쿠팡 제품 정보 수집 중...")
+                    coupang_manager = get_coupang_manager()
+                    coupang_overlay_data = coupang_manager.create_product_overlay_data(valid_links)
+                    st.success(f"✅ 쿠팡 제품 오버레이 준비 완료!")
+                    
+            except Exception as e:
+                st.warning(f"⚠️ 쿠팡 제품 정보 수집 실패: {str(e)}")
+                st.info("💡 제품 오버레이 없이 영상을 생성합니다")
+                coupang_overlay_data = None
+    
     # Task 1: Korean (Original)
+    korean_params = params.copy()
+    korean_params.coupang_overlay_data = coupang_overlay_data  # 쿠팡 오버레이 데이터 추가
     tasks_to_run.append({
         "label": "🇰🇷 한국어 버전",
-        "params": params.copy(),
+        "params": korean_params,
         "icon": "🎬"
     })
     
@@ -5289,6 +5628,13 @@ if start_button:
                     except Exception:
                         eng_params.video_terms = "motivation, success, lifestyle, tips, guide, inspiration"
                     
+                    # 영어 버전에도 쿠팡 오버레이 데이터 추가
+                    eng_params.coupang_overlay_data = coupang_overlay_data
+                    
+                    # 영어 버전임을 표시하고 한국어 자막 경로 전달
+                    eng_params.is_english_version = True
+                    eng_params.korean_task_id = None  # 한국어 버전 완료 후 설정됨
+                    
                     tasks_to_run.append({
                         "label": "🌍 글로벌 버전",
                         "params": eng_params,
@@ -5378,6 +5724,11 @@ if start_button:
                             generated_videos = result["videos"]
                             final_video_files.extend(generated_videos)
                             status_text.success(f"🎉 {task_label} 생성 완료!")
+                            
+                            # 한국어 버전 완료 시 영어 버전에 task_id 전달
+                            if i == 0 and len(tasks_to_run) > 1:  # 첫 번째 태스크(한국어)이고 영어 버전이 있는 경우
+                                tasks_to_run[1]["params"].korean_task_id = task_id
+                                logger.info(f"Korean task completed, passing task_id to English version: {task_id}")
                             
                             # Auto-upload if enabled
                             auto_upload_enabled = st.session_state.get("yt_auto_upload", False)
