@@ -144,35 +144,21 @@ def generate_subtitle(task_id, params, video_script, sub_maker, audio_file):
 
     subtitle_path = path.join(utils.task_dir(task_id), "subtitle.srt")
     
-    # 영어 버전이고 한국어 task_id가 있는 경우 한국어 자막을 번역
-    if getattr(params, 'is_english_version', False) and getattr(params, 'korean_task_id', None):
-        korean_task_id = params.korean_task_id
-        korean_subtitle_path = path.join(utils.task_dir(korean_task_id), "subtitle.srt")
-        
-        logger.info(f"English version detected, translating Korean subtitle: {korean_subtitle_path}")
-        
-        if os.path.exists(korean_subtitle_path):
-            try:
-                from app.services import voice
-                success = voice.translate_subtitle_file(
-                    korean_subtitle_path=korean_subtitle_path,
-                    english_subtitle_path=subtitle_path,
-                    english_script=video_script
-                )
-                
-                if success and os.path.exists(subtitle_path):
-                    logger.info(f"Successfully translated Korean subtitle to English: {subtitle_path}")
-                    return subtitle_path
-                else:
-                    logger.warning("Subtitle translation failed, falling back to normal generation")
-            except Exception as e:
-                logger.error(f"Subtitle translation failed: {str(e)}, falling back to normal generation")
-        else:
-            logger.warning(f"Korean subtitle file not found: {korean_subtitle_path}, falling back to normal generation")
+    # 영어 버전은 항상 영어 음성에 맞는 새로운 자막을 생성 (동기화 보장)
+    if getattr(params, 'is_english_version', False):
+        logger.info(f"🌍 English version detected, generating fresh subtitle for proper audio sync")
+        logger.info(f"Skipping Korean subtitle translation to ensure English audio-subtitle sync")
+        # 아래 기존 로직으로 진행하여 영어 음성에 맞는 자막 생성
     
-    # 기존 자막 생성 로직
+    # 기존 자막 생성 로직 (영어 버전도 여기서 영어 음성에 맞게 새로 생성)
     subtitle_provider = config.app.get("subtitle_provider", "edge").strip().lower()
-    logger.info(f"\n\n## generating subtitle, provider: {subtitle_provider}")
+    
+    # 영어 버전인지 확인하여 로그에 표시
+    is_english_version = getattr(params, 'is_english_version', False)
+    version_info = "🌍 English version" if is_english_version else "🇰🇷 Korean version"
+    logger.info(f"\n\n## generating subtitle for {version_info}, provider: {subtitle_provider}")
+    logger.info(f"Audio file for subtitle timing: {audio_file}")
+    logger.info(f"Video script length: {len(video_script)} characters")
 
     subtitle_fallback = False
     if sub_maker is None:
@@ -189,15 +175,20 @@ def generate_subtitle(task_id, params, video_script, sub_maker, audio_file):
 
     if subtitle_provider == "whisper" or subtitle_fallback:
         # Whisper fallback enabled for better subtitle generation
-        logger.info("Using Whisper for subtitle generation...")
+        version_info = "🌍 English version" if getattr(params, 'is_english_version', False) else "🇰🇷 Korean version"
+        logger.info(f"Using Whisper for {version_info} subtitle generation...")
+        logger.info(f"Audio file to analyze: {audio_file}")
+        
         try:
             subtitle.create(audio_file=audio_file, subtitle_file=subtitle_path)
+            logger.info(f"✅ Whisper subtitle created for {version_info}")
             logger.info("\n\n## correcting subtitle")
             subtitle.correct(subtitle_file=subtitle_path, video_script=video_script)
+            logger.info(f"✅ Subtitle correction completed for {version_info}")
         except Exception as e:
-            logger.error(f"Whisper subtitle generation failed: {str(e)}")
+            logger.error(f"❌ Whisper subtitle generation failed for {version_info}: {str(e)}")
             # Create simple subtitle from script as fallback
-            logger.info("Creating simple subtitle from script...")
+            logger.info(f"Creating simple subtitle from script for {version_info}...")
             try:
                 from app.services import voice
                 # Try to create subtitle using script timing estimation
@@ -206,8 +197,9 @@ def generate_subtitle(task_id, params, video_script, sub_maker, audio_file):
                     subtitle_file=subtitle_path,
                     audio_duration=None  # Will be calculated from audio file
                 )
+                logger.info(f"✅ Simple subtitle created for {version_info}")
             except Exception as e2:
-                logger.error(f"Simple subtitle creation also failed: {str(e2)}")
+                logger.error(f"❌ Simple subtitle creation also failed for {version_info}: {str(e2)}")
                 return ""
 
     subtitle_lines = subtitle.file_to_subtitles(subtitle_path)
@@ -221,6 +213,9 @@ def generate_subtitle(task_id, params, video_script, sub_maker, audio_file):
 
 
 def get_video_materials(task_id, params, video_terms, audio_duration, video_script=None):
+    # 영어 버전 배경영상 재사용 기능 비활성화 (동기화 문제로 인해)
+    # 영어 버전도 독립적으로 배경영상을 검색하여 음성과 자막 동기화 보장
+    
     if params.video_source == "local":
         logger.info("\n\n## preprocess local materials")
         if not params.video_materials:

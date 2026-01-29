@@ -2143,12 +2143,12 @@ def gtts_synthesize(text: str, voice_name: str, voice_file: str) -> Union[GTTSSu
             import streamlit as st
             if lang_part == "ko":
                 # 한국어는 추가 속도 향상 적용
-                speed_multiplier = st.session_state.get("settings_korean_speed_boost", 1.4)
+                speed_multiplier = st.session_state.get("settings_korean_speed_boost", 1.3)
                 use_slow = False
                 logger.info(f"Korean voice: using speed multiplier {speed_multiplier}x")
             elif lang_part == "en":
                 # 영어는 설정된 추가 속도 적용
-                speed_multiplier = st.session_state.get("settings_english_speed_boost", 1.2)
+                speed_multiplier = st.session_state.get("settings_english_speed_boost", 1.1)
                 use_slow = False
                 logger.info(f"English voice: using speed multiplier {speed_multiplier}x")
             else:
@@ -2159,10 +2159,10 @@ def gtts_synthesize(text: str, voice_name: str, voice_file: str) -> Union[GTTSSu
         except:
             # Streamlit 세션이 없는 경우 기본값 사용
             if lang_part == "ko":
-                speed_multiplier = 1.4  # 한국어 1.4배속
+                speed_multiplier = 1.3  # 한국어 1.3배속
                 logger.info(f"Korean voice: using default speed boost {speed_multiplier}x")
             elif lang_part == "en":
-                speed_multiplier = 1.2  # 영어 1.2배속
+                speed_multiplier = 1.1  # 영어 1.1배속
                 logger.info(f"English voice: using default speed boost {speed_multiplier}x")
             else:
                 speed_multiplier = 1.0

@@ -1320,8 +1320,8 @@ if "shorts_optimization_applied" not in st.session_state:
     st.session_state["settings_video_count"] = 1
     st.session_state["settings_voice_rate"] = 1.2  # 최적화된 템포
     st.session_state["settings_voice_volume"] = 1.0
-    st.session_state["settings_korean_speed_boost"] = 1.4  # 한국어 1.4배속
-    st.session_state["settings_english_speed_boost"] = 1.2  # 영어 1.2배속
+    st.session_state["settings_korean_speed_boost"] = 1.3  # 한국어 1.3배속
+    st.session_state["settings_english_speed_boost"] = 1.1  # 영어 1.1배속
     st.session_state["settings_bgm_type"] = 1
     st.session_state["settings_bgm_volume"] = 0.05
     st.session_state["settings_subtitle_enabled"] = True
@@ -1777,8 +1777,8 @@ with tab_main:
                 st.session_state["settings_video_count"] = 1
                 st.session_state["settings_voice_rate"] = 1.2
                 st.session_state["settings_voice_volume"] = 1.0
-                st.session_state["settings_korean_speed_boost"] = 1.4  # 한국어 1.4배속
-                st.session_state["settings_english_speed_boost"] = 1.2  # 영어 1.2배속
+                st.session_state["settings_korean_speed_boost"] = 1.3  # 한국어 1.3배속
+                st.session_state["settings_english_speed_boost"] = 1.1  # 영어 1.1배속
                 st.session_state["settings_bgm_type"] = 1
                 st.session_state["settings_bgm_volume"] = 0.05
                 st.session_state["settings_subtitle_enabled"] = True
@@ -1792,7 +1792,7 @@ with tab_main:
                 config.ui["text_fore_color"] = "#FFFFFF"
                 
                 st.success("✅ 쇼츠 최적화 설정 완료!")
-                st.info("📱 9:16 세로 비율, 최적화된 템포(1.2배속), 큰 자막, 자막-영상 매칭으로 설정되었습니다")
+                st.info("📱 9:16 세로 비율, 최적화된 템포(1.2배속), 큰 자막, 자막-영상 매칭으로 설정되었습니다 (한국어 1.3배속, 영어 1.1배속)")
                 time.sleep(1)
                 st.rerun()
             
@@ -4751,26 +4751,26 @@ with tab_settings:
             
             with col_ko_speed:
                 if "settings_korean_speed_boost" not in st.session_state:
-                    st.session_state["settings_korean_speed_boost"] = 1.4
+                    st.session_state["settings_korean_speed_boost"] = 1.3
                 
                 korean_speed = st.selectbox(
                     "🇰🇷 한국어 추가 속도",
                     options=[1.0, 1.1, 1.2, 1.3, 1.4, 1.5],
-                    index=5,  # 1.5 기본값
+                    index=3,  # 1.3 기본값
                     key="settings_korean_speed_boost",
-                    help="한국어 gTTS는 느려서 1.5배속 추천"
+                    help="한국어 gTTS는 느려서 1.3배속 추천"
                 )
             
             with col_en_speed:
                 if "settings_english_speed_boost" not in st.session_state:
-                    st.session_state["settings_english_speed_boost"] = 1.2
+                    st.session_state["settings_english_speed_boost"] = 1.1
                 
                 english_speed = st.selectbox(
                     "🇺🇸 영어 추가 속도",
                     options=[1.0, 1.1, 1.2, 1.3, 1.4, 1.5],
-                    index=2,  # 1.2 기본값
+                    index=1,  # 1.1 기본값
                     key="settings_english_speed_boost",
-                    help="영어도 1.2배속으로 쇼츠 최적화"
+                    help="영어도 1.1배속으로 쇼츠 최적화"
                 )
 
             st.markdown("#### 🎵 배경음악 설정")
@@ -5517,10 +5517,13 @@ if start_button:
     
     # Task 2: English (Optional)
     if generate_english_version:
+        st.write(f"🔍 DEBUG: 영어 버전 생성 시작 - generate_english_version = {generate_english_version}")
         with st.spinner("🌍 글로벌 버전 준비 중... (대본 번역)"):
             try:
                 # 1단계: 대본 번역 시도
+                st.write(f"🔍 DEBUG: 번역 시도 - 원본 대본: {params.video_script[:50]}...")
                 english_script = llm.translate_to_english(params.video_script)
+                st.write(f"🔍 DEBUG: 번역 결과: {english_script[:50] if english_script else 'None'}...")
                 
                 # 번역 성공 여부 확인 (한글이 없고, 원본과 다르면 성공)
                 import re
@@ -5530,6 +5533,7 @@ if start_button:
                     "Error" not in english_script and
                     not re.search(r'[가-힣]', english_script)
                 )
+                st.write(f"🔍 DEBUG: 번역 성공 여부: {translation_success}")
                 
                 if not translation_success:
                     st.warning("⚠️ 대본 번역에 실패했습니다. 영어 키워드로 새 대본을 생성합니다...")
@@ -5641,11 +5645,14 @@ if start_button:
                         "icon": "🌎"
                     })
                     
+                    st.write(f"🔍 DEBUG: 영어 버전 태스크 추가됨 - 총 태스크 수: {len(tasks_to_run)}")
+                    
                     st.success(f"✅ 글로벌 버전 준비 완료!")
                     st.info(f"📝 영어 주제: {eng_subject}")
                     st.info(f"🎵 영어 음성: Google TTS (무료)")
                     st.info(f"🏷️ 영어 키워드: {eng_params.video_terms[:50]}{'...' if len(eng_params.video_terms) > 50 else ''}")
                 else:
+                    st.write(f"🔍 DEBUG: 번역 실패로 영어 버전 건너뜀")
                     st.warning("⚠️ 모든 영어 버전 생성 방법이 실패하여 글로벌 버전 생성을 건너뜁니다")
                     
             except Exception as e:
@@ -5663,7 +5670,9 @@ if start_button:
             elapsed_time = time.time() - st.session_state.get("generation_start_time", time.time())
             show_mobile_progress_tracker(0.0, "영상 생성 준비 중...", elapsed_time)
         
+        st.write(f"🔍 DEBUG: 실행할 태스크 수: {len(tasks_to_run)}")
         for i, task in enumerate(tasks_to_run):
+            st.write(f"🔍 DEBUG: 태스크 {i+1} 시작 - {task['label']}")
             task_label = task["label"]
             task_params = task["params"]
             task_icon = task["icon"]

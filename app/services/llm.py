@@ -11,6 +11,158 @@ from app.config import config
 
 _max_retries = 3
 
+def check_api_quota_status():
+    """API 할당량 상태 실제 확인 (테스트 호출 포함)"""
+    try:
+        config.reload()
+        
+        # Gemini API 키들 실제 상태 확인
+        gemini_keys = []
+        for i in range(1, 6):  # gemini_api_key, gemini_api_key_2, ..., gemini_api_key_5
+            if i == 1:
+                key = config.app.get("gemini_api_key")
+            else:
+                key = config.app.get(f"gemini_api_key_{i}")
+            
+            if key:
+                # 실제 API 호출로 상태 확인
+                status = _test_gemini_api_key(key, i)
+                gemini_keys.append({
+                    "key_num": i,
+                    "key_preview": f"{key[:8]}...{key[-4:]}",
+                    "available": status["available"],
+                    "status": status["message"]
+                })
+            else:
+                gemini_keys.append({
+                    "key_num": i,
+                    "key_preview": "미설정",
+                    "available": False,
+                    "status": "미설정"
+                })
+        
+        # OpenAI API 키 실제 상태 확인
+        openai_keys = []
+        openai_key = config.app.get("openai_api_key")
+        if openai_key:
+            status = _test_openai_api_key(openai_key)
+            openai_keys.append({
+                "key_num": 1,
+                "key_preview": f"{openai_key[:8]}...{openai_key[-4:]}",
+                "available": status["available"],
+                "status": status["message"]
+            })
+        else:
+            openai_keys.append({
+                "key_num": 1,
+                "key_preview": "미설정",
+                "available": False,
+                "status": "미설정"
+            })
+        
+        return {
+            "gemini_keys": gemini_keys,
+            "openai_keys": openai_keys
+        }
+        
+    except Exception as e:
+        logger.error(f"API quota status check failed: {e}")
+        return {
+            "gemini_keys": [],
+            "openai_keys": []
+        }
+
+def _test_gemini_api_key(api_key: str, key_num: int):
+    """Gemini API 키 실제 테스트"""
+    try:
+        import google.generativeai as genai
+        genai.configure(api_key=api_key)
+        
+        # 간단한 테스트 요청
+        model = genai.GenerativeModel('gemini-2.5-flash')
+        response = model.generate_content("Hello", 
+                                        generation_config=genai.types.GenerationConfig(
+                                            max_output_tokens=10,
+                                            temperature=0.1
+                                        ))
+        
+        if response and response.text:
+            return {
+                "available": True,
+                "message": "✅ 정상 작동 (할당량 사용 가능)"
+            }
+        else:
+            return {
+                "available": False,
+                "message": "❌ 응답 없음 (할당량 소진 가능)"
+            }
+            
+    except Exception as e:
+        error_msg = str(e).lower()
+        if "quota" in error_msg or "limit" in error_msg:
+            return {
+                "available": False,
+                "message": "❌ 할당량 초과"
+            }
+        elif "invalid" in error_msg or "unauthorized" in error_msg:
+            return {
+                "available": False,
+                "message": "❌ 유효하지 않은 키"
+            }
+        elif "blocked" in error_msg:
+            return {
+                "available": False,
+                "message": "❌ 차단된 키"
+            }
+        else:
+            return {
+                "available": False,
+                "message": f"❌ 오류: {str(e)[:50]}..."
+            }
+
+def _test_openai_api_key(api_key: str):
+    """OpenAI API 키 실제 테스트"""
+    try:
+        from openai import OpenAI
+        client = OpenAI(api_key=api_key)
+        
+        # 간단한 테스트 요청
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": "Hello"}],
+            max_tokens=10,
+            temperature=0.1
+        )
+        
+        if response and response.choices:
+            return {
+                "available": True,
+                "message": "✅ 정상 작동 (할당량 사용 가능)"
+            }
+        else:
+            return {
+                "available": False,
+                "message": "❌ 응답 없음"
+            }
+            
+    except Exception as e:
+        error_msg = str(e).lower()
+        if "quota" in error_msg or "limit" in error_msg:
+            return {
+                "available": False,
+                "message": "❌ 할당량 초과"
+            }
+        elif "invalid" in error_msg or "unauthorized" in error_msg:
+            return {
+                "available": False,
+                "message": "❌ 유효하지 않은 키"
+            }
+        else:
+            return {
+                "available": False,
+                "message": f"❌ 오류: {str(e)[:50]}..."
+            }
+
 def _generate_response(prompt: str) -> str:
     config.reload()
     

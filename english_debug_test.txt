@@ -1,0 +1,29 @@
+
+# 영어 버전 생성 테스트 코드 (Main.py에 임시 추가)
+if st.button("🔍 영어 버전 디버그 테스트"):
+    st.write("체크박스 상태:", generate_english_version)
+    
+    if generate_english_version:
+        st.write("✅ 영어 버전 생성 조건 만족")
+        
+        # 번역 테스트
+        try:
+            test_script = "안녕하세요. 이것은 테스트 대본입니다."
+            from app.services import llm
+            translated = llm.translate_to_english(test_script)
+            st.write("번역 결과:", translated)
+            
+            # 번역 성공 여부 확인
+            import re
+            success = (
+                translated and 
+                translated != test_script and 
+                "Error" not in translated and
+                not re.search(r'[가-힣]', translated)
+            )
+            st.write("번역 성공:", success)
+            
+        except Exception as e:
+            st.error(f"번역 테스트 실패: {e}")
+    else:
+        st.write("❌ 영어 버전 생성 조건 불만족")
