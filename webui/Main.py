@@ -27,6 +27,7 @@ try:
         add_mobile_styles, add_mobile_connection_monitor, show_mobile_generation_tips,
         show_mobile_progress_tracker, check_mobile_compatibility, add_mobile_error_recovery
     )
+    from webui.mobile_session_manager import mobile_session_manager
     MOBILE_OPTIMIZATION_AVAILABLE = True
 except ImportError:
     MOBILE_OPTIMIZATION_AVAILABLE = False
@@ -1293,6 +1294,110 @@ i18n_dir = os.path.join(root_dir, "webui", "i18n")
 config_file = os.path.join(root_dir, "webui", ".streamlit", "webui.toml")
 system_locale = utils.get_system_locale()
 
+# 모바일 세션 복원 (페이지 로드 시 한 번만 실행) - 안전한 방식으로 재활성화
+if MOBILE_OPTIMIZATION_AVAILABLE and "session_restored" not in st.session_state:
+    try:
+        logger.info("Starting mobile session restoration...")
+        
+        # 이전 세션 복원 시도
+        restored_session = mobile_session_manager.restore_session()
+        logger.info(f"Restored session result: {restored_session}")
+        
+        if restored_session:
+            task_id = restored_session.get("task_id")
+            logger.info(f"Found task_id in restored session: {task_id}")
+            
+            if task_id:
+                # 작업 상태 확인
+                task_status = mobile_session_manager.get_active_task_status(task_id)
+                logger.info(f"Task status: {task_status}")
+                
+                if task_status:
+                    # 세션 상태 복원
+                    st.session_state["current_task_id"] = task_id
+                    st.session_state["generation_start_time"] = restored_session.get("start_time", time.time())
+                    
+                    if task_status["is_active"]:
+                        st.session_state["generation_in_progress"] = True
+                        logger.info(f"Restored active session with progress: {task_status['progress']}%")
+                        st.info(f"🔄 이전 영상 생성 작업을 복원했습니다. 진행률: {task_status['progress']}%")
+                    elif task_status.get("video_file"):
+                        st.session_state["generation_in_progress"] = False
+                        st.session_state["completed_video_file"] = task_status["video_file"]
+                        logger.info(f"Restored completed session with video: {task_status['video_file']}")
+                        st.success("✅ 이전에 완료된 영상이 있습니다!")
+                    else:
+                        st.session_state["generation_in_progress"] = False
+                        logger.info("Restored session but task was interrupted")
+                        st.warning("⚠️ 이전 작업이 중단되었습니다.")
+                else:
+                    logger.info("No active task status found")
+            else:
+                logger.info("No task_id found in restored session")
+        else:
+            logger.info("No session to restore")
+        
+        # 오래된 세션 정리
+        mobile_session_manager.cleanup_old_sessions()
+        
+    except Exception as e:
+        logger.error(f"Session restoration failed: {e}")
+        import traceback
+        logger.error(f"Full traceback: {traceback.format_exc()}")
+    
+    st.session_state["session_restored"] = True
+
+# 세션 복원 디버깅 버튼 (개발용)
+if MOBILE_OPTIMIZATION_AVAILABLE:
+    with st.expander("🔧 세션 복원 디버깅 (개발용)", expanded=False):
+        col_debug1, col_debug2, col_debug3 = st.columns(3)
+        
+        with col_debug1:
+            if st.button("🔍 세션 상태 확인", use_container_width=True):
+                session_id = mobile_session_manager.get_session_id()
+                st.info(f"현재 세션 ID: {session_id}")
+                
+                # 세션 파일 확인
+                session_file = os.path.join(mobile_session_manager.session_dir, f"{session_id}.json")
+                if os.path.exists(session_file):
+                    try:
+                        with open(session_file, 'r', encoding='utf-8') as f:
+                            session_data = json.load(f)
+                        st.json(session_data)
+                    except Exception as e:
+                        st.error(f"세션 파일 읽기 실패: {e}")
+                else:
+                    st.warning("세션 파일이 존재하지 않습니다")
+        
+        with col_debug2:
+            if st.button("🔄 수동 세션 복원", use_container_width=True):
+                try:
+                    restored = mobile_session_manager.restore_session()
+                    if restored:
+                        st.success("세션 복원 성공!")
+                        st.json(restored)
+                    else:
+                        st.warning("복원할 세션이 없습니다")
+                except Exception as e:
+                    st.error(f"세션 복원 실패: {e}")
+        
+        with col_debug3:
+            if st.button("🗑️ 세션 정리", use_container_width=True):
+                try:
+                    mobile_session_manager.cleanup_old_sessions()
+                    st.success("오래된 세션 정리 완료")
+                except Exception as e:
+                    st.error(f"세션 정리 실패: {e}")
+        
+        # 모든 세션 파일 표시
+        if os.path.exists(mobile_session_manager.session_dir):
+            session_files = [f for f in os.listdir(mobile_session_manager.session_dir) if f.endswith('.json')]
+            if session_files:
+                st.write(f"**세션 파일 목록:** {len(session_files)}개")
+                for file in session_files[:5]:  # 최대 5개만 표시
+                    st.write(f"- {file}")
+            else:
+                st.write("**세션 파일이 없습니다**")
 
 if "video_subject" not in st.session_state:
     st.session_state["video_subject"] = ""
@@ -1407,7 +1512,7 @@ with col_status:
                 if total_available > 0:
                     st.success(f"✅ 총 {total_available}개 API 키 사용 가능")
                     if available_gemini > 0:
-                        st.info(f"🤖 Gemini: {available_gemini}/5개 키 활성화")
+                        st.info(f"🤖 Gemini: {available_gemini}/10개 키 활성화")
                 else:
                     st.error("❌ 사용 가능한 API 키가 없습니다!")
                     st.warning("💡 config.toml에서 API 키를 설정하거나 할당량을 확인하세요")
@@ -1533,6 +1638,42 @@ llm_provider = config.app.get("llm_provider", "").lower()
 # --- PREMIUM TABBED INTERFACE ---
 params = VideoParams(video_subject="")
 uploaded_files = None
+
+# 모바일 진행 중인 작업 알림 (탭 위에 표시) - 안전한 방식으로 재활성화
+if MOBILE_OPTIMIZATION_AVAILABLE and st.session_state.get("generation_in_progress", False):
+    current_task_id = st.session_state.get("current_task_id")
+    if current_task_id:
+        try:
+            task_status = mobile_session_manager.get_active_task_status(current_task_id)
+            if task_status and task_status["is_active"]:
+                elapsed_time = time.time() - st.session_state.get("generation_start_time", time.time())
+                st.markdown(f"""
+                <div style="
+                    background: linear-gradient(135deg, rgba(0, 123, 255, 0.1) 0%, rgba(40, 167, 69, 0.1) 100%);
+                    border: 1px solid rgba(0, 123, 255, 0.3);
+                    border-radius: 12px;
+                    padding: 1rem;
+                    margin: 1rem 0;
+                    text-align: center;
+                ">
+                    <h4 style="color: #007bff; margin: 0 0 0.5rem 0;">🎬 영상 생성 진행 중</h4>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>진행률:</strong> {task_status['progress']}% | 
+                        <strong>경과 시간:</strong> {int(elapsed_time//60)}분 {int(elapsed_time%60)}초
+                    </div>
+                    <div style="font-size: 0.9rem; color: #666;">
+                        {task_status['message']}
+                    </div>
+                    <div style="margin-top: 0.5rem; font-size: 0.8rem; color: #28a745;">
+                        💡 다른 페이지로 이동해도 백그라운드에서 계속 진행됩니다
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            elif task_status and task_status.get("video_file"):
+                st.success("✅ 영상 생성이 완료되었습니다! 아래에서 확인하세요.")
+                st.session_state["generation_in_progress"] = False
+        except Exception as e:
+            logger.error(f"Failed to check mobile task status: {e}")
 
 # Premium Tab Design
 tab_main, tab_settings, tab_analytics = st.tabs([
@@ -3111,7 +3252,9 @@ with tab_main:
                     
                     # 대본 표시 (중첩 expander 제거)
                     st.markdown(f"**📝 사용된 대본 - {title}**")
-                    st.text_area("대본 내용", value=script, height=100, disabled=True, key=f"script_display_{i}")
+                    import time
+                    unique_key = f"script_display_batch_{i}_{hash(title)}_{int(time.time()*1000)}"
+                    st.text_area("대본 내용", value=script, height=100, disabled=True, key=unique_key)
                     
                     # 2. 키워드 생성 (일반 영상과 정확히 동일한 방식)
                     status_text.text("🔍 대본 분석 및 키워드 추출 중...")
@@ -3175,7 +3318,8 @@ with tab_main:
                             auto_upload=batch_auto_upload,
                             task_id=task_id,  # task_id 전달
                             script=script,    # 생성된 대본 전달
-                            terms=terms       # 생성된 키워드 전달
+                            terms=terms,      # 생성된 키워드 전달
+                            ui_params=params  # 일반영상과 동일한 UI 설정 전달
                         )
                         
                         # 일반 영상 생성과 동일한 진행률 모니터링
@@ -3197,7 +3341,7 @@ with tab_main:
                                 elif state == const.TASK_STATE_COMPLETE:
                                     status_text.success("✅ 완료!")
                                     break
-                            time.sleep(1)
+                            time.sleep(2)  # 모바일 깜빡임 방지를 위해 업데이트 간격 증가
                         
                         if future.done():
                             try:
@@ -3388,7 +3532,9 @@ with tab_main:
                             
                             # 영어 대본 표시 (중첩 expander 제거)
                             st.markdown(f"**📝 사용된 영어 대본 - {title}**")
-                            st.text_area("영어 대본 내용", value=eng_script, height=100, disabled=True, key=f"eng_script_display_{i}")
+                            import time
+                            unique_eng_key = f"eng_script_display_batch_{i}_{hash(title)}_{int(time.time()*1000)}"
+                            st.text_area("영어 대본 내용", value=eng_script, height=100, disabled=True, key=unique_eng_key)
                             
                             # 영어 키워드 생성 (일반 영상과 정확히 동일한 방식)
                             eng_status_text.text("🔍 영어 대본 분석 및 키워드 추출 중...")
@@ -3458,7 +3604,8 @@ with tab_main:
                                     auto_upload=batch_auto_upload,
                                     task_id=eng_task_id,  # task_id 전달
                                     script=eng_script,    # 생성된 영어 대본 전달
-                                    terms=eng_terms       # 생성된 영어 키워드 전달
+                                    terms=eng_terms,      # 생성된 영어 키워드 전달
+                                    ui_params=params      # 일반영상과 동일한 UI 설정 전달
                                 )
                                 
                                 while not eng_future.done():
@@ -3479,7 +3626,7 @@ with tab_main:
                                         elif eng_state == const.TASK_STATE_COMPLETE:
                                             eng_status_text.success("✅ 영어 버전 완료!")
                                             break
-                                    time.sleep(1)
+                                    time.sleep(2)  # 모바일 깜빡임 방지를 위해 업데이트 간격 증가
                                 
                                 if eng_future.done():
                                     eng_result = eng_future.result()
@@ -5009,7 +5156,7 @@ with tab_settings:
             
             # Show current additional keys
             gemini_keys = []
-            for i in range(2, 6):  # Support up to 5 total keys (key_2 to key_5)
+            for i in range(2, 11):  # Support up to 10 total keys (key_2 to key_10)
                 key_name = f"gemini_api_key_{i}"
                 current_key = config.app.get(key_name, "")
                 if current_key:
@@ -5055,7 +5202,7 @@ with tab_settings:
                     if new_gemini_key:
                         # Find next available slot
                         next_slot = None
-                        for i in range(2, 6):  # Support up to 5 total keys
+                        for i in range(2, 11):  # Support up to 10 total keys
                             key_name = f"gemini_api_key_{i}"
                             if not config.app.get(key_name):
                                 next_slot = i
@@ -5068,7 +5215,7 @@ with tab_settings:
                             time.sleep(1)
                             st.rerun()
                         else:
-                            st.error("❌ 최대 5개의 API 키만 저장할 수 있습니다")
+                            st.error("❌ 최대 10개의 API 키만 저장할 수 있습니다")
                     else:
                         st.error("API 키를 입력해주세요")
             
@@ -5316,6 +5463,18 @@ if start_button:
     st.session_state["generation_start_time"] = time.time()
     
     task_id = str(uuid4())
+    
+    # 모바일 세션 저장 - 안전한 방식으로 재활성화
+    if MOBILE_OPTIMIZATION_AVAILABLE:
+        try:
+            mobile_session_manager.save_generation_state(task_id, {
+                "video_subject": params.video_subject,
+                "video_type": "shorts" if params.video_aspect == "9:16" else "longform",
+                "video_language": params.video_language,
+                "voice_name": params.voice_name,
+            })
+        except Exception as e:
+            logger.error(f"Failed to save mobile session: {e}")
     
     # Mobile optimization: Add connection keep-alive and progress tracking
     if MOBILE_OPTIMIZATION_AVAILABLE:
@@ -5665,11 +5824,6 @@ if start_button:
     with generation_status_container:
         st.markdown("### 🚀 **AI 영상 생성 진행중**")
         
-        # Mobile optimization: Show mobile-friendly progress
-        if MOBILE_OPTIMIZATION_AVAILABLE:
-            elapsed_time = time.time() - st.session_state.get("generation_start_time", time.time())
-            show_mobile_progress_tracker(0.0, "영상 생성 준비 중...", elapsed_time)
-        
         st.write(f"🔍 DEBUG: 실행할 태스크 수: {len(tasks_to_run)}")
         for i, task in enumerate(tasks_to_run):
             st.write(f"🔍 DEBUG: 태스크 {i+1} 시작 - {task['label']}")
@@ -5711,12 +5865,6 @@ if start_button:
                             progress_normalized = min(int(progress) / 100, 1.0)
                             progress_bar.progress(progress_normalized)
                             
-                            # Mobile optimization: Update mobile progress tracker
-                            if MOBILE_OPTIMIZATION_AVAILABLE:
-                                elapsed_time = time.time() - st.session_state.get("generation_start_time", time.time())
-                                current_status = f"{task_msg} ({int(progress)}%)" if task_msg else f"처리 중... {int(progress)}%"
-                                show_mobile_progress_tracker(progress_normalized, current_status, elapsed_time)
-                            
                             if state == const.TASK_STATE_PROCESSING:
                                 status_text.info(f"🎬 {task_msg} ({int(progress)}%)" if task_msg else f"처리 중... {int(progress)}%")
                             elif state == const.TASK_STATE_FAILED:
@@ -5725,7 +5873,7 @@ if start_button:
                             elif state == const.TASK_STATE_COMPLETE:
                                 status_text.success("✅ 완료!")
                                 break
-                        time.sleep(1)
+                        time.sleep(2)
                     
                     if future.done():
                         result = future.result()
@@ -5733,6 +5881,14 @@ if start_button:
                             generated_videos = result["videos"]
                             final_video_files.extend(generated_videos)
                             status_text.success(f"🎉 {task_label} 생성 완료!")
+                            
+                            # 모바일 세션 완료 처리 - 안전한 방식으로 재활성화
+                            if MOBILE_OPTIMIZATION_AVAILABLE and generated_videos:
+                                try:
+                                    video_file = generated_videos[0] if generated_videos else None
+                                    mobile_session_manager.complete_generation(task_id, video_file)
+                                except Exception as e:
+                                    logger.error(f"Failed to update mobile session completion: {e}")
                             
                             # 한국어 버전 완료 시 영어 버전에 task_id 전달
                             if i == 0 and len(tasks_to_run) > 1:  # 첫 번째 태스크(한국어)이고 영어 버전이 있는 경우

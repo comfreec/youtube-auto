@@ -1203,12 +1203,10 @@ def tts(
     # TTS 텍스트 전처리 - 발음 개선
     def preprocess_tts_text(text: str) -> str:
         """TTS를 위한 텍스트 전처리"""
-        # "-"를 "다시"로 변경 (문맥에 따라)
         import re
         
-        # 단어 사이의 하이픈을 "다시"로 변경
-        # 예: "재시작 - 새로운 시작" -> "재시작 다시 새로운 시작"
-        text = re.sub(r'\s*-\s*', ' 다시 ', text)
+        # 모든 언어에서 "-" 문자 제거 (음성에서 읽지 않도록)
+        text = re.sub(r'-', '', text)
         
         # 기타 TTS 발음 개선
         text = re.sub(r'&', ' 그리고 ', text)  # &를 "그리고"로
@@ -1890,17 +1888,33 @@ def create_subtitle(sub_maker: submaker.SubMaker, text: str, subtitle_file: str)
             return ""
 
         _line = script_lines[_sub_index]
+        
+        # 1. 완전 일치
         if _sub_line == _line:
             return script_lines[_sub_index].strip()
 
+        # 2. 공백 정규화 후 일치
+        _sub_line_normalized = re.sub(r'\s+', ' ', _sub_line.strip())
+        _line_normalized = re.sub(r'\s+', ' ', _line.strip())
+        if _sub_line_normalized == _line_normalized:
+            return _line.strip()
+
+        # 3. 특수문자 제거 후 일치
         _sub_line_ = re.sub(r"[^\w\s]", "", _sub_line)
         _line_ = re.sub(r"[^\w\s]", "", _line)
         if _sub_line_ == _line_:
-            return _line_.strip()
+            return _line.strip()
 
+        # 4. 모든 공백과 특수문자 제거 후 일치
         _sub_line_ = re.sub(r"\W+", "", _sub_line)
         _line_ = re.sub(r"\W+", "", _line)
         if _sub_line_ == _line_:
+            return _line.strip()
+        
+        # 5. 부분 일치 (70% 이상 유사도)
+        from difflib import SequenceMatcher
+        similarity = SequenceMatcher(None, _sub_line.lower(), _line.lower()).ratio()
+        if similarity >= 0.7:
             return _line.strip()
 
         return ""
@@ -1936,6 +1950,22 @@ def create_subtitle(sub_maker: submaker.SubMaker, text: str, subtitle_file: str)
                 duration = max([tb for ((ta, tb), txt) in sbs])
                 logger.info(
                     f"completed, subtitle file created: {subtitle_file}, duration: {duration}"
+                )
+            except Exception as e:
+                logger.error(f"failed, error: {str(e)}")
+                os.remove(subtitle_file)
+        elif len(sub_items) > 0 and len(sub_items) >= len(script_lines) * 0.7:
+            # 70% 이상 매칭되면 허용 (완벽하지 않아도 Whisper보다 나음)
+            logger.warning(
+                f"partial match accepted, sub_items len: {len(sub_items)}, script_lines len: {len(script_lines)}"
+            )
+            with open(subtitle_file, "w", encoding="utf-8") as file:
+                file.write("\n".join(sub_items) + "\n")
+            try:
+                sbs = subtitles.file_to_subtitles(subtitle_file, encoding="utf-8")
+                duration = max([tb for ((ta, tb), txt) in sbs]) if sbs else 0
+                logger.info(
+                    f"completed with partial match, subtitle file created: {subtitle_file}, duration: {duration}"
                 )
             except Exception as e:
                 logger.error(f"failed, error: {str(e)}")
@@ -2253,6 +2283,56 @@ def gtts_synthesize(text: str, voice_name: str, voice_file: str) -> Union[GTTSSu
     except Exception as e:
         logger.error(f"gTTS synthesis failed: {str(e)}")
         return None
+
+
+def create_gtts_subtitle(sub_maker: GTTSSubMaker, text: str, subtitle_file: str):
+    """
+    gTTS SubMaker를 사용하여 자막 파일 생성
+    gTTS 음성과 완벽하게 동기화된 자막 생성
+    """
+    try:
+        logger.info(f"Creating gTTS subtitle: {subtitle_file}")
+        
+        if not sub_maker or not hasattr(sub_maker, 'offset') or not hasattr(sub_maker, 'subs'):
+            logger.error("Invalid gTTS SubMaker object")
+            return False
+        
+        if not sub_maker.offset or not sub_maker.subs:
+            logger.error("Empty gTTS SubMaker data")
+            return False
+        
+        # SRT 형식으로 자막 파일 생성
+        subtitle_lines = []
+        
+        for i, (offset, subtitle_text) in enumerate(zip(sub_maker.offset, sub_maker.subs)):
+            start_time_100ns, end_time_100ns = offset
+            
+            # 100ns 단위를 초 단위로 변환
+            start_seconds = start_time_100ns / 10000000
+            end_seconds = end_time_100ns / 10000000
+            
+            # SRT 시간 형식으로 변환
+            start_srt = _seconds_to_srt_time(start_seconds)
+            end_srt = _seconds_to_srt_time(end_seconds)
+            
+            # SRT 항목 생성
+            subtitle_lines.append(f"{i + 1}")
+            subtitle_lines.append(f"{start_srt} --> {end_srt}")
+            subtitle_lines.append(subtitle_text.strip())
+            subtitle_lines.append("")  # 빈 줄
+        
+        # 파일에 저장
+        with open(subtitle_file, 'w', encoding='utf-8') as f:
+            f.write('\n'.join(subtitle_lines))
+        
+        logger.info(f"gTTS subtitle created successfully: {subtitle_file}")
+        logger.info(f"Subtitle items: {len(sub_maker.subs)}, Duration: {end_seconds:.2f}s")
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"Failed to create gTTS subtitle: {str(e)}")
+        return False
 
 
 def get_audio_duration_gtts(target: Union[str, GTTSSubMaker]) -> float:

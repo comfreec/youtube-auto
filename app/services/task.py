@@ -13,6 +13,57 @@ from app.services import state as sm
 from app.utils import utils
 
 
+def _remove_dash_from_subtitle_file(subtitle_path: str):
+    """
+    자막 파일에서 "-" 문자만 제거 (한국어 버전용)
+    """
+    try:
+        if not os.path.exists(subtitle_path):
+            logger.warning(f"Subtitle file not found: {subtitle_path}")
+            return
+            
+        # 자막 파일 읽기
+        with open(subtitle_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        if not content.strip():
+            logger.warning(f"Subtitle file is empty: {subtitle_path}")
+            return
+        
+        # "-" 문자만 제거 (줄바꿈과 공백은 유지)
+        cleaned_content = content.replace('-', '')
+        
+        # 내용이 변경되었는지 확인
+        if cleaned_content != content:
+            # 백업 파일 생성
+            backup_path = subtitle_path + ".backup"
+            with open(backup_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+            
+            # 파일에 다시 저장
+            with open(subtitle_path, 'w', encoding='utf-8') as f:
+                f.write(cleaned_content)
+                
+            logger.info(f"Removed dash characters from subtitle file: {subtitle_path}")
+            logger.debug(f"Backup created: {backup_path}")
+        else:
+            logger.debug(f"No dash characters found in subtitle file: {subtitle_path}")
+        
+    except Exception as e:
+        logger.error(f"Failed to remove dash characters from subtitle: {str(e)}")
+        # 오류 발생 시 원본 파일 복원 시도
+        backup_path = subtitle_path + ".backup"
+        if os.path.exists(backup_path):
+            try:
+                with open(backup_path, 'r', encoding='utf-8') as f:
+                    original_content = f.read()
+                with open(subtitle_path, 'w', encoding='utf-8') as f:
+                    f.write(original_content)
+                logger.info(f"Restored original subtitle file from backup")
+            except Exception as restore_error:
+                logger.error(f"Failed to restore subtitle file: {restore_error}")
+
+
 def generate_script(task_id, params):
     logger.info("\n\n## generating video script")
     # If real-time auto generation is enabled, always use AI to generate script from the subject
@@ -161,9 +212,32 @@ def generate_subtitle(task_id, params, video_script, sub_maker, audio_file):
     logger.info(f"Video script length: {len(video_script)} characters")
 
     subtitle_fallback = False
+    is_gtts_voice = hasattr(sub_maker, '__class__') and sub_maker.__class__.__name__ == 'GTTSSubMaker'
+    
     if sub_maker is None:
         subtitle_fallback = True
+    elif is_gtts_voice:
+        # gTTS 사용 시 gTTS 전용 자막 생성
+        logger.info("Using gTTS-based subtitle generation")
+        try:
+            from app.services import voice
+            # gTTS SubMaker를 사용하여 자막 파일 생성
+            voice.create_gtts_subtitle(sub_maker, video_script, subtitle_path)
+            if os.path.exists(subtitle_path) and os.path.getsize(subtitle_path) > 0:
+                logger.info(f"✅ gTTS subtitle created successfully")
+                # 임시로 "-" 문자 제거 비활성화 (테스트용)
+                # if not getattr(params, 'is_english_version', False):
+                #     logger.info("Removing '-' characters from Korean gTTS subtitle...")
+                #     _remove_dash_from_subtitle_file(subtitle_path)
+                #     logger.info("✅ Dash characters removed from Korean gTTS subtitle")
+            else:
+                subtitle_fallback = True
+                logger.warning("gTTS subtitle creation failed, fallback to whisper")
+        except Exception as e:
+            logger.error(f"gTTS subtitle creation error: {str(e)}")
+            subtitle_fallback = True
     else:
+        # Edge TTS 사용 시 기존 로직
         if subtitle_provider == "edge":
             from app.services import voice
             voice.create_subtitle(
@@ -172,6 +246,13 @@ def generate_subtitle(task_id, params, video_script, sub_maker, audio_file):
             if not os.path.exists(subtitle_path) or os.path.getsize(subtitle_path) == 0:
                 subtitle_fallback = True
                 logger.warning("subtitle file not found or empty, fallback to whisper")
+            else:
+                # 임시로 "-" 문자 제거 비활성화 (테스트용)
+                # if not getattr(params, 'is_english_version', False):
+                #     logger.info("Removing '-' characters from Korean Edge TTS subtitle...")
+                #     _remove_dash_from_subtitle_file(subtitle_path)
+                #     logger.info("✅ Dash characters removed from Korean Edge TTS subtitle")
+                pass
 
     if subtitle_provider == "whisper" or subtitle_fallback:
         # Whisper fallback enabled for better subtitle generation
@@ -185,6 +266,13 @@ def generate_subtitle(task_id, params, video_script, sub_maker, audio_file):
             logger.info("\n\n## correcting subtitle")
             subtitle.correct(subtitle_file=subtitle_path, video_script=video_script)
             logger.info(f"✅ Subtitle correction completed for {version_info}")
+            
+            # 임시로 "-" 문자 제거 비활성화 (테스트용)
+            # if not getattr(params, 'is_english_version', False):
+            #     logger.info("Removing '-' characters from Korean subtitle...")
+            #     _remove_dash_from_subtitle_file(subtitle_path)
+            #     logger.info("✅ Dash characters removed from Korean subtitle")
+            
         except Exception as e:
             logger.error(f"❌ Whisper subtitle generation failed for {version_info}: {str(e)}")
             # Create simple subtitle from script as fallback
