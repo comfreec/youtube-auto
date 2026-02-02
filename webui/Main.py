@@ -1294,23 +1294,18 @@ i18n_dir = os.path.join(root_dir, "webui", "i18n")
 config_file = os.path.join(root_dir, "webui", ".streamlit", "webui.toml")
 system_locale = utils.get_system_locale()
 
-# 모바일 세션 복원 (페이지 로드 시 한 번만 실행) - 안전한 방식으로 재활성화
+# 모바일 세션 복원 (페이지 로드 시 한 번만 실행) - 완전 자동화 버전
 if MOBILE_OPTIMIZATION_AVAILABLE and "session_restored" not in st.session_state:
     try:
-        logger.info("Starting mobile session restoration...")
-        
         # 이전 세션 복원 시도
         restored_session = mobile_session_manager.restore_session()
-        logger.info(f"Restored session result: {restored_session}")
         
         if restored_session:
             task_id = restored_session.get("task_id")
-            logger.info(f"Found task_id in restored session: {task_id}")
             
             if task_id:
                 # 작업 상태 확인
                 task_status = mobile_session_manager.get_active_task_status(task_id)
-                logger.info(f"Task status: {task_status}")
                 
                 if task_status:
                     # 세션 상태 복원
@@ -1319,85 +1314,152 @@ if MOBILE_OPTIMIZATION_AVAILABLE and "session_restored" not in st.session_state:
                     
                     if task_status["is_active"]:
                         st.session_state["generation_in_progress"] = True
-                        logger.info(f"Restored active session with progress: {task_status['progress']}%")
-                        st.info(f"🔄 이전 영상 생성 작업을 복원했습니다. 진행률: {task_status['progress']}%")
+                        st.session_state["auto_restored"] = True
+                        
+                        # 화면 껐다 켜기 복원 알림 (더 명확하게)
+                        elapsed = int(time.time() - restored_session.get("start_time", time.time()))
+                        st.success(f"📱 화면 복원: 영상 생성 진행 중 ({task_status['progress']}%, {elapsed//60}분 경과)")
+                        
                     elif task_status.get("video_file"):
                         st.session_state["generation_in_progress"] = False
                         st.session_state["completed_video_file"] = task_status["video_file"]
-                        logger.info(f"Restored completed session with video: {task_status['video_file']}")
-                        st.success("✅ 이전에 완료된 영상이 있습니다!")
+                        st.success("✅ 화면 복원: 완료된 영상을 찾았습니다!")
                     else:
                         st.session_state["generation_in_progress"] = False
-                        logger.info("Restored session but task was interrupted")
-                        st.warning("⚠️ 이전 작업이 중단되었습니다.")
+                        st.info("ℹ️ 이전 작업 기록을 복원했습니다.")
                 else:
-                    logger.info("No active task status found")
+                    # 작업 상태를 찾을 수 없어도 세션 정보는 복원
+                    st.session_state["current_task_id"] = task_id
+                    st.session_state["generation_start_time"] = restored_session.get("start_time", time.time())
+                    
+                    # 더 자세한 상태 정보 제공
+                    elapsed = int(time.time() - restored_session.get("start_time", time.time()))
+                    st.info(f"📱 이전 세션을 복원했습니다 ({elapsed//60}분 전 시작). 작업이 완료되었거나 중단되었을 수 있습니다.")
             else:
-                logger.info("No task_id found in restored session")
+                st.info("ℹ️ 이전 세션 기록이 있지만 진행 중인 작업은 없습니다.")
         else:
-            logger.info("No session to restore")
+            # 복원할 세션이 없는 경우 (정상적인 첫 방문)
+            logger.info("No previous session found - starting fresh")
         
         # 오래된 세션 정리
         mobile_session_manager.cleanup_old_sessions()
         
     except Exception as e:
         logger.error(f"Session restoration failed: {e}")
-        import traceback
-        logger.error(f"Full traceback: {traceback.format_exc()}")
     
     st.session_state["session_restored"] = True
 
-# 세션 복원 디버깅 버튼 (개발용)
-if MOBILE_OPTIMIZATION_AVAILABLE:
-    with st.expander("🔧 세션 복원 디버깅 (개발용)", expanded=False):
-        col_debug1, col_debug2, col_debug3 = st.columns(3)
-        
-        with col_debug1:
-            if st.button("🔍 세션 상태 확인", use_container_width=True):
-                session_id = mobile_session_manager.get_session_id()
-                st.info(f"현재 세션 ID: {session_id}")
+# 자동 복원된 진행 중인 작업 실시간 모니터링 - 깜빡임 없는 버전
+if st.session_state.get("generation_in_progress", False) and st.session_state.get("auto_restored", False):
+    task_id = st.session_state.get("current_task_id")
+    
+    if task_id:
+        # 진행률 표시
+        task_status = mobile_session_manager.get_active_task_status(task_id)
+        if task_status and task_status.get('progress', 0) < 100:
+            # 진행 중인 작업 표시
+            st.markdown("""
+            <div class="mobile-progress">
+                <h4>🔄 영상 생성 진행 중</h4>
+                <p>백그라운드에서 영상 생성이 계속 진행되고 있습니다.</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # 실시간 진행률 바 (깜빡임 방지)
+            progress = task_status.get('progress', 0)
+            message = task_status.get('message', '진행 중...')
+            
+            # 진행률 표시 (부드러운 애니메이션)
+            st.markdown(f"""
+            <div style="margin: 1rem 0;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span><strong>진행률: {progress}%</strong></span>
+                    <span style="color: #666;">{message}</span>
+                </div>
+                <div style="background: #f0f0f0; border-radius: 10px; height: 20px; overflow: hidden;">
+                    <div style="
+                        background: linear-gradient(90deg, #4CAF50, #45a049);
+                        height: 100%;
+                        width: {progress}%;
+                        transition: width 2s ease-in-out;
+                        border-radius: 10px;
+                    "></div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # 경과 시간 표시
+            start_time = st.session_state.get("generation_start_time", time.time())
+            elapsed = int(time.time() - start_time)
+            st.write(f"⏱️ 경과 시간: {elapsed//60}분 {elapsed%60}초")
+            
+            # 수동 새로고침 버튼만 제공 (자동 새로고침 제거)
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("🔄 진행률 확인", use_container_width=True, key="refresh_progress"):
+                    st.rerun()
+            with col2:
+                if st.button("⏹️ 작업 중단", use_container_width=True, key="stop_task"):
+                    st.session_state["generation_in_progress"] = False
+                    st.session_state["auto_restored"] = False
+                    st.warning("작업이 중단되었습니다.")
+                    st.rerun()
+            
+            # 부드러운 자동 업데이트 (JavaScript 없이)
+            st.markdown("""
+            <div style="text-align: center; margin-top: 1rem; color: #666; font-size: 0.9rem;">
+                💡 진행률을 확인하려면 '🔄 진행률 확인' 버튼을 눌러주세요
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # ngrok 환경에서 연결 상태 표시
+            if "ngrok" in st.get_option("server.baseUrlPath") or "ngrok" in str(st.session_state.get("server_url", "")):
+                st.markdown("""
+                <div class="ngrok-status">
+                    🌐 ngrok 터널 연결됨
+                </div>
+                """, unsafe_allow_html=True)
                 
-                # 세션 파일 확인
-                session_file = os.path.join(mobile_session_manager.session_dir, f"{session_id}.json")
-                if os.path.exists(session_file):
-                    try:
-                        with open(session_file, 'r', encoding='utf-8') as f:
-                            session_data = json.load(f)
-                        st.json(session_data)
-                    except Exception as e:
-                        st.error(f"세션 파일 읽기 실패: {e}")
-                else:
-                    st.warning("세션 파일이 존재하지 않습니다")
-        
-        with col_debug2:
-            if st.button("🔄 수동 세션 복원", use_container_width=True):
+                # 연결 안정성 체크
+                import requests
                 try:
-                    restored = mobile_session_manager.restore_session()
-                    if restored:
-                        st.success("세션 복원 성공!")
-                        st.json(restored)
-                    else:
-                        st.warning("복원할 세션이 없습니다")
-                except Exception as e:
-                    st.error(f"세션 복원 실패: {e}")
-        
-        with col_debug3:
-            if st.button("🗑️ 세션 정리", use_container_width=True):
-                try:
-                    mobile_session_manager.cleanup_old_sessions()
-                    st.success("오래된 세션 정리 완료")
-                except Exception as e:
-                    st.error(f"세션 정리 실패: {e}")
-        
-        # 모든 세션 파일 표시
-        if os.path.exists(mobile_session_manager.session_dir):
-            session_files = [f for f in os.listdir(mobile_session_manager.session_dir) if f.endswith('.json')]
-            if session_files:
-                st.write(f"**세션 파일 목록:** {len(session_files)}개")
-                for file in session_files[:5]:  # 최대 5개만 표시
-                    st.write(f"- {file}")
-            else:
-                st.write("**세션 파일이 없습니다**")
+                    # 간단한 연결 테스트 (타임아웃 3초)
+                    response = requests.get(f"{st.get_option('server.baseUrlPath')}/health", timeout=3)
+                    if response.status_code != 200:
+                        st.warning("⚠️ 네트워크 연결이 불안정합니다. 새로고침을 시도해보세요.")
+                except:
+                    st.error("❌ 네트워크 연결에 문제가 있습니다. ngrok 터널을 확인해주세요.")
+            
+        elif task_status and task_status.get('progress', 0) >= 100:
+            # 완료된 경우 자동으로 완료 상태로 전환
+            st.session_state["generation_in_progress"] = False
+            st.session_state["auto_restored"] = False
+            if task_status.get("video_file"):
+                st.session_state["completed_video_file"] = task_status["video_file"]
+                st.success("🎉 영상 생성이 완료되었습니다!")
+            st.rerun()
+        else:
+            # 작업을 찾을 수 없는 경우
+            st.warning("⚠️ 진행 중인 작업을 찾을 수 없습니다.")
+            st.session_state["generation_in_progress"] = False
+            st.session_state["auto_restored"] = False
+
+# 영상 생성 시 자동으로 세션 저장
+def save_generation_session(task_id: str, subject: str):
+    """영상 생성 시작 시 세션 자동 저장"""
+    try:
+        params = {
+            "video_subject": subject,
+            "video_type": "shorts",
+            "start_time": time.time()
+        }
+        mobile_session_manager.save_generation_state(task_id, params)
+        st.session_state["current_task_id"] = task_id
+        st.session_state["generation_in_progress"] = True
+        logger.info(f"Auto-saved generation session: {task_id}")
+    except Exception as e:
+        logger.error(f"Failed to save generation session: {e}")
+# 세션복원디버깅 코드 제거됨 - 자동 복원만 사용
 
 if "video_subject" not in st.session_state:
     st.session_state["video_subject"] = ""
@@ -1639,7 +1701,7 @@ llm_provider = config.app.get("llm_provider", "").lower()
 params = VideoParams(video_subject="")
 uploaded_files = None
 
-# 모바일 진행 중인 작업 알림 (탭 위에 표시) - 안전한 방식으로 재활성화
+# 모바일 진행 중인 작업 알림 (탭 위에 표시) - 개선된 버전
 if MOBILE_OPTIMIZATION_AVAILABLE and st.session_state.get("generation_in_progress", False):
     current_task_id = st.session_state.get("current_task_id")
     if current_task_id:
@@ -1647,33 +1709,35 @@ if MOBILE_OPTIMIZATION_AVAILABLE and st.session_state.get("generation_in_progres
             task_status = mobile_session_manager.get_active_task_status(current_task_id)
             if task_status and task_status["is_active"]:
                 elapsed_time = time.time() - st.session_state.get("generation_start_time", time.time())
+                progress = task_status.get('progress', 0)
+                message = task_status.get('message', '진행 중...')
+                
+                # 상세한 진행 상황 표시
                 st.markdown(f"""
-                <div style="
-                    background: linear-gradient(135deg, rgba(0, 123, 255, 0.1) 0%, rgba(40, 167, 69, 0.1) 100%);
-                    border: 1px solid rgba(0, 123, 255, 0.3);
-                    border-radius: 12px;
-                    padding: 1rem;
-                    margin: 1rem 0;
-                    text-align: center;
-                ">
-                    <h4 style="color: #007bff; margin: 0 0 0.5rem 0;">🎬 영상 생성 진행 중</h4>
-                    <div style="margin-bottom: 0.5rem;">
-                        <strong>진행률:</strong> {task_status['progress']}% | 
-                        <strong>경과 시간:</strong> {int(elapsed_time//60)}분 {int(elapsed_time%60)}초
-                    </div>
-                    <div style="font-size: 0.9rem; color: #666;">
-                        {task_status['message']}
-                    </div>
-                    <div style="margin-top: 0.5rem; font-size: 0.8rem; color: #28a745;">
-                        💡 다른 페이지로 이동해도 백그라운드에서 계속 진행됩니다
-                    </div>
+                <div class="mobile-progress">
+                    <h4>🎬 영상 생성 진행 중</h4>
+                    <p><strong>진행률:</strong> {progress}%</p>
+                    <p><strong>상태:</strong> {message}</p>
+                    <p><strong>경과 시간:</strong> {int(elapsed_time//60)}분 {int(elapsed_time%60)}초</p>
                 </div>
                 """, unsafe_allow_html=True)
+                
+                # 진행률 바
+                st.progress(progress / 100.0)
+                
             elif task_status and task_status.get("video_file"):
-                st.success("✅ 영상 생성이 완료되었습니다! 아래에서 확인하세요.")
+                st.success("✅ 영상 생성이 완료되었습니다!")
                 st.session_state["generation_in_progress"] = False
+                
+                # 완료된 영상 파일 정보 표시
+                video_file = task_status["video_file"]
+                if os.path.exists(video_file):
+                    file_size = os.path.getsize(video_file) / (1024 * 1024)  # MB
+                    st.info(f"📁 생성된 파일: {os.path.basename(video_file)} ({file_size:.1f}MB)")
+                    
         except Exception as e:
             logger.error(f"Failed to check mobile task status: {e}")
+            st.warning("⚠️ 진행 상황을 확인할 수 없습니다. 새로고침해보세요.")
 
 # Premium Tab Design
 tab_main, tab_settings, tab_analytics = st.tabs([
@@ -2827,190 +2891,17 @@ with tab_main:
                         status_text.error(f"❌ 생성 실패: {str(e)}")
                         progress_bar.empty()
 
-    # Premium YouTube Analysis Section
+    # YouTube 영상 분석 & 재해석 - 완전히 새로운 독립적 구현
     with st.expander("🎯 **YouTube 영상 분석 & 재해석** - 기존 영상을 새롭게 재창조", expanded=False):
-        st.markdown("""
-        <div style="background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 152, 0, 0.1) 100%); 
-                    padding: 1rem; border-radius: 12px; margin-bottom: 1rem;">
-            <p style="margin: 0; color: #a0a0a0;">
-                🔍 <strong>콘텐츠 분석</strong> | 🎭 <strong>창의적 재해석</strong> | 🚀 <strong>독창적 재창조</strong><br>
-                YouTube 영상을 분석하여 완전히 새로운 방식으로 재해석한 영상을 생성합니다.
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # YouTube Analysis Configuration
-        col_yt_config, col_yt_generate = st.columns([0.6, 0.4])
-        
-        with col_yt_config:
-            st.markdown("#### 🔗 **YouTube 영상 분석**")
-            
-            # YouTube URL input
-            youtube_url = st.text_input(
-                "YouTube 영상 URL",
-                placeholder="https://www.youtube.com/watch?v=...",
-                key="youtube_url_input",
-                help="분석할 YouTube 영상의 URL을 입력하세요. 자막이 있는 영상이어야 합니다."
-            )
-            
-            # Analysis options
-            col_reinterpret, col_format = st.columns(2)
-            with col_reinterpret:
-                reinterpret_style = st.selectbox(
-                    "재해석 스타일",
-                    ["🎭 완전히 다른 톤", "📚 교육적 접근", "💡 실용적 팁", "🎯 문제해결형", "📊 데이터 중심"],
-                    index=0,
-                    key="reinterpret_style_select",
-                    help="원본과 다른 방식으로 재해석할 스타일을 선택하세요."
-                )
-            
-            with col_format:
-                output_format = st.selectbox(
-                    "출력 형식",
-                    ["📱 쇼츠 (60-90초)", "📺 롱폼 (5-10분)"],
-                    index=0,
-                    key="output_format_select",
-                    help="재해석된 콘텐츠의 출력 형식을 선택하세요."
-                )
-            
-            # Advanced options
-            st.markdown("#### ⚙️ **고급 옵션**")
-            col_creativity, col_similarity = st.columns(2)
-            with col_creativity:
-                creativity_level = st.slider(
-                    "창의성 수준",
-                    min_value=1,
-                    max_value=5,
-                    value=3,
-                    key="creativity_level",
-                    help="1: 보수적 재해석, 5: 매우 창의적 재해석"
-                )
-            
-            with col_similarity:
-                preserve_core = st.checkbox(
-                    "핵심 메시지 보존",
-                    value=True,
-                    key="preserve_core_message",
-                    help="원본의 핵심 메시지를 반드시 보존합니다."
-                )
-        
-        with col_yt_generate:
-            st.markdown("#### 🚀 **분석 & 생성**")
-            
-            # Analysis button
-            if st.button("🔍 영상 분석 시작", use_container_width=True, key="analyze_youtube_btn"):
-                if not youtube_url.strip():
-                    st.error("❌ YouTube URL을 입력해주세요!")
-                    st.stop()
-                
-                # URL 정리 및 검증
-                youtube_url = youtube_url.strip()
-                if not any(domain in youtube_url.lower() for domain in ['youtube.com', 'youtu.be']):
-                    st.error("❌ 올바른 YouTube URL을 입력해주세요!")
-                    st.stop()
-                
-                # Display URL for debugging
-                st.info(f"🔍 분석할 URL: {youtube_url}")
-                
-                analysis_container = st.container()
-                with analysis_container:
-                    analysis_status = st.empty()
-                    analysis_progress = st.progress(0)
-                    
-                    try:
-                        analysis_status.info("🔍 YouTube 영상 분석 중...")
-                        analysis_progress.progress(20)
-                        
-                        # Import YouTube analyzer
-                        from app.services.youtube_analyzer import analyze_youtube_video
-                        
-                        # Analyze YouTube video
-                        analysis_result = analyze_youtube_video(youtube_url)
-                        analysis_progress.progress(60)
-                        
-                        if analysis_result['success']:
-                            analysis_status.success("✅ 영상 분석 완료!")
-                            analysis_progress.progress(100)
-                            
-                            # Store analysis result in session state
-                            st.session_state['youtube_analysis'] = analysis_result
-                            
-                            # Display analysis results
-                            st.markdown("---")
-                            st.markdown("### 📊 **분석 결과**")
-                            
-                            col_info, col_script = st.columns([0.4, 0.6])
-                            
-                            with col_info:
-                                st.markdown("#### 📹 **영상 정보**")
-                                video_info = analysis_result['video_info']
-                                st.write(f"**제목**: {video_info['title']}")
-                                st.write(f"**채널**: {video_info['author']}")
-                                if video_info['thumbnail']:
-                                    st.image(video_info['thumbnail'], width=200)
-                                
-                                st.markdown("#### 🏷️ **핵심 주제**")
-                                topics = analysis_result['key_topics']
-                                if topics:
-                                    for topic in topics[:5]:
-                                        st.write(f"• {topic}")
-                            
-                            with col_script:
-                                st.markdown("#### 🎭 **재해석된 대본**")
-                                reinterpreted_script = analysis_result['reinterpreted_script']
-                                st.text_area(
-                                    "재해석된 대본",
-                                    value=reinterpreted_script,
-                                    height=300,
-                                    key="reinterpreted_script_display",
-                                    help="이 대본을 수정한 후 영상을 생성할 수 있습니다."
-                                )
-                            
-                            time.sleep(1)
-                            st.rerun()
-                            
-                        else:
-                            analysis_status.error(f"❌ 분석 실패: {analysis_result['error']}")
-                            analysis_progress.empty()
-                            
-                    except Exception as e:
-                        analysis_status.error(f"❌ 분석 중 오류: {str(e)}")
-                        analysis_progress.empty()
-            
-            # Generate video button (only show if analysis is complete)
-            if 'youtube_analysis' in st.session_state and st.session_state['youtube_analysis']['success']:
-                st.markdown("---")
-                
-                # Auto-upload checkbox
-                yt_analysis_auto_upload = st.checkbox(
-                    "📤 생성 후 자동 업로드",
-                    value=True,
-                    key="yt_analysis_auto_upload",
-                    help="재해석된 영상을 생성 후 자동으로 YouTube에 업로드합니다."
-                )
-                
-                if st.button("🎬 재해석 영상 생성", use_container_width=True, key="generate_reinterpreted_btn", type="primary"):
-                    analysis_result = st.session_state['youtube_analysis']
-                    
-                    # Use the reinterpreted script
-                    reinterpreted_script = st.session_state.get('reinterpreted_script_display', analysis_result['reinterpreted_script'])
-                    
-                    # Set up parameters for video generation
-                    params.video_subject = f"재해석: {analysis_result['video_info']['title']}"
-                    params.video_script = reinterpreted_script
-                    
-                    # Generate keywords from the reinterpreted content
-                    st.session_state["video_subject"] = params.video_subject
-                    st.session_state["video_script"] = reinterpreted_script
-                    
-                    # Extract keywords from analysis
-                    key_topics = analysis_result.get('key_topics', [])
-                    if key_topics:
-                        st.session_state["video_terms"] = ", ".join(key_topics[:5])
-                    
-                    st.success("🎯 재해석된 콘텐츠가 설정되었습니다! 위의 '영상 생성' 버튼을 클릭하여 영상을 만드세요.")
-                    time.sleep(2)
-                    st.rerun()
+        try:
+            from webui.youtube_reinterpret_ui import render_youtube_reinterpret_section
+            render_youtube_reinterpret_section()
+        except ImportError as e:
+            st.error(f"❌ YouTube 재해석 모듈 로드 실패: {e}")
+            st.info("💡 youtube_reinterpret_ui.py 파일이 필요합니다.")
+        except Exception as e:
+            st.error(f"❌ YouTube 재해석 기능 오류: {e}")
+            logger.error(f"YouTube reinterpret UI error: {e}")
 
     # Premium Batch Video Generation Section
     with st.expander("🔄 **배치 영상 생성** - 여러 영상을 한 번에 자동 생성", expanded=False):

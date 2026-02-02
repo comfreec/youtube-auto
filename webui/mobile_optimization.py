@@ -70,11 +70,27 @@ def add_mobile_styles():
         will-change: auto;
         backface-visibility: hidden;
         transform: translateZ(0);
+        /* 부드러운 전환 효과 */
+        transition: all 0.3s ease-in-out;
     }
     
-    /* 진행률 바 애니메이션 최적화 */
+    /* 진행률 바 애니메이션 최적화 - 깜빡임 방지 */
     .mobile-progress div[style*="transition"] {
-        transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        transition: width 2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+    
+    /* Streamlit 기본 진행률 바 깜빡임 방지 */
+    .stProgress > div > div {
+        transition: width 1.5s ease-in-out !important;
+    }
+    
+    /* 버튼 클릭 시 깜빡임 방지 */
+    .stButton > button {
+        transition: all 0.2s ease-in-out !important;
+    }
+    
+    .stButton > button:active {
+        transform: scale(0.98) !important;
     }
     
     /* 연결 상태 표시 */
@@ -98,6 +114,52 @@ def add_mobile_styles():
     }
     
     .connection-offline {
+        background: rgba(220, 53, 69, 0.9) !important;
+    }
+    
+    /* ngrok 터널 연결 상태 표시 */
+    .ngrok-status {
+        position: fixed;
+        bottom: 10px;
+        left: 10px;
+        z-index: 1000;
+        background: rgba(0, 123, 255, 0.9);
+        color: white;
+        padding: 0.3rem 0.8rem;
+        border-radius: 15px;
+        font-size: 0.7rem;
+        transition: all 0.3s ease;
+    }
+    
+    .ngrok-unstable {
+        background: rgba(255, 193, 7, 0.9) !important;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.7; }
+        100% { opacity: 1; }
+    }
+    
+    /* 모바일 네트워크 최적화 */
+    @media (max-width: 768px) {
+        /* 이미지 로딩 최적화 */
+        img {
+            loading: lazy;
+        }
+        
+        /* 스크롤 성능 최적화 */
+        * {
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* 터치 응답성 개선 */
+        button, .stButton > button {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+    }
         background: rgba(220, 53, 69, 0.9) !important;
     }
     </style>
