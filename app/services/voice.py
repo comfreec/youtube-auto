@@ -1980,18 +1980,6 @@ def create_subtitle(sub_maker: submaker.SubMaker, text: str, subtitle_file: str)
                     logger.success(f"✅ English subtitle timing corrected by {timing_offset_100ns/10000}ms")
             except Exception as e:
                 logger.warning(f"Could not validate subtitle duration: {e}")
-        else:
-            logger.warning(f"Subtitle count mismatch: {len(sub_items)} vs {len(script_lines)}")
-            
-    except Exception as e:
-        logger.error(f"Error creating subtitle: {e}")
-        return ""
-                logger.info(
-                    f"completed, subtitle file created: {subtitle_file}, duration: {duration}"
-                )
-            except Exception as e:
-                logger.error(f"failed, error: {str(e)}")
-                os.remove(subtitle_file)
         elif len(sub_items) > 0 and len(sub_items) >= len(script_lines) * 0.7:
             # 70% 이상 매칭되면 허용 (완벽하지 않아도 Whisper보다 나음)
             logger.warning(
