@@ -75,16 +75,18 @@ audio_codec = "aac"
 video_codec = "libx264"
 fps = 30
 
-# Enhanced video encoding settings for better compatibility
+# Enhanced video encoding settings for better compatibility and stability
 video_encoding_params = [
     "-pix_fmt", "yuv420p",  # Ensure compatibility with all players
     "-movflags", "+faststart",  # Enable progressive download
-    "-profile:v", "baseline",  # Use baseline profile for maximum compatibility
-    "-level", "3.0",  # H.264 level for mobile compatibility
-    "-r", "30",  # Force frame rate
-    "-g", "60",  # GOP size (2 seconds at 30fps)
-    "-keyint_min", "30",  # Minimum keyframe interval
+    "-profile:v", "main",  # Use main profile instead of baseline for better quality
+    "-level", "4.0",  # Higher H.264 level for better compatibility
+    "-r", "30",  # Force consistent frame rate
+    "-g", "30",  # Smaller GOP size (1 second at 30fps) for better seeking
+    "-keyint_min", "15",  # More frequent keyframes for smoother playback
     "-sc_threshold", "0",  # Disable scene change detection
+    "-vsync", "cfr",  # Constant frame rate to prevent frame drops
+    "-async", "1",  # Audio sync method
 ]
 
 def parse_srt(file_path):
@@ -530,6 +532,9 @@ def combine_videos(
                 "-r", str(fps),
                 "-avoid_negative_ts", "make_zero",  # Handle timestamp issues
                 "-fflags", "+genpts",  # Generate presentation timestamps
+                "-max_muxing_queue_size", "1024",  # Prevent muxing queue overflow
+                "-vsync", "cfr",  # Constant frame rate for stability
+                "-async", "1",  # Audio sync method
             ] + video_encoding_params + [combined_video_path]
             
             # Run ffmpeg with timeout

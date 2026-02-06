@@ -988,16 +988,49 @@ def translate_terms_to_korean(terms: List[str]) -> List[str]:
     joined = ", ".join([t.strip() for t in terms if t])
     if not joined:
         return []
-    prompt = f"Translate the following English keywords into Korean. Return ONLY a comma-separated list with no extra words:\n\n{joined}"
+    
+    # 더 명확한 번역 프롬프트
+    prompt = f"""다음 영어 키워드들을 자연스러운 한국어로 번역하세요. 각 키워드는 YouTube 태그로 사용될 예정입니다.
+
+영어 키워드: {joined}
+
+요구사항:
+1. 각 키워드를 정확한 한국어로 번역
+2. 쉼표로 구분하여 나열
+3. 추가 설명이나 번호 없이 키워드만 작성
+4. 한국어 검색에 적합한 자연스러운 용어 사용
+
+번역된 한국어 키워드:"""
+    
     try:
         response = _generate_response(prompt)
         if response:
             cleaned = response.replace("\n", ",").strip()
+            # 불필요한 텍스트 제거
+            prefixes = ["번역된 한국어 키워드:", "키워드:", "태그:", "결과:"]
+            for prefix in prefixes:
+                if cleaned.startswith(prefix):
+                    cleaned = cleaned[len(prefix):].strip()
+                    if cleaned.startswith(":"):
+                        cleaned = cleaned[1:].strip()
+            
             out = [t.strip() for t in cleaned.split(",") if t.strip()]
-            return out
+            
+            # 번역 결과 검증 - 한국어가 포함되어 있는지 확인
+            import re
+            korean_terms = [term for term in out if re.search(r'[가-힣]', term)]
+            
+            if korean_terms and len(korean_terms) >= len(terms) * 0.5:  # 최소 50% 이상이 한국어여야 함
+                logger.info(f"Successfully translated to Korean: {korean_terms}")
+                return korean_terms
+            else:
+                logger.warning(f"Translation quality insufficient, Korean terms: {korean_terms}")
+                return []
+                
     except Exception as e:
         logger.error(f"Translation failed: {e}")
-    return terms
+    
+    return []
 
 def translate_terms_to_english(terms: List[str]) -> List[str]:
     if not terms:
