@@ -1979,10 +1979,13 @@ def gtts_synthesize(text: str, voice_name: str, voice_file: str, voice_rate: flo
     """
     gTTS를 사용하여 음성 합성
     
+    ⚠️ 자막-음성 동기화 핵심 함수 - 수정 금지! ⚠️
+    
     Args:
         text: 합성할 텍스트
         voice_name: 음성 이름 (예: "gtts:ko-한국어")
         voice_file: 출력 음성 파일 경로
+        voice_rate: 음성 속도 배율 (기본값 1.0)
         
     Returns:
         GTTSSubMaker 객체 또는 None
@@ -2001,18 +2004,16 @@ def gtts_synthesize(text: str, voice_name: str, voice_file: str, voice_rate: flo
             logger.error("Empty text for gTTS synthesis")
             return None
             
-        logger.info(f"gTTS synthesis started - Language: {lang_part}, Text length: {len(text)}, Voice rate: {voice_rate}x")
-        
-        # 언어별 속도 배율 설정 (UI voice_rate + 언어별 추가 배율)
-        # voice_rate는 UI에서 설정한 기본 속도 (예: 1.2)
+        # 언어별 속도 배율 계산
+        # voice_rate: UI 설정값 (예: 1.2)
         # 한국어는 추가로 1.3배, 영어는 1.1배 적용
-        base_multiplier = voice_rate  # UI 설정값
+        base_multiplier = voice_rate
         lang_multiplier = 1.3 if lang_part == "ko" else 1.1 if lang_part == "en" else 1.0
         speed_multiplier = base_multiplier * lang_multiplier
         
-        logger.info(f"Speed calculation: UI rate {base_multiplier}x * Lang boost {lang_multiplier}x = {speed_multiplier}x")
+        logger.info(f"gTTS synthesis - Language: {lang_part}, Speed: {speed_multiplier}x (UI: {base_multiplier}x × Lang: {lang_multiplier}x)")
         
-        # gTTS 객체 생성 및 음성 합성
+        # gTTS 객체 생성 및 음성 합성 (기본 속도로 생성)
         tts = gTTS(text=text, lang=lang_part, slow=False)
         
         # 임시 파일에 저장
@@ -2021,47 +2022,23 @@ def gtts_synthesize(text: str, voice_name: str, voice_file: str, voice_rate: flo
             
         tts.save(temp_path)
         
-        # 속도 조정 (ffmpeg 사용 - 더 안정적)
-        if speed_multiplier != 1.0:
-            try:
-                import subprocess
-                
-                # ffmpeg로 속도 조정
-                adjusted_path = voice_file.replace('.mp3', '_adjusted.mp3')
-                atempo_filter = f"atempo={speed_multiplier}" if speed_multiplier <= 2.0 else f"atempo=2.0,atempo={speed_multiplier/2.0}"
-                
-                cmd = [
-                    'ffmpeg', '-i', temp_path,
-                    '-filter:a', atempo_filter,
-                    '-y', adjusted_path
-                ]
-                
-                result = subprocess.run(cmd, capture_output=True, text=True)
-                
-                if result.returncode == 0 and os.path.exists(adjusted_path):
-                    import shutil
-                    shutil.move(adjusted_path, voice_file)
-                    os.unlink(temp_path)
-                    logger.info(f"✅ Speed adjustment completed: {speed_multiplier}x (ffmpeg)")
-                else:
-                    logger.warning(f"ffmpeg failed, using original: {result.stderr}")
-                    import shutil
-                    shutil.move(temp_path, voice_file)
-            except Exception as e:
-                logger.warning(f"Speed adjustment failed: {e}, using original")
-                import shutil
-                shutil.move(temp_path, voice_file)
-        else:
-            import shutil
-            shutil.move(temp_path, voice_file)
+        # 파일 이동 (속도 조정 없이)
+        import shutil
+        shutil.move(temp_path, voice_file)
         
-        # 오디오 길이 측정 (속도 조정 후)
-        audio_duration = _get_audio_duration_from_mp3(voice_file)
-        logger.info(f"gTTS synthesis completed - Duration: {audio_duration}s (after {speed_multiplier}x speed)")
+        # 오디오 길이 측정 (원본 속도)
+        original_duration = _get_audio_duration_from_mp3(voice_file)
         
-        # SubMaker 객체 생성 (조정된 오디오 길이 기준)
+        # 속도 배율을 적용한 실제 재생 시간 계산
+        # 예: 10초 오디오를 1.56배속으로 재생하면 6.41초가 됨
+        adjusted_duration = original_duration / speed_multiplier
+        
+        logger.info(f"gTTS synthesis completed - Original: {original_duration:.2f}s, Adjusted ({speed_multiplier}x): {adjusted_duration:.2f}s")
+        
+        # SubMaker 객체 생성 (속도 조정된 시간 기준으로 자막 생성)
+        # 이렇게 하면 자막 타이밍이 빨라진 음성과 동기화됨
         sub_maker = GTTSSubMaker()
-        sub_maker.create_sub(text, audio_duration)
+        sub_maker.create_sub(text, adjusted_duration)
         
         return sub_maker
         
