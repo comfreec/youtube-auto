@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import json
 import os.path
 import re
@@ -197,6 +198,97 @@ def similarity(a, b):
     return 1 - (distance / max_length)
 
 
+def merge_short_subtitles(subtitle_items, min_duration=1.0, min_chars=10):
+    """
+    짧은 자막들을 병합하여 가독성 향상
+    
+    Args:
+        subtitle_items: 자막 아이템 리스트 [(index, time, text), ...]
+        min_duration: 최소 자막 지속 시간 (초)
+        min_chars: 최소 문자 수
+    
+    Returns:
+        병합된 자막 아이템 리스트
+    """
+    if not subtitle_items:
+        return subtitle_items
+    
+    merged = []
+    i = 0
+    
+    while i < len(subtitle_items):
+        current_item = subtitle_items[i]
+        current_time = current_item[1]
+        current_text = current_item[2].strip()
+        
+        # 시작/종료 시간 파싱
+        start_time_str, end_time_str = current_time.split(" --> ")
+        
+        def time_to_seconds(time_str):
+            """HH:MM:SS,mmm -> seconds"""
+            h, m, s = time_str.replace(',', '.').split(':')
+            return int(h) * 3600 + int(m) * 60 + float(s)
+        
+        def seconds_to_time(seconds):
+            """seconds -> HH:MM:SS,mmm"""
+            h = int(seconds // 3600)
+            m = int((seconds % 3600) // 60)
+            s = seconds % 60
+            return f"{h:02d}:{m:02d}:{s:06.3f}".replace('.', ',')
+        
+        start_time = time_to_seconds(start_time_str)
+        end_time = time_to_seconds(end_time_str)
+        duration = end_time - start_time
+        
+        # 짧은 자막이면 다음 자막과 병합 시도
+        if (duration < min_duration or len(current_text) < min_chars) and i + 1 < len(subtitle_items):
+            # 다음 자막들을 계속 병합
+            combined_text = current_text
+            final_end_time = end_time
+            j = i + 1
+            
+            while j < len(subtitle_items):
+                next_item = subtitle_items[j]
+                next_time = next_item[1]
+                next_text = next_item[2].strip()
+                
+                next_start_str, next_end_str = next_time.split(" --> ")
+                next_start = time_to_seconds(next_start_str)
+                next_end = time_to_seconds(next_end_str)
+                
+                # 다음 자막이 너무 멀리 떨어져 있으면 병합 중단
+                if next_start - final_end_time > 0.5:
+                    break
+                
+                # 텍스트 병합
+                combined_text += " " + next_text
+                final_end_time = next_end
+                j += 1
+                
+                # 충분히 길어지면 병합 중단
+                combined_duration = final_end_time - start_time
+                if combined_duration >= min_duration and len(combined_text) >= min_chars:
+                    break
+            
+            # 병합된 자막 추가
+            merged.append((
+                len(merged) + 1,
+                f"{seconds_to_time(start_time)} --> {seconds_to_time(final_end_time)}",
+                combined_text
+            ))
+            i = j
+        else:
+            # 충분히 긴 자막은 그대로 추가
+            merged.append((
+                len(merged) + 1,
+                current_time,
+                current_text
+            ))
+            i += 1
+    
+    return merged
+
+
 def correct(subtitle_file, video_script):
     subtitle_items = file_to_subtitles(subtitle_file)
     script_lines = utils.split_string_by_punctuations(video_script)
@@ -280,6 +372,15 @@ def correct(subtitle_file, video_script):
                 )
             )
         script_index += 1
+        corrected = True
+    
+    # 짧은 자막 병합 (추가 개선)
+    logger.info("Merging short subtitles for better readability...")
+    original_count = len(new_subtitle_items)
+    new_subtitle_items = merge_short_subtitles(new_subtitle_items, min_duration=0.8, min_chars=8)
+    merged_count = original_count - len(new_subtitle_items)
+    if merged_count > 0:
+        logger.info(f"Merged {merged_count} short subtitles ({original_count} -> {len(new_subtitle_items)})")
         corrected = True
 
     if corrected:

@@ -66,31 +66,6 @@ def add_mobile_styles():
         border-radius: 12px;
         padding: 1rem;
         margin: 1rem 0;
-        /* 깜빡임 방지를 위한 안정화 */
-        will-change: auto;
-        backface-visibility: hidden;
-        transform: translateZ(0);
-        /* 부드러운 전환 효과 */
-        transition: all 0.3s ease-in-out;
-    }
-    
-    /* 진행률 바 애니메이션 최적화 - 깜빡임 방지 */
-    .mobile-progress div[style*="transition"] {
-        transition: width 2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    }
-    
-    /* Streamlit 기본 진행률 바 깜빡임 방지 */
-    .stProgress > div > div {
-        transition: width 1.5s ease-in-out !important;
-    }
-    
-    /* 버튼 클릭 시 깜빡임 방지 */
-    .stButton > button {
-        transition: all 0.2s ease-in-out !important;
-    }
-    
-    .stButton > button:active {
-        transform: scale(0.98) !important;
     }
     
     /* 연결 상태 표시 */
@@ -104,9 +79,6 @@ def add_mobile_styles():
         padding: 0.5rem 1rem;
         border-radius: 20px;
         font-size: 0.8rem;
-        /* 깜빡임 방지 */
-        will-change: auto;
-        backface-visibility: hidden;
     }
     
     .connection-online {
@@ -114,52 +86,6 @@ def add_mobile_styles():
     }
     
     .connection-offline {
-        background: rgba(220, 53, 69, 0.9) !important;
-    }
-    
-    /* ngrok 터널 연결 상태 표시 */
-    .ngrok-status {
-        position: fixed;
-        bottom: 10px;
-        left: 10px;
-        z-index: 1000;
-        background: rgba(0, 123, 255, 0.9);
-        color: white;
-        padding: 0.3rem 0.8rem;
-        border-radius: 15px;
-        font-size: 0.7rem;
-        transition: all 0.3s ease;
-    }
-    
-    .ngrok-unstable {
-        background: rgba(255, 193, 7, 0.9) !important;
-        animation: pulse 2s infinite;
-    }
-    
-    @keyframes pulse {
-        0% { opacity: 1; }
-        50% { opacity: 0.7; }
-        100% { opacity: 1; }
-    }
-    
-    /* 모바일 네트워크 최적화 */
-    @media (max-width: 768px) {
-        /* 이미지 로딩 최적화 */
-        img {
-            loading: lazy;
-        }
-        
-        /* 스크롤 성능 최적화 */
-        * {
-            -webkit-overflow-scrolling: touch;
-        }
-        
-        /* 터치 응답성 개선 */
-        button, .stButton > button {
-            touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
-        }
-    }
         background: rgba(220, 53, 69, 0.9) !important;
     }
     </style>
@@ -263,7 +189,7 @@ def show_mobile_generation_tips():
     pass
 
 def show_mobile_progress_tracker(progress: float, status: str, elapsed_time: float = 0):
-    """모바일 친화적 진행 상태 표시 - 깜빡임 완전 제거 버전 v2"""
+    """모바일 친화적 진행 상태 표시 - 강화된 버전"""
     estimated_total = 300  # 5분 예상
     remaining_time = max(0, estimated_total - elapsed_time)
     
@@ -281,98 +207,54 @@ def show_mobile_progress_tracker(progress: float, status: str, elapsed_time: flo
     else:
         phase_msg = "🎉 마무리 작업 중입니다"
     
-    # 세션 상태 기반 변화 감지 - 더 엄격한 기준
-    last_progress = st.session_state.get("last_mobile_progress", -1)
-    last_status = st.session_state.get("last_mobile_status", "")
-    last_elapsed = st.session_state.get("last_mobile_elapsed", -1)
-    last_update_time = st.session_state.get("last_progress_update_time", 0)
-    
-    current_time = time.time()
-    
-    # 변화 감지 조건 (더 엄격하게)
-    progress_changed = abs(progress - last_progress) >= 0.02  # 2% 이상 변화
-    status_changed = status != last_status
-    time_changed = abs(elapsed_time - last_elapsed) >= 2.0  # 2초 이상 변화
-    force_update = (current_time - last_update_time) > 10.0  # 10초마다 강제 업데이트
-    
-    should_update = progress_changed or status_changed or time_changed or force_update
-    
-    # 진행률이 완료에 가까우면 더 자주 업데이트
-    if progress > 0.95:
-        should_update = should_update or abs(progress - last_progress) >= 0.005  # 0.5% 변화
-    
-    if should_update:
-        # 상태 업데이트
-        st.session_state["last_mobile_progress"] = progress
-        st.session_state["last_mobile_status"] = status
-        st.session_state["last_mobile_elapsed"] = elapsed_time
-        st.session_state["last_progress_update_time"] = current_time
-        
-        # 고유하고 안정적인 컨테이너 ID
-        container_key = "mobile_progress_container"
-        
-        # 컨테이너가 이미 존재하는지 확인
-        if container_key not in st.session_state:
-            st.session_state[container_key] = st.empty()
-        
-        # 기존 컨테이너에 업데이트 (새로 생성하지 않음)
-        with st.session_state[container_key].container():
-            st.markdown(f"""
-            <div class="mobile-progress" style="
-                background: rgba(0, 123, 255, 0.1);
-                border: 1px solid rgba(0, 123, 255, 0.3);
-                border-radius: 12px;
-                padding: 1rem;
-                margin: 1rem 0;
-                will-change: auto;
-                backface-visibility: hidden;
-                transform: translateZ(0);
-                position: relative;
-            ">
-                <h4 style="color: #007bff; margin: 0 0 0.5rem 0;">{phase_msg}</h4>
-                <div style="margin-bottom: 1rem;">
-                    <div style="background: rgba(0,0,0,0.1); border-radius: 10px; height: 25px; overflow: hidden; position: relative;">
-                        <div style="
-                            background: linear-gradient(90deg, #007bff, #0056b3); 
-                            height: 100%; 
-                            width: {progress*100:.1f}%; 
-                            transition: width 1.5s ease-out; 
-                            border-radius: 10px;
-                            will-change: width;
-                        "></div>
-                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-weight: bold; font-size: 0.9rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.7);">
-                            {progress*100:.1f}%
-                        </div>
-                    </div>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                    <div style="text-align: center; padding: 0.5rem; background: rgba(0,123,255,0.1); border-radius: 8px;">
-                        <div style="font-size: 0.8rem; color: #666;">경과 시간</div>
-                        <div style="font-weight: bold; color: #007bff;">
-                            {int(elapsed_time//60)}분 {int(elapsed_time%60)}초
-                        </div>
-                    </div>
-                    <div style="text-align: center; padding: 0.5rem; background: rgba(40,167,69,0.1); border-radius: 8px;">
-                        <div style="font-size: 0.8rem; color: #666;">예상 남은 시간</div>
-                        <div style="font-weight: bold; color: #28a745;">
-                            {int(remaining_time//60)}분 {int(remaining_time%60)}초
-                        </div>
-                    </div>
-                </div>
-                <div style="color: #666; font-size: 0.9rem; text-align: center; margin-bottom: 1rem;">
-                    <strong>현재 상태:</strong> {status}
-                </div>
-                <div style="padding: 1rem; background: rgba(255,193,7,0.1); border-radius: 8px; font-size: 0.85rem; color: #856404;">
-                    <div style="margin-bottom: 0.5rem;"><strong>📱 모바일 사용자 안내:</strong></div>
-                    <div>• 화면을 켜둔 상태로 유지해주세요</div>
-                    <div>• 다른 앱으로 전환해도 백그라운드에서 계속 진행됩니다</div>
-                    <div>• 네트워크 연결이 끊어지면 자동으로 재연결을 시도합니다</div>
-                    <div>• 완료되면 알림으로 알려드립니다</div>
+    st.markdown(f"""
+    <div class="mobile-progress">
+        <h4 style="color: #007bff; margin: 0 0 0.5rem 0;">{phase_msg}</h4>
+        <div style="margin-bottom: 1rem;">
+            <div style="background: rgba(0,0,0,0.1); border-radius: 10px; height: 25px; overflow: hidden; position: relative;">
+                <div style="background: linear-gradient(90deg, #007bff, #0056b3); height: 100%; width: {progress*100}%; transition: width 0.5s ease; border-radius: 10px;"></div>
+                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-weight: bold; font-size: 0.9rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.7);">
+                    {progress*100:.1f}%
                 </div>
             </div>
-            """, unsafe_allow_html=True)
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+            <div style="text-align: center; padding: 0.5rem; background: rgba(0,123,255,0.1); border-radius: 8px;">
+                <div style="font-size: 0.8rem; color: #666;">경과 시간</div>
+                <div style="font-weight: bold; color: #007bff;">{int(elapsed_time//60)}분 {int(elapsed_time%60)}초</div>
+            </div>
+            <div style="text-align: center; padding: 0.5rem; background: rgba(40,167,69,0.1); border-radius: 8px;">
+                <div style="font-size: 0.8rem; color: #666;">예상 남은 시간</div>
+                <div style="font-weight: bold; color: #28a745;">{int(remaining_time//60)}분 {int(remaining_time%60)}초</div>
+            </div>
+        </div>
+        <div style="color: #666; font-size: 0.9rem; text-align: center; margin-bottom: 1rem;">
+            <strong>현재 상태:</strong> {status}
+        </div>
+        <div style="padding: 1rem; background: rgba(255,193,7,0.1); border-radius: 8px; font-size: 0.85rem; color: #856404;">
+            <div style="margin-bottom: 0.5rem;"><strong>📱 모바일 사용자 안내:</strong></div>
+            <div>• 화면을 켜둔 상태로 유지해주세요</div>
+            <div>• 다른 앱으로 전환해도 백그라운드에서 계속 진행됩니다</div>
+            <div>• 네트워크 연결이 끊어지면 자동으로 재연결을 시도합니다</div>
+            <div>• 완료되면 알림으로 알려드립니다</div>
+        </div>
+    </div>
     
-    # 변화가 없으면 아무것도 하지 않음 (깜빡임 완전 방지)
+    <script>
+    // 진행률 업데이트 시 로컬 스토리지에 저장
+    localStorage.setItem('video_generation_progress', JSON.stringify({{
+        progress: {progress},
+        status: '{status}',
+        elapsed_time: {elapsed_time},
+        timestamp: Date.now()
+    }}));
+    
+    // 진동 피드백 (지원되는 경우)
+    if ('vibrate' in navigator && {progress} > 0.95) {{
+        navigator.vibrate([200, 100, 200]); // 완료 시 진동
+    }}
+    </script>
+    """, unsafe_allow_html=True)
 
 def check_mobile_compatibility() -> Dict[str, Any]:
     """모바일 호환성 확인"""

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import re
 import glob
@@ -7,6 +8,7 @@ import sys
 import time
 import json
 import concurrent.futures
+import threading
 from uuid import uuid4
 
 import streamlit as st
@@ -20,6 +22,9 @@ if root_dir not in sys.path:
 # Import VideoAspect for timer video generation
 from app.models.schema import VideoAspect
 from app.config import config
+from app.services import task
+from app.services import state as sm
+from app.models import const
 
 # Import mobile optimization
 try:
@@ -31,6 +36,13 @@ try:
     MOBILE_OPTIMIZATION_AVAILABLE = True
 except ImportError:
     MOBILE_OPTIMIZATION_AVAILABLE = False
+
+# Import animation shorts UI
+try:
+    from webui.animation_shorts_ui import show_animation_shorts_ui
+    ANIMATION_SHORTS_AVAILABLE = True
+except ImportError:
+    ANIMATION_SHORTS_AVAILABLE = False
 
 
 st.set_page_config(
@@ -1297,20 +1309,27 @@ system_locale = utils.get_system_locale()
 # 모바일 세션 복원 (페이지 로드 시 한 번만 실행) - 완전 자동화 버전
 if MOBILE_OPTIMIZATION_AVAILABLE and "session_restored" not in st.session_state:
     try:
+        logger.info("🔄 Starting mobile session restoration...")
+        
         # 이전 세션 복원 시도
         restored_session = mobile_session_manager.restore_session()
         
         if restored_session:
             task_id = restored_session.get("task_id")
+            logger.info(f"📱 Found previous session with task_id: {task_id}")
             
             if task_id:
                 # 작업 상태 확인
                 task_status = mobile_session_manager.get_active_task_status(task_id)
+                logger.info(f"📊 Task status: {task_status}")
                 
                 if task_status:
                     # 세션 상태 복원
                     st.session_state["current_task_id"] = task_id
                     st.session_state["generation_start_time"] = restored_session.get("start_time", time.time())
+                    
+                    # 🔄 중요: 메모리 상태도 함께 복원
+                    mobile_session_manager.restore_task_to_memory(task_id, restored_session)
                     
                     if task_status["is_active"]:
                         st.session_state["generation_in_progress"] = True
@@ -1319,33 +1338,79 @@ if MOBILE_OPTIMIZATION_AVAILABLE and "session_restored" not in st.session_state:
                         # 화면 껐다 켜기 복원 알림 (더 명확하게)
                         elapsed = int(time.time() - restored_session.get("start_time", time.time()))
                         st.success(f"📱 화면 복원: 영상 생성 진행 중 ({task_status['progress']}%, {elapsed//60}분 경과)")
+                        logger.info(f"✅ Active task restored: {task_id}, progress: {task_status['progress']}%")
                         
                     elif task_status.get("video_file"):
                         st.session_state["generation_in_progress"] = False
                         st.session_state["completed_video_file"] = task_status["video_file"]
                         st.success("✅ 화면 복원: 완료된 영상을 찾았습니다!")
+                        logger.info(f"✅ Completed task restored: {task_id}")
                     else:
                         st.session_state["generation_in_progress"] = False
                         st.info("ℹ️ 이전 작업 기록을 복원했습니다.")
+                        logger.info(f"ℹ️ Inactive task restored: {task_id}")
                 else:
-                    # 작업 상태를 찾을 수 없어도 세션 정보는 복원
+                    # 작업 상태를 찾을 수 없어도 세션 정보는 복원하고 메모리 상태 복원 시도
                     st.session_state["current_task_id"] = task_id
                     st.session_state["generation_start_time"] = restored_session.get("start_time", time.time())
+                    
+                    # 메모리 상태 복원 시도
+                    mobile_session_manager.restore_task_to_memory(task_id, restored_session)
                     
                     # 더 자세한 상태 정보 제공
                     elapsed = int(time.time() - restored_session.get("start_time", time.time()))
                     st.info(f"📱 이전 세션을 복원했습니다 ({elapsed//60}분 전 시작). 작업이 완료되었거나 중단되었을 수 있습니다.")
+                    logger.warning(f"⚠️ Task status not found for: {task_id}")
             else:
                 st.info("ℹ️ 이전 세션 기록이 있지만 진행 중인 작업은 없습니다.")
+                logger.info("ℹ️ Session found but no task_id")
         else:
             # 복원할 세션이 없는 경우 (정상적인 첫 방문)
-            logger.info("No previous session found - starting fresh")
+            logger.info("🆕 No previous session found - starting fresh")
         
         # 오래된 세션 정리
         mobile_session_manager.cleanup_old_sessions()
         
+        # 추가: 작업 ID 기반 복원 (URL 파라미터나 쿠키에서)
+        if not restored_session:
+            try:
+                # URL 파라미터에서 task_id 확인
+                query_params = st.query_params
+                if "task_id" in query_params:
+                    task_id = query_params["task_id"]
+                    logger.info(f"🔗 Found task_id in URL: {task_id}")
+                    
+                    # 해당 작업의 상태 확인
+                    task_status = mobile_session_manager.get_active_task_status(task_id)
+                    if task_status:
+                        # 임시 세션 데이터 생성
+                        restored_session = {
+                            "task_id": task_id,
+                            "start_time": time.time() - 3600,  # 1시간 전으로 가정
+                            "status": "url_restored"
+                        }
+                        logger.info(f"✅ Restored session from URL parameter: {task_id}")
+                        
+                        # 세션 상태 복원
+                        st.session_state["current_task_id"] = task_id
+                        st.session_state["generation_start_time"] = restored_session["start_time"]
+                        
+                        if task_status["is_active"]:
+                            st.session_state["generation_in_progress"] = True
+                            st.session_state["auto_restored"] = True
+                            st.success(f"🔗 URL에서 작업 복원: 영상 생성 진행 중 ({task_status['progress']}%)")
+                        elif task_status.get("video_file"):
+                            st.session_state["generation_in_progress"] = False
+                            st.session_state["completed_video_file"] = task_status["video_file"]
+                            st.success("🔗 URL에서 작업 복원: 완료된 영상을 찾았습니다!")
+                        
+            except Exception as e:
+                logger.error(f"Failed to restore from URL: {e}")
+        
     except Exception as e:
-        logger.error(f"Session restoration failed: {e}")
+        logger.error(f"❌ Session restoration failed: {e}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
     
     st.session_state["session_restored"] = True
 
@@ -1354,38 +1419,55 @@ if st.session_state.get("generation_in_progress", False) and st.session_state.ge
     task_id = st.session_state.get("current_task_id")
     
     if task_id:
-        # 진행률 표시
+        logger.info(f"🔄 Monitoring restored task: {task_id}")
+        
+        # 진행률 표시는 아래쪽 통합 섹션에서 처리하므로 여기서는 제거
+        # 단순히 복원 상태만 확인하고 디버깅 정보만 표시
         task_status = mobile_session_manager.get_active_task_status(task_id)
-        if task_status and task_status.get('progress', 0) < 100:
-            # 진행 중인 작업 표시
-            st.markdown("""
-            <div class="mobile-progress">
-                <h4>🔄 영상 생성 진행 중</h4>
-                <p>백그라운드에서 영상 생성이 계속 진행되고 있습니다.</p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # 실시간 진행률 바 (깜빡임 방지)
+        logger.info(f"📊 Current task status: {task_status}")
+        
+        if task_status:
             progress = task_status.get('progress', 0)
-            message = task_status.get('message', '진행 중...')
+            is_active = task_status.get('is_active', False)
             
-            # 진행률 표시 (부드러운 애니메이션)
-            st.markdown(f"""
-            <div style="margin: 1rem 0;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                    <span><strong>진행률: {progress}%</strong></span>
-                    <span style="color: #666;">{message}</span>
-                </div>
-                <div style="background: #f0f0f0; border-radius: 10px; height: 20px; overflow: hidden;">
-                    <div style="
-                        background: linear-gradient(90deg, #4CAF50, #45a049);
-                        height: 100%;
-                        width: {progress}%;
-                        transition: width 2s ease-in-out;
-                        border-radius: 10px;
-                    "></div>
-                </div>
-            </div>
+            if is_active and progress < 100:
+                # 진행 상태 표시는 아래쪽 통합 섹션에서 처리
+                # 여기서는 디버깅 정보만 표시 (필요시)
+                pass
+                
+            elif progress >= 100 or task_status.get('video_file'):
+                # 완료된 작업
+                st.session_state["generation_in_progress"] = False
+                st.session_state["auto_restored"] = False
+                if task_status.get('video_file'):
+                    st.session_state["completed_video_file"] = task_status['video_file']
+                
+                # URL에서 task_id 제거 (완료되었으므로)
+                try:
+                    if "task_id" in st.query_params:
+                        del st.query_params["task_id"]
+                        logger.info("🔗 Removed task_id from URL (completed)")
+                except:
+                    pass
+                
+                st.success("✅ 영상 생성이 완료되었습니다!")
+                # 페이지 중복 방지: st.rerun() 제거
+            else:
+                # 상태 불명확 - 진행률 표시는 아래쪽 통합 섹션에서 처리
+                # 여기서는 간단한 로그만 남김
+                logger.info(f"📊 Task status unclear: {message} ({progress}%)")
+        else:
+            # 작업 상태를 찾을 수 없음
+            st.warning("⚠️ 작업 상태를 확인할 수 없습니다. 작업이 완료되었거나 중단되었을 수 있습니다.")
+            logger.warning(f"⚠️ No task status found for restored task: {task_id}")
+            
+            # 5초 후 자동 새로고침으로 재확인
+            st.markdown("""
+            <script>
+            setTimeout(function() {
+                window.location.reload();
+            }, 5000);
+            </script>
             """, unsafe_allow_html=True)
             
             # 경과 시간 표시
@@ -1393,24 +1475,8 @@ if st.session_state.get("generation_in_progress", False) and st.session_state.ge
             elapsed = int(time.time() - start_time)
             st.write(f"⏱️ 경과 시간: {elapsed//60}분 {elapsed%60}초")
             
-            # 수동 새로고침 버튼만 제공 (자동 새로고침 제거)
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("🔄 진행률 확인", use_container_width=True, key="refresh_progress"):
-                    st.rerun()
-            with col2:
-                if st.button("⏹️ 작업 중단", use_container_width=True, key="stop_task"):
-                    st.session_state["generation_in_progress"] = False
-                    st.session_state["auto_restored"] = False
-                    st.warning("작업이 중단되었습니다.")
-                    st.rerun()
-            
-            # 부드러운 자동 업데이트 (JavaScript 없이)
-            st.markdown("""
-            <div style="text-align: center; margin-top: 1rem; color: #666; font-size: 0.9rem;">
-                💡 진행률을 확인하려면 '🔄 진행률 확인' 버튼을 눌러주세요
-            </div>
-            """, unsafe_allow_html=True)
+            # 진행률 확인과 제어는 아래쪽 통합 섹션에서 처리
+            # 여기서는 중복 제거
             
             # ngrok 환경에서 연결 상태 표시
             if "ngrok" in st.get_option("server.baseUrlPath") or "ngrok" in str(st.session_state.get("server_url", "")):
@@ -1429,20 +1495,25 @@ if st.session_state.get("generation_in_progress", False) and st.session_state.ge
                         st.warning("⚠️ 네트워크 연결이 불안정합니다. 새로고침을 시도해보세요.")
                 except:
                     st.error("❌ 네트워크 연결에 문제가 있습니다. ngrok 터널을 확인해주세요.")
-            
-        elif task_status and task_status.get('progress', 0) >= 100:
-            # 완료된 경우 자동으로 완료 상태로 전환
-            st.session_state["generation_in_progress"] = False
-            st.session_state["auto_restored"] = False
-            if task_status.get("video_file"):
-                st.session_state["completed_video_file"] = task_status["video_file"]
-                st.success("🎉 영상 생성이 완료되었습니다!")
-            st.rerun()
-        else:
-            # 작업을 찾을 수 없는 경우
-            st.warning("⚠️ 진행 중인 작업을 찾을 수 없습니다.")
-            st.session_state["generation_in_progress"] = False
-            st.session_state["auto_restored"] = False
+    
+    # 복원된 작업의 완료 상태 확인
+    if st.session_state.get("generation_in_progress", False) and st.session_state.get("auto_restored", False):
+        task_id = st.session_state.get("current_task_id")
+        if task_id:
+            task_status = mobile_session_manager.get_active_task_status(task_id)
+            if task_status and task_status.get('progress', 0) >= 100:
+                # 완료된 경우 자동으로 완료 상태로 전환
+                st.session_state["generation_in_progress"] = False
+                st.session_state["auto_restored"] = False
+                if task_status.get("video_file"):
+                    st.session_state["completed_video_file"] = task_status["video_file"]
+                    st.success("🎉 영상 생성이 완료되었습니다!")
+                # 페이지 중복 방지: st.rerun() 제거하고 자연스러운 업데이트 대기
+            elif not task_status:
+                # 작업을 찾을 수 없는 경우
+                st.warning("⚠️ 진행 중인 작업을 찾을 수 없습니다.")
+                st.session_state["generation_in_progress"] = False
+                st.session_state["auto_restored"] = False
 
 # 영상 생성 시 자동으로 세션 저장
 def save_generation_session(task_id: str, subject: str):
@@ -1725,6 +1796,19 @@ if MOBILE_OPTIMIZATION_AVAILABLE and st.session_state.get("generation_in_progres
                 # 진행률 바
                 st.progress(progress / 100.0)
                 
+                # 제어 버튼들 (통합)
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.button("🔄 진행률 확인", use_container_width=True, key="refresh_progress"):
+                        # 페이지 중복 방지: st.rerun() 제거하고 자연스러운 업데이트 대기
+                        pass
+                with col2:
+                    if st.button("⏹️ 작업 중단", use_container_width=True, key="stop_task"):
+                        st.session_state["generation_in_progress"] = False
+                        st.session_state["auto_restored"] = False
+                        st.warning("작업이 중단되었습니다.")
+                        # 페이지 중복 방지: st.rerun() 제거
+                
             elif task_status and task_status.get("video_file"):
                 st.success("✅ 영상 생성이 완료되었습니다!")
                 st.session_state["generation_in_progress"] = False
@@ -1740,8 +1824,9 @@ if MOBILE_OPTIMIZATION_AVAILABLE and st.session_state.get("generation_in_progres
             st.warning("⚠️ 진행 상황을 확인할 수 없습니다. 새로고침해보세요.")
 
 # Premium Tab Design
-tab_main, tab_settings, tab_analytics = st.tabs([
+tab_main, tab_animation, tab_settings, tab_analytics = st.tabs([
     "🎬 영상 생성", 
+    "🎨 애니메이션 쇼츠",
     "⚙️ 고급 설정", 
     "📊 분석 & 관리"
 ])
@@ -1812,7 +1897,7 @@ with tab_main:
                 st.rerun()
         
         with col_quick3:
-            if st.button("✨ 자동 생성", use_container_width=True, type="primary"):
+            if st.button("📝 대본&키워드생성", use_container_width=True, type="primary"):
                 if not params.video_subject:
                     st.error("먼저 영상 주제를 입력해주세요!")
                     st.stop()
@@ -2109,13 +2194,23 @@ with tab_main:
                 else:
                     st.info("💡 제품 오버레이를 활성화하면 쿠팡 제품 링크를 추가할 수 있습니다")
             
-            # Main generation button
-            start_button = st.button(
-                "🎬 AI 영상 생성 시작", 
-                use_container_width=True, 
-                type="primary",
-                help="모든 설정을 확인한 후 영상 생성을 시작합니다."
-            )
+            # Main generation button - 진행 중일 때는 비활성화
+            generation_in_progress = st.session_state.get("generation_in_progress", False)
+            
+            if generation_in_progress:
+                st.button(
+                    "🔄 영상 생성 진행 중...", 
+                    use_container_width=True, 
+                    disabled=True,
+                    help="영상 생성이 진행 중입니다. 완료될 때까지 기다려주세요."
+                )
+            else:
+                start_button = st.button(
+                    "🎬 AI 영상 생성 시작", 
+                    use_container_width=True, 
+                    type="primary",
+                    help="모든 설정을 확인한 후 영상 생성을 시작합니다."
+                )
             
             # Generation status container
             generation_status_container = st.empty()
@@ -4521,7 +4616,15 @@ with tab_analytics:
                 except Exception as e:
                     st.error(f"복원 실패: {e}")
 
-# --- TAB 2: SETTINGS (Enhanced) ---
+# --- TAB 2: ANIMATION SHORTS ---
+with tab_animation:
+    if ANIMATION_SHORTS_AVAILABLE:
+        show_animation_shorts_ui()
+    else:
+        st.error("❌ 애니메이션 쇼츠 모듈을 불러올 수 없습니다.")
+        st.info("💡 webui/animation_shorts_ui.py 파일을 확인해주세요.")
+
+# --- TAB 3: SETTINGS (Enhanced) ---
 with tab_settings:
     st.markdown("### ⚙️ **고급 설정 및 커스터마이징**")
     st.markdown("*전문가급 영상을 위한 세밀한 설정을 조정하세요*")
@@ -5348,12 +5451,35 @@ with tab_settings:
 
 
 # Premium Generation Logic
-if start_button:
+if not st.session_state.get("generation_in_progress", False) and 'start_button' in locals() and start_button:
     # Mobile optimization: Set generation state and add keep-alive
     st.session_state["generation_in_progress"] = True
     st.session_state["generation_start_time"] = time.time()
     
     task_id = str(uuid4())
+    st.session_state["current_task_id"] = task_id  # 중요: task_id를 세션에 저장
+    
+    # 🔄 모바일 세션 저장 (영상 생성 시작 시)
+    if MOBILE_OPTIMIZATION_AVAILABLE:
+        try:
+            mobile_session_params = {
+                "video_subject": params.video_subject,
+                "video_type": "shorts",  # 기본값
+                "video_language": getattr(params, 'video_language', 'ko-KR'),
+                "voice_name": getattr(params, 'voice_name', ''),
+            }
+            mobile_session_manager.save_generation_state(task_id, mobile_session_params)
+            logger.info(f"✅ Mobile session saved for task: {task_id}")
+        except Exception as e:
+            logger.error(f"❌ Failed to save mobile session: {e}")
+            # 오류가 발생해도 영상 생성은 계속 진행
+    
+    # URL에 task_id 추가 (페이지 종료 후 재접속 시 복원용)
+    try:
+        st.query_params["task_id"] = task_id
+        logger.info(f"🔗 Added task_id to URL: {task_id}")
+    except Exception as e:
+        logger.warning(f"Failed to add task_id to URL: {e}")
     
     # 모바일 세션 저장 - 안전한 방식으로 재활성화
     if MOBILE_OPTIMIZATION_AVAILABLE:
@@ -5364,6 +5490,7 @@ if start_button:
                 "video_language": params.video_language,
                 "voice_name": params.voice_name,
             })
+            logger.info(f"📱 Mobile session saved for task: {task_id}")
         except Exception as e:
             logger.error(f"Failed to save mobile session: {e}")
     
@@ -5469,7 +5596,7 @@ if start_button:
     # Validation with premium error messages
     if not params.video_subject and not params.video_script:
         st.error("❌ **영상 주제 또는 대본이 필요합니다**")
-        st.info("💡 위의 '영상 주제' 입력란에 내용을 입력하거나 '✨ 자동 생성' 버튼을 클릭하세요")
+        st.info("💡 위의 '영상 주제' 입력란에 내용을 입력하거나 '📝 대본&키워드생성' 버튼을 클릭하세요")
         st.session_state["generation_in_progress"] = False
         st.stop()
 
@@ -5666,26 +5793,29 @@ if start_button:
                     # 영어 버전 자막 설정 명시적 활성화
                     eng_params.subtitle_enabled = True
                     
-                    # 영어 키워드 생성 (영상 소재 검색용)
-                    try:
-                        eng_terms = llm.generate_terms(video_subject=eng_subject, video_script=english_script, amount=8) or []
-                        if eng_terms:
-                            # 영어 키워드만 필터링
-                            filtered_terms = [t for t in eng_terms if t and not re.search(r'[가-힣]', t)]
-                            if filtered_terms:
-                                eng_params.video_terms = ", ".join(filtered_terms)
+                    # 영어 키워드 생성 - 한국어 키워드 번역 방식 (배경영상 재사용을 위해)
+                    korean_terms = getattr(params, 'video_terms', '')
+                    if korean_terms:
+                        korean_terms_list = [t.strip() for t in korean_terms.split(',') if t.strip()]
+                        if korean_terms_list:
+                            logger.info(f"🔄 Translating Korean terms to English for background video consistency: {korean_terms_list}")
+                            translated_terms = llm.translate_terms_to_english(korean_terms_list)
+                            if translated_terms and len(translated_terms) >= 3:
+                                eng_params.video_terms = ", ".join(translated_terms)
+                                logger.info(f"✅ Using translated terms: {eng_params.video_terms}")
                             else:
-                                # 기본 영어 키워드
+                                # 번역 실패 시 기본 키워드
                                 eng_params.video_terms = "motivation, success, lifestyle, tips, guide, inspiration"
+                                logger.warning(f"Translation failed, using fallback: {eng_params.video_terms}")
                         else:
                             eng_params.video_terms = "motivation, success, lifestyle, tips, guide, inspiration"
-                    except Exception:
+                    else:
                         eng_params.video_terms = "motivation, success, lifestyle, tips, guide, inspiration"
                     
                     # 영어 버전에도 쿠팡 오버레이 데이터 추가
                     eng_params.coupang_overlay_data = coupang_overlay_data
                     
-                    # 영어 버전임을 표시하고 한국어 자막 경로 전달
+                    # 영어 버전임을 표시하고 한국어 배경영상 재사용 설정
                     eng_params.is_english_version = True
                     eng_params.korean_task_id = None  # 한국어 버전 완료 후 설정됨
                     
@@ -5824,7 +5954,7 @@ if start_button:
                                                 if video_terms_value:
                                                     # Check if this is Korean version and terms are in English
                                                     if video_language != "en-US":
-                                                        # Korean version - check if terms need translation
+                                                        # Korean version - ALWAYS use Korean tags
                                                         if isinstance(video_terms_value, list):
                                                             terms_list = video_terms_value
                                                         else:
@@ -5835,22 +5965,49 @@ if start_button:
                                                         has_korean = any(re.search(r'[가-힣]', str(term)) for term in terms_list)
                                                         
                                                         if not has_korean:
-                                                            # English terms detected in Korean version - translate them
-                                                            logger.info(f"🇰🇷 Translating English terms to Korean: {terms_list}")
+                                                            # English terms detected in Korean version - MUST translate them
+                                                            logger.info(f"🇰🇷 Korean video detected with English terms, translating: {terms_list}")
                                                             try:
                                                                 korean_terms = llm.translate_terms_to_korean(terms_list)
-                                                                keywords = ", ".join(korean_terms + [str(title_subject).strip()])
-                                                                logger.info(f"🇰🇷 Successfully translated tags: {keywords}")
+                                                                # 번역 결과 검증 - 한국어가 포함되어 있는지 확인
+                                                                if korean_terms and len(korean_terms) > 0:
+                                                                    # 번역된 결과에 한국어가 실제로 포함되어 있는지 재확인
+                                                                    translated_has_korean = any(re.search(r'[가-힣]', str(term)) for term in korean_terms)
+                                                                    if translated_has_korean:
+                                                                        keywords = ", ".join(korean_terms + [str(title_subject).strip()])
+                                                                        logger.info(f"🇰🇷 Successfully translated tags: {keywords}")
+                                                                    else:
+                                                                        # 번역 결과가 여전히 영어인 경우 - 한국어 키워드 생성
+                                                                        logger.warning("Translation result still contains no Korean, generating Korean terms")
+                                                                        korean_terms = llm.generate_korean_terms(task_params.video_subject, getattr(task_params, 'video_script', '') or "", amount=10) or []
+                                                                        if korean_terms:
+                                                                            keywords = ", ".join(korean_terms + [str(title_subject).strip()])
+                                                                        else:
+                                                                            fallback_terms = ["정보", "팁", "노하우", "가이드", "도움"]
+                                                                            keywords = ", ".join(fallback_terms + [str(title_subject).strip()])
+                                                                else:
+                                                                    # Translation failed, generate Korean terms
+                                                                    logger.warning("Translation returned empty, generating Korean terms")
+                                                                    korean_terms = llm.generate_korean_terms(task_params.video_subject, getattr(task_params, 'video_script', '') or "", amount=10) or []
+                                                                    if korean_terms:
+                                                                        keywords = ", ".join(korean_terms + [str(title_subject).strip()])
+                                                                    else:
+                                                                        fallback_terms = ["정보", "팁", "노하우", "가이드", "도움"]
+                                                                        keywords = ", ".join(fallback_terms + [str(title_subject).strip()])
                                                             except Exception as e:
-                                                                logger.error(f"Translation failed: {e}, using fallback Korean tags")
-                                                                fallback_terms = ["정보", "팁", "노하우", "가이드", "도움"]
-                                                                keywords = ", ".join(fallback_terms + [str(title_subject).strip()])
+                                                                logger.error(f"Translation failed: {e}, generating Korean tags instead")
+                                                                korean_terms = llm.generate_korean_terms(task_params.video_subject, getattr(task_params, 'video_script', '') or "", amount=10) or []
+                                                                if korean_terms:
+                                                                    keywords = ", ".join(korean_terms + [str(title_subject).strip()])
+                                                                else:
+                                                                    fallback_terms = ["정보", "팁", "노하우", "가이드", "도움"]
+                                                                    keywords = ", ".join(fallback_terms + [str(title_subject).strip()])
                                                         else:
-                                                            # Already Korean terms
+                                                            # Already Korean terms - use as is
                                                             keywords = ", ".join(terms_list + [str(title_subject).strip()])
                                                             logger.info(f"🇰🇷 Using existing Korean tags: {keywords}")
                                                     else:
-                                                        # English version - use as is
+                                                        # English version - use English tags as is
                                                         if isinstance(video_terms_value, list):
                                                             keywords = ", ".join(video_terms_value + [str(title_subject).strip()])
                                                         else:
@@ -5890,9 +6047,9 @@ if start_button:
                                             except Exception as e:
                                                 logger.error(f"Upload error: {e}")
                                                 status_text.error(f"❌ 업로드 오류: {e}")
-                                            else:
-                                                status_text.warning("⚠️ 자동 업로드가 활성화되어 있지만 YouTube 인증이 필요합니다")
-                                                st.info("💡 '고급 설정' → 'YouTube 업로드 설정'에서 '🔐 메인 채널 인증' 버튼을 클릭하세요")
+                                        else:
+                                            status_text.warning("⚠️ 자동 업로드가 활성화되어 있지만 YouTube 인증이 필요합니다")
+                                            st.info("💡 '고급 설정' → 'YouTube 업로드 설정'에서 '🔐 메인 채널 인증' 버튼을 클릭하세요")
                             else:
                                 logger.warning("❌ 자동 업로드가 비활성화되어 있습니다.")
                                 st.warning("⚠️ 자동 업로드가 비활성화되어 있습니다.")
@@ -5953,8 +6110,7 @@ if start_button:
         """, unsafe_allow_html=True)
         
         st.balloons()
-        time.sleep(1)
-        st.rerun()
+        # 페이지 중복 방지: st.rerun() 제거
     else:
         # Mobile optimization: Reset generation state on failure
         st.session_state["generation_in_progress"] = False

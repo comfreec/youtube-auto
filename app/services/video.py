@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import glob
 import itertools
 import os
@@ -888,26 +889,6 @@ def generate_video(
 
         # Audio setup
         final_audio = AudioFileClip(audio_path)
-        
-        # 음성 속도 조정 적용 (자막과 동기화 유지)
-        # voice_rate: UI 설정값 (예: 1.2)
-        # 언어별 추가 배율: 한국어 1.3배, 영어 1.1배
-        voice_rate = getattr(params, 'voice_rate', 1.0)
-        voice_name = getattr(params, 'voice_name', '')
-        
-        # 언어 감지
-        is_korean = 'ko-' in voice_name.lower() or 'korean' in voice_name.lower() or 'gtts:ko' in voice_name.lower()
-        is_english = 'en-' in voice_name.lower() or 'english' in voice_name.lower() or 'gtts:en' in voice_name.lower()
-        
-        # 속도 배율 계산
-        lang_multiplier = 1.3 if is_korean else 1.1 if is_english else 1.0
-        speed_multiplier = voice_rate * lang_multiplier
-        
-        # 속도 조정 적용 (MoviePy speedx 사용)
-        if speed_multiplier != 1.0:
-            logger.info(f"🎵 Applying audio speed: {speed_multiplier}x (UI: {voice_rate}x × Lang: {lang_multiplier}x)")
-            final_audio = final_audio.with_effects([afx.MultiplySpeed(speed_multiplier)])
-        
         bgm_clip = None
         
         if bgm_file:

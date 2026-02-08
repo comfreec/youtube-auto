@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import asyncio
 import os
 import re
@@ -1203,12 +1204,10 @@ def tts(
     # TTS 텍스트 전처리 - 발음 개선
     def preprocess_tts_text(text: str) -> str:
         """TTS를 위한 텍스트 전처리"""
-        # "-"를 "다시"로 변경 (문맥에 따라)
         import re
         
-        # 단어 사이의 하이픈을 "다시"로 변경
-        # 예: "재시작 - 새로운 시작" -> "재시작 다시 새로운 시작"
-        text = re.sub(r'\s*-\s*', ' 다시 ', text)
+        # 모든 언어에서 "-" 문자 제거 (음성에서 읽지 않도록)
+        text = re.sub(r'-', '', text)
         
         # 기타 TTS 발음 개선
         text = re.sub(r'&', ' 그리고 ', text)  # &를 "그리고"로
@@ -1728,15 +1727,167 @@ def _format_text(text: str) -> str:
     return text
 
 
+def translate_subtitle_file(korean_subtitle_path: str, english_subtitle_path: str, english_script: str):
+    """
+    한국어 자막 파일을 영어로 번역하여 새 자막 파일 생성
+    타이밍 정보는 그대로 유지하고 텍스트만 번역
+    
+    Args:
+        korean_subtitle_path: 한국어 자막 파일 경로
+        english_subtitle_path: 생성할 영어 자막 파일 경로
+        english_script: 영어 대본 (번역 참조용)
+    """
+    try:
+        logger.info(f"Translating subtitle from Korean to English: {korean_subtitle_path} -> {english_subtitle_path}")
+        
+        if not os.path.exists(korean_subtitle_path):
+            logger.error(f"Korean subtitle file not found: {korean_subtitle_path}")
+            return False
+        
+        # 한국어 자막 파일 읽기
+        from app.services import subtitle
+        korean_subtitles = subtitle.file_to_subtitles(korean_subtitle_path)
+        
+        if not korean_subtitles:
+            logger.error("Failed to parse Korean subtitle file")
+            return False
+        
+        # 영어 대본을 문장별로 분할
+        english_lines = utils.split_string_by_punctuations(english_script)
+        
+        # 한국어 자막과 영어 대본 매칭
+        english_subtitles = []
+        
+        for i, (index, timing, korean_text) in enumerate(korean_subtitles):
+            # 영어 대본에서 해당하는 문장 찾기
+            if i < len(english_lines):
+                english_text = english_lines[i].strip()
+            else:
+                # 영어 대본이 부족한 경우 LLM으로 번역
+                try:
+                    from app.services import llm
+                    english_text = llm.translate_to_english(korean_text)
+                    if not english_text or english_text == korean_text:
+                        english_text = korean_text  # 번역 실패 시 원문 유지
+                except Exception as e:
+                    logger.warning(f"Translation failed for: {korean_text}, using original")
+                    english_text = korean_text
+            
+            english_subtitles.append((index, timing, english_text))
+        
+        # 영어 자막 파일 생성
+        with open(english_subtitle_path, "w", encoding="utf-8") as f:
+            for index, timing, text in english_subtitles:
+                f.write(f"{index}\n{timing}\n{text}\n\n")
+        
+        logger.info(f"English subtitle created successfully: {english_subtitle_path}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Failed to translate subtitle: {str(e)}")
+        return False
+
+
+def create_simple_subtitle_from_script(text: str, subtitle_file: str, audio_duration: float = None):
+    """
+    대본으로부터 간단한 자막 파일 생성 (오디오 파일이 없을 때 사용)
+    
+    Args:
+        text: 영상 대본
+        subtitle_file: 자막 파일 경로
+        audio_duration: 오디오 길이 (None이면 추정)
+    """
+    try:
+        logger.info(f"Creating simple subtitle from script: {subtitle_file}")
+        
+        # 대본을 문장별로 분할
+        script_lines = utils.split_string_by_punctuations(text)
+        if not script_lines:
+            logger.warning("No script lines found")
+            return
+        
+        # 오디오 길이 추정 (한국어: 초당 3-4글자, 영어: 초당 2-3단어)
+        if audio_duration is None:
+            if re.search(r'[가-힣]', text):  # 한국어
+                char_count = len(re.sub(r'\s+', '', text))
+                audio_duration = char_count / 3.5  # 초당 3.5글자
+            else:  # 영어
+                word_count = len(text.split())
+                audio_duration = word_count / 2.5  # 초당 2.5단어
+        
+        # 각 문장의 시간 할당
+        total_chars = sum(len(line.strip()) for line in script_lines)
+        subtitle_items = []
+        current_time = 0.0
+        
+        for i, line in enumerate(script_lines):
+            line = line.strip()
+            if not line:
+                continue
+                
+            # 문장 길이에 비례하여 시간 할당
+            line_duration = (len(line) / total_chars) * audio_duration
+            start_time = current_time
+            end_time = current_time + line_duration
+            
+            # SRT 형식으로 포맷
+            start_srt = _seconds_to_srt_time(start_time)
+            end_srt = _seconds_to_srt_time(end_time)
+            
+            subtitle_items.append(f"{i + 1}\n{start_srt} --> {end_srt}\n{line}\n")
+            
+            current_time = end_time
+        
+        # 자막 파일 저장
+        with open(subtitle_file, "w", encoding="utf-8") as f:
+            f.write("\n".join(subtitle_items) + "\n")
+        
+        logger.info(f"Simple subtitle created: {subtitle_file}, duration: {audio_duration:.2f}s")
+        
+    except Exception as e:
+        logger.error(f"Failed to create simple subtitle: {str(e)}")
+        raise
+
+
+def _seconds_to_srt_time(seconds: float) -> str:
+    """초를 SRT 시간 형식으로 변환 (00:00:00,000)"""
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    secs = int(seconds % 60)
+    millisecs = int((seconds % 1) * 1000)
+    return f"{hours:02d}:{minutes:02d}:{secs:02d},{millisecs:03d}"
+
+
 def create_subtitle(sub_maker: submaker.SubMaker, text: str, subtitle_file: str):
     """
-    优化字幕文件
+    优化字幕文件 - 영어 자막 타이밍 보정 포함
     1. 将字幕文件按照标点符号分割成多行
     2. 逐行匹配字幕文件中的文本
     3. 生成新的字幕文件
+    4. 영어 자막의 경우 타이밍 보정 적용
     """
 
     text = _format_text(text)
+    
+    # 영어 자막인지 확인
+    is_english_subtitle = False
+    try:
+        if text:
+            import re
+            # 영어 문자가 50% 이상이면 영어로 판단
+            english_chars = len(re.findall(r'[a-zA-Z]', text))
+            total_chars = len(re.sub(r'\s', '', text))
+            if total_chars > 0:
+                is_english_subtitle = (english_chars / total_chars) > 0.5
+    except:
+        pass
+    
+    # 영어 자막의 경우 타이밍 보정값 설정 (100나노초 단위)
+    timing_offset_100ns = -2000000 if is_english_subtitle else 0  # 영어는 200ms(0.2초) 앞당김
+    
+    logger.info(f"Subtitle language: {'English' if is_english_subtitle else 'Korean'}")
+    if timing_offset_100ns != 0:
+        logger.info(f"Applying timing offset: {timing_offset_100ns/10000}ms for better English sync")
 
     def formatter(idx: int, start_time: float, end_time: float, sub_text: str) -> str:
         """
@@ -1759,17 +1910,33 @@ def create_subtitle(sub_maker: submaker.SubMaker, text: str, subtitle_file: str)
             return ""
 
         _line = script_lines[_sub_index]
+        
+        # 1. 완전 일치
         if _sub_line == _line:
             return script_lines[_sub_index].strip()
 
+        # 2. 공백 정규화 후 일치
+        _sub_line_normalized = re.sub(r'\s+', ' ', _sub_line.strip())
+        _line_normalized = re.sub(r'\s+', ' ', _line.strip())
+        if _sub_line_normalized == _line_normalized:
+            return _line.strip()
+
+        # 3. 특수문자 제거 후 일치
         _sub_line_ = re.sub(r"[^\w\s]", "", _sub_line)
         _line_ = re.sub(r"[^\w\s]", "", _line)
         if _sub_line_ == _line_:
-            return _line_.strip()
+            return _line.strip()
 
+        # 4. 모든 공백과 특수문자 제거 후 일치
         _sub_line_ = re.sub(r"\W+", "", _sub_line)
         _line_ = re.sub(r"\W+", "", _line)
         if _sub_line_ == _line_:
+            return _line.strip()
+        
+        # 5. 부분 일치 (70% 이상 유사도)
+        from difflib import SequenceMatcher
+        similarity = SequenceMatcher(None, _sub_line.lower(), _line.lower()).ratio()
+        if similarity >= 0.7:
             return _line.strip()
 
         return ""
@@ -1779,6 +1946,12 @@ def create_subtitle(sub_maker: submaker.SubMaker, text: str, subtitle_file: str)
     try:
         for _, (offset, sub) in enumerate(zip(sub_maker.offset, sub_maker.subs)):
             _start_time, end_time = offset
+            
+            # 영어 자막 타이밍 보정 적용
+            if timing_offset_100ns != 0:
+                _start_time = max(0, _start_time + timing_offset_100ns)  # 음수 방지
+                end_time = max(_start_time + 1000000, end_time + timing_offset_100ns)  # 최소 0.1초 지속
+            
             if start_time < 0:
                 start_time = _start_time
 
@@ -1803,19 +1976,17 @@ def create_subtitle(sub_maker: submaker.SubMaker, text: str, subtitle_file: str)
             try:
                 sbs = subtitles.file_to_subtitles(subtitle_file, encoding="utf-8")
                 duration = max([tb for ((ta, tb), txt) in sbs])
-                logger.info(
-                    f"completed, subtitle file created: {subtitle_file}, duration: {duration}"
-                )
+                logger.info(f"Subtitle created successfully with duration: {duration:.2f}s")
+                if timing_offset_100ns != 0:
+                    logger.success(f"✅ English subtitle timing corrected by {timing_offset_100ns/10000}ms")
             except Exception as e:
-                logger.error(f"failed, error: {str(e)}")
-                os.remove(subtitle_file)
+                logger.warning(f"Could not validate subtitle duration: {e}")
         else:
-            logger.warning(
-                f"failed, sub_items len: {len(sub_items)}, script_lines len: {len(script_lines)}"
-            )
-
+            logger.warning(f"Subtitle count mismatch: {len(sub_items)} vs {len(script_lines)}")
+            
     except Exception as e:
-        logger.error(f"failed, error: {str(e)}")
+        logger.error(f"Error creating subtitle: {e}")
+        return ""
 
 
 def _get_audio_duration_from_submaker(sub_maker: submaker.SubMaker):
@@ -1936,14 +2107,29 @@ class GTTSSubMaker:
     def __init__(self):
         self.offset = []
         self.subs = []
+    
+    def adjust_speed(self, speed_multiplier: float):
+        """자막 타이밍을 속도에 맞춰 조정"""
+        if not self.offset:
+            return
+        
+        adjusted_offset = []
+        for start_offset, end_offset in self.offset:
+            # 시작/끝 시간을 속도에 맞춰 조정 (빠르게 하면 시간이 짧아짐)
+            adjusted_start = int(start_offset / speed_multiplier)
+            adjusted_end = int(end_offset / speed_multiplier)
+            adjusted_offset.append((adjusted_start, adjusted_end))
+        
+        self.offset = adjusted_offset
+        logger.info(f"Adjusted {len(self.offset)} subtitle timings by {speed_multiplier}x")
         
     def create_sub(self, text: str, audio_duration: float):
-        """텍스트와 오디오 길이를 기반으로 자막 생성"""
+        """텍스트와 오디오 길이를 기반으로 자막 생성 (개선된 타이밍)"""
         sentences = utils.split_string_by_punctuations(text)
         if not sentences:
             return
             
-        # 각 문장의 길이에 비례하여 시간 할당
+        # 각 문장의 길이에 비례하여 시간 할당 (기본 방식)
         total_chars = sum(len(s.strip()) for s in sentences)
         if total_chars == 0:
             return
@@ -1955,10 +2141,26 @@ class GTTSSubMaker:
             if not sentence:
                 continue
                 
-            # 문장 길이에 비례한 시간 계산
-            sentence_duration = (len(sentence) / total_chars) * audio_duration
+            # 문장 길이에 비례한 시간 계산 (개선된 공식)
+            # 짧은 문장은 상대적으로 더 긴 시간, 긴 문장은 상대적으로 더 짧은 시간 할당
+            base_duration = (len(sentence) / total_chars) * audio_duration
+            
+            # 문장 길이에 따른 보정 (짧은 문장에 더 많은 시간 할당)
+            if len(sentence) < 20:  # 짧은 문장
+                sentence_duration = base_duration * 1.2
+            elif len(sentence) > 80:  # 긴 문장
+                sentence_duration = base_duration * 0.9
+            else:  # 중간 길이 문장
+                sentence_duration = base_duration
+            
             start_time = current_time
             end_time = current_time + sentence_duration
+            
+            # 전체 시간을 초과하지 않도록 조정
+            if end_time > audio_duration:
+                end_time = audio_duration
+                if start_time >= end_time:
+                    start_time = max(0, end_time - 0.5)  # 최소 0.5초 지속
             
             # offset 형식: (시작시간, 끝시간) - 10,000,000 단위 (100ns)
             start_offset = int(start_time * 10000000)
@@ -1968,6 +2170,120 @@ class GTTSSubMaker:
             self.subs.append(sentence)
             
             current_time = end_time
+    
+    def create_sub_with_whisper_timing(self, text: str, audio_file: str):
+        """Whisper를 사용하여 실제 음성 기반 정확한 자막 타이밍 생성"""
+        try:
+            from app.services import subtitle
+            import tempfile
+            import os
+            
+            # 임시 자막 파일 생성
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.srt', delete=False, encoding='utf-8') as temp_srt:
+                temp_srt_path = temp_srt.name
+            
+            # Whisper로 실제 음성 분석
+            subtitle.create(audio_file, temp_srt_path)
+            
+            if os.path.exists(temp_srt_path) and os.path.getsize(temp_srt_path) > 0:
+                # Whisper 결과를 읽어서 타이밍 정보 추출
+                whisper_subtitles = subtitle.file_to_subtitles(temp_srt_path)
+                
+                # 원본 텍스트를 문장으로 분할
+                sentences = utils.split_string_by_punctuations(text)
+                sentences = [s.strip() for s in sentences if s.strip()]
+                
+                if whisper_subtitles and sentences:
+                    # Whisper 결과와 원본 문장 매칭
+                    self._match_whisper_to_sentences(whisper_subtitles, sentences)
+                    logger.info(f"✅ Whisper-based timing applied: {len(self.subs)} segments")
+                else:
+                    # Whisper 실패 시 기본 방식 사용
+                    logger.warning("Whisper analysis failed, using basic timing")
+                    audio_duration = self._get_audio_duration_from_file(audio_file)
+                    self.create_sub(text, audio_duration)
+                
+                # 임시 파일 정리
+                os.unlink(temp_srt_path)
+            else:
+                # Whisper 실패 시 기본 방식 사용
+                logger.warning("Whisper subtitle creation failed, using basic timing")
+                audio_duration = self._get_audio_duration_from_file(audio_file)
+                self.create_sub(text, audio_duration)
+                
+        except Exception as e:
+            logger.error(f"Whisper timing analysis failed: {str(e)}")
+            # 오류 시 기본 방식 사용
+            audio_duration = self._get_audio_duration_from_file(audio_file)
+            self.create_sub(text, audio_duration)
+    
+    def _match_whisper_to_sentences(self, whisper_subtitles, sentences):
+        """Whisper 결과와 원본 문장을 매칭하여 정확한 타이밍 적용"""
+        self.offset = []
+        self.subs = []
+        
+        # Whisper 자막을 하나의 텍스트로 합치기
+        whisper_text = " ".join([item[2] for item in whisper_subtitles])
+        
+        sentence_index = 0
+        whisper_index = 0
+        
+        for sentence in sentences:
+            if sentence_index >= len(sentences):
+                break
+                
+            # 현재 문장과 가장 잘 매칭되는 Whisper 세그먼트 찾기
+            best_match_start = whisper_index
+            best_match_end = whisper_index
+            
+            # 문장 길이에 따라 여러 Whisper 세그먼트를 합칠 수 있음
+            accumulated_text = ""
+            for i in range(whisper_index, len(whisper_subtitles)):
+                accumulated_text += " " + whisper_subtitles[i][2]
+                
+                # 유사도 계산 (간단한 길이 기반)
+                if len(accumulated_text.strip()) >= len(sentence) * 0.7:
+                    best_match_end = i
+                    break
+            
+            # 타이밍 정보 추출
+            if best_match_start < len(whisper_subtitles):
+                # 시작 시간: 첫 번째 매칭 세그먼트의 시작 시간
+                start_time_str = whisper_subtitles[best_match_start][1].split(" --> ")[0]
+                start_seconds = self._srt_time_to_seconds(start_time_str)
+                
+                # 끝 시간: 마지막 매칭 세그먼트의 끝 시간
+                end_time_str = whisper_subtitles[best_match_end][1].split(" --> ")[1]
+                end_seconds = self._srt_time_to_seconds(end_time_str)
+                
+                # offset 형식으로 변환
+                start_offset = int(start_seconds * 10000000)
+                end_offset = int(end_seconds * 10000000)
+                
+                self.offset.append((start_offset, end_offset))
+                self.subs.append(sentence)
+                
+                whisper_index = best_match_end + 1
+            
+            sentence_index += 1
+    
+    def _srt_time_to_seconds(self, srt_time: str) -> float:
+        """SRT 시간 형식을 초로 변환"""
+        try:
+            # 형식: "00:00:01,500"
+            time_part, ms_part = srt_time.split(',')
+            h, m, s = map(int, time_part.split(':'))
+            ms = int(ms_part)
+            return h * 3600 + m * 60 + s + ms / 1000.0
+        except:
+            return 0.0
+    
+    def _get_audio_duration_from_file(self, audio_file: str) -> float:
+        """오디오 파일에서 길이 추출"""
+        try:
+            return _get_audio_duration_from_mp3(audio_file)
+        except:
+            return 0.0
 
 
 def is_gtts_voice(voice_name: str) -> bool:
@@ -1979,13 +2295,11 @@ def gtts_synthesize(text: str, voice_name: str, voice_file: str, voice_rate: flo
     """
     gTTS를 사용하여 음성 합성
     
-    ⚠️ 자막-음성 동기화 핵심 함수 - 수정 금지! ⚠️
-    
     Args:
         text: 합성할 텍스트
         voice_name: 음성 이름 (예: "gtts:ko-한국어")
         voice_file: 출력 음성 파일 경로
-        voice_rate: 음성 속도 배율 (기본값 1.0)
+        voice_rate: 음성 속도 배율 (기본값: 1.0)
         
     Returns:
         GTTSSubMaker 객체 또는 None
@@ -2004,47 +2318,171 @@ def gtts_synthesize(text: str, voice_name: str, voice_file: str, voice_rate: flo
             logger.error("Empty text for gTTS synthesis")
             return None
             
-        # 언어별 속도 배율 계산
-        # voice_rate: UI 설정값 (예: 1.2)
-        # 한국어는 추가로 1.3배, 영어는 1.1배 적용
-        base_multiplier = voice_rate
-        lang_multiplier = 1.3 if lang_part == "ko" else 1.1 if lang_part == "en" else 1.0
-        speed_multiplier = base_multiplier * lang_multiplier
+        logger.info(f"gTTS synthesis started - Language: {lang_part}, Text length: {len(text)}")
         
-        logger.info(f"gTTS synthesis - Language: {lang_part}, Speed: {speed_multiplier}x (UI: {base_multiplier}x × Lang: {lang_multiplier}x)")
+        # 전달받은 속도 사용
+        speed_multiplier = voice_rate
+        logger.info(f"Target speed: {speed_multiplier}x")
         
-        # gTTS 객체 생성 및 음성 합성 (기본 속도로 생성)
-        tts = gTTS(text=text, lang=lang_part, slow=False)
+        # 문장 단위로 분할
+        sentences = utils.split_string_by_punctuations(text)
+        sentences = [s.strip() for s in sentences if s.strip()]
         
-        # 임시 파일에 저장
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as temp_file:
-            temp_path = temp_file.name
+        if not sentences:
+            logger.error("No sentences found in text")
+            return None
+        
+        logger.info(f"Split into {len(sentences)} sentences")
+        
+        # 각 문장의 음성을 개별 생성하고 실제 길이 측정
+        temp_files = []
+        sentence_durations = []
+        
+        try:
+            for i, sentence in enumerate(sentences):
+                # 각 문장의 음성 생성
+                tts = gTTS(text=sentence, lang=lang_part, slow=False)
+                
+                with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as temp_file:
+                    temp_path = temp_file.name
+                    temp_files.append(temp_path)
+                
+                tts.save(temp_path)
+                
+                # 실제 음성 길이 측정
+                duration = _get_audio_duration_from_mp3(temp_path)
+                sentence_durations.append(duration)
+                
+                logger.debug(f"Sentence {i+1}/{len(sentences)}: {duration:.2f}s - {sentence[:30]}...")
             
-        tts.save(temp_path)
+            # 전체 음성 길이
+            total_duration = sum(sentence_durations)
+            logger.info(f"Total original duration: {total_duration:.2f}s")
+            
+            # 실제 길이 기반으로 자막 생성
+            sub_maker = GTTSSubMaker()
+            current_time = 0.0
+            
+            for sentence, duration in zip(sentences, sentence_durations):
+                start_time = current_time
+                end_time = current_time + duration
+                
+                # offset 형식: (시작시간, 끝시간) - 10,000,000 단위 (100ns)
+                start_offset = int(start_time * 10000000)
+                end_offset = int(end_time * 10000000)
+                
+                sub_maker.offset.append((start_offset, end_offset))
+                sub_maker.subs.append(sentence)
+                
+                current_time = end_time
+            
+            logger.info(f"✅ Subtitle created with accurate timing based on actual audio durations")
+            
+            # 모든 음성 파일을 하나로 합치기
+            from moviepy import AudioFileClip, concatenate_audioclips
+            
+            audio_clips = [AudioFileClip(temp_file) for temp_file in temp_files]
+            combined_audio = concatenate_audioclips(audio_clips)
+            
+            # 임시 파일에 저장
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as temp_combined:
+                temp_combined_path = temp_combined.name
+            
+            combined_audio.write_audiofile(temp_combined_path, logger=None)
+            
+            # 리소스 정리
+            for clip in audio_clips:
+                clip.close()
+            combined_audio.close()
+            
+            # 속도 조정
+            logger.info(f"Adjusting audio speed to {speed_multiplier}x...")
+            
+            audio_clip = AudioFileClip(temp_combined_path)
+            from moviepy.video.fx.MultiplySpeed import MultiplySpeed
+            adjusted_audio = audio_clip.with_effects([MultiplySpeed(speed_multiplier)])
+            
+            # 최종 파일로 저장
+            adjusted_audio.write_audiofile(voice_file, logger=None)
+            
+            # 리소스 정리
+            audio_clip.close()
+            adjusted_audio.close()
+            os.unlink(temp_combined_path)
+            
+            logger.info(f"✅ Audio speed adjusted to {speed_multiplier}x")
+            
+            # 자막 타이밍도 속도에 맞춰 조정
+            sub_maker.adjust_speed(speed_multiplier)
+            logger.info(f"✅ Subtitle timing adjusted to {speed_multiplier}x")
+            
+        finally:
+            # 임시 파일 정리
+            for temp_file in temp_files:
+                if os.path.exists(temp_file):
+                    os.unlink(temp_file)
         
-        # 파일 이동 (속도 조정 없이)
-        import shutil
-        shutil.move(temp_path, voice_file)
-        
-        # 오디오 길이 측정 (원본 속도)
-        original_duration = _get_audio_duration_from_mp3(voice_file)
-        
-        # 속도 배율을 적용한 실제 재생 시간 계산
-        # 예: 10초 오디오를 1.56배속으로 재생하면 6.41초가 됨
-        adjusted_duration = original_duration / speed_multiplier
-        
-        logger.info(f"gTTS synthesis completed - Original: {original_duration:.2f}s, Adjusted ({speed_multiplier}x): {adjusted_duration:.2f}s")
-        
-        # SubMaker 객체 생성 (속도 조정된 시간 기준으로 자막 생성)
-        # 이렇게 하면 자막 타이밍이 빨라진 음성과 동기화됨
-        sub_maker = GTTSSubMaker()
-        sub_maker.create_sub(text, adjusted_duration)
+        # 최종 오디오 길이 측정
+        audio_duration = _get_audio_duration_from_mp3(voice_file)
+        logger.info(f"gTTS synthesis completed - Final duration: {audio_duration:.2f}s")
         
         return sub_maker
         
     except Exception as e:
         logger.error(f"gTTS synthesis failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
         return None
+
+
+def create_gtts_subtitle(sub_maker: GTTSSubMaker, text: str, subtitle_file: str):
+    """
+    gTTS SubMaker를 사용하여 자막 파일 생성
+    gTTS 음성과 완벽하게 동기화된 자막 생성
+    """
+    try:
+        logger.info(f"Creating gTTS subtitle: {subtitle_file}")
+        
+        if not sub_maker or not hasattr(sub_maker, 'offset') or not hasattr(sub_maker, 'subs'):
+            logger.error("Invalid gTTS SubMaker object")
+            return False
+        
+        if not sub_maker.offset or not sub_maker.subs:
+            logger.error("Empty gTTS SubMaker data")
+            return False
+        
+        # SRT 형식으로 자막 파일 생성
+        subtitle_lines = []
+        
+        for i, (offset, subtitle_text) in enumerate(zip(sub_maker.offset, sub_maker.subs)):
+            start_time_100ns, end_time_100ns = offset
+            
+            # 100ns 단위를 초 단위로 변환
+            start_seconds = start_time_100ns / 10000000
+            end_seconds = end_time_100ns / 10000000
+            
+            # SRT 시간 형식으로 변환
+            start_srt = _seconds_to_srt_time(start_seconds)
+            end_srt = _seconds_to_srt_time(end_seconds)
+            
+            # SRT 항목 생성
+            subtitle_lines.append(f"{i + 1}")
+            subtitle_lines.append(f"{start_srt} --> {end_srt}")
+            subtitle_lines.append(subtitle_text.strip())
+            subtitle_lines.append("")  # 빈 줄
+        
+        # 파일에 저장
+        with open(subtitle_file, 'w', encoding='utf-8') as f:
+            f.write('\n'.join(subtitle_lines))
+        
+        logger.info(f"gTTS subtitle created successfully: {subtitle_file}")
+        logger.info(f"Subtitle items: {len(sub_maker.subs)}, Duration: {end_seconds:.2f}s")
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"Failed to create gTTS subtitle: {str(e)}")
+        return False
 
 
 def get_audio_duration_gtts(target: Union[str, GTTSSubMaker]) -> float:

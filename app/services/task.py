@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import math
 import os.path
 import re
@@ -11,6 +12,57 @@ from app.models.schema import VideoConcatMode, VideoParams
 from app.services import llm, material, subtitle, video, voice
 from app.services import state as sm
 from app.utils import utils
+
+
+def _remove_dash_from_subtitle_file(subtitle_path: str):
+    """
+    자막 파일에서 "-" 문자만 제거 (한국어 버전용)
+    """
+    try:
+        if not os.path.exists(subtitle_path):
+            logger.warning(f"Subtitle file not found: {subtitle_path}")
+            return
+            
+        # 자막 파일 읽기
+        with open(subtitle_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        if not content.strip():
+            logger.warning(f"Subtitle file is empty: {subtitle_path}")
+            return
+        
+        # "-" 문자만 제거 (줄바꿈과 공백은 유지)
+        cleaned_content = content.replace('-', '')
+        
+        # 내용이 변경되었는지 확인
+        if cleaned_content != content:
+            # 백업 파일 생성
+            backup_path = subtitle_path + ".backup"
+            with open(backup_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+            
+            # 파일에 다시 저장
+            with open(subtitle_path, 'w', encoding='utf-8') as f:
+                f.write(cleaned_content)
+                
+            logger.info(f"Removed dash characters from subtitle file: {subtitle_path}")
+            logger.debug(f"Backup created: {backup_path}")
+        else:
+            logger.debug(f"No dash characters found in subtitle file: {subtitle_path}")
+        
+    except Exception as e:
+        logger.error(f"Failed to remove dash characters from subtitle: {str(e)}")
+        # 오류 발생 시 원본 파일 복원 시도
+        backup_path = subtitle_path + ".backup"
+        if os.path.exists(backup_path):
+            try:
+                with open(backup_path, 'r', encoding='utf-8') as f:
+                    original_content = f.read()
+                with open(subtitle_path, 'w', encoding='utf-8') as f:
+                    f.write(original_content)
+                logger.info(f"Restored original subtitle file from backup")
+            except Exception as restore_error:
+                logger.error(f"Failed to restore subtitle file: {restore_error}")
 
 
 def generate_script(task_id, params):
@@ -143,28 +195,101 @@ def generate_subtitle(task_id, params, video_script, sub_maker, audio_file):
         return ""
 
     subtitle_path = path.join(utils.task_dir(task_id), "subtitle.srt")
+    
+    # 영어 버전은 항상 영어 음성에 맞는 새로운 자막을 생성 (동기화 보장)
+    if getattr(params, 'is_english_version', False):
+        logger.info(f"🌍 English version detected, generating fresh subtitle for proper audio sync")
+        logger.info(f"Skipping Korean subtitle translation to ensure English audio-subtitle sync")
+        # 아래 기존 로직으로 진행하여 영어 음성에 맞는 자막 생성
+    
+    # 기존 자막 생성 로직 (영어 버전도 여기서 영어 음성에 맞게 새로 생성)
     subtitle_provider = config.app.get("subtitle_provider", "edge").strip().lower()
-    logger.info(f"\n\n## generating subtitle, provider: {subtitle_provider}")
+    
+    # 영어 버전인지 확인하여 로그에 표시
+    is_english_version = getattr(params, 'is_english_version', False)
+    version_info = "🌍 English version" if is_english_version else "🇰🇷 Korean version"
+    logger.info(f"\n\n## generating subtitle for {version_info}, provider: {subtitle_provider}")
+    logger.info(f"Audio file for subtitle timing: {audio_file}")
+    logger.info(f"Video script length: {len(video_script)} characters")
 
     subtitle_fallback = False
+    is_gtts_voice = hasattr(sub_maker, '__class__') and sub_maker.__class__.__name__ == 'GTTSSubMaker'
+    
     if sub_maker is None:
         subtitle_fallback = True
+    elif is_gtts_voice:
+        # gTTS 사용 시 gTTS 전용 자막 생성
+        logger.info("Using gTTS-based subtitle generation")
+        try:
+            from app.services import voice
+            # gTTS SubMaker를 사용하여 자막 파일 생성
+            voice.create_gtts_subtitle(sub_maker, video_script, subtitle_path)
+            if os.path.exists(subtitle_path) and os.path.getsize(subtitle_path) > 0:
+                logger.info(f"✅ gTTS subtitle created successfully")
+                # 임시로 "-" 문자 제거 비활성화 (테스트용)
+                # if not getattr(params, 'is_english_version', False):
+                #     logger.info("Removing '-' characters from Korean gTTS subtitle...")
+                #     _remove_dash_from_subtitle_file(subtitle_path)
+                #     logger.info("✅ Dash characters removed from Korean gTTS subtitle")
+            else:
+                subtitle_fallback = True
+                logger.warning("gTTS subtitle creation failed, fallback to whisper")
+        except Exception as e:
+            logger.error(f"gTTS subtitle creation error: {str(e)}")
+            subtitle_fallback = True
     else:
+        # Edge TTS 사용 시 기존 로직
         if subtitle_provider == "edge":
+            from app.services import voice
             voice.create_subtitle(
                 text=video_script, sub_maker=sub_maker, subtitle_file=subtitle_path
             )
             if not os.path.exists(subtitle_path) or os.path.getsize(subtitle_path) == 0:
                 subtitle_fallback = True
                 logger.warning("subtitle file not found or empty, fallback to whisper")
+            else:
+                # 임시로 "-" 문자 제거 비활성화 (테스트용)
+                # if not getattr(params, 'is_english_version', False):
+                #     logger.info("Removing '-' characters from Korean Edge TTS subtitle...")
+                #     _remove_dash_from_subtitle_file(subtitle_path)
+                #     logger.info("✅ Dash characters removed from Korean Edge TTS subtitle")
+                pass
 
     if subtitle_provider == "whisper" or subtitle_fallback:
-        # Whisper fallback disabled for stability
-        logger.warning("Whisper subtitle generation skipped to prevent system hang.")
-        return ""
-        # subtitle.create(audio_file=audio_file, subtitle_file=subtitle_path)
-        # logger.info("\n\n## correcting subtitle")
-        # subtitle.correct(subtitle_file=subtitle_path, video_script=video_script)
+        # Whisper fallback enabled for better subtitle generation
+        version_info = "🌍 English version" if getattr(params, 'is_english_version', False) else "🇰🇷 Korean version"
+        logger.info(f"Using Whisper for {version_info} subtitle generation...")
+        logger.info(f"Audio file to analyze: {audio_file}")
+        
+        try:
+            subtitle.create(audio_file=audio_file, subtitle_file=subtitle_path)
+            logger.info(f"✅ Whisper subtitle created for {version_info}")
+            logger.info("\n\n## correcting subtitle")
+            subtitle.correct(subtitle_file=subtitle_path, video_script=video_script)
+            logger.info(f"✅ Subtitle correction completed for {version_info}")
+            
+            # 임시로 "-" 문자 제거 비활성화 (테스트용)
+            # if not getattr(params, 'is_english_version', False):
+            #     logger.info("Removing '-' characters from Korean subtitle...")
+            #     _remove_dash_from_subtitle_file(subtitle_path)
+            #     logger.info("✅ Dash characters removed from Korean subtitle")
+            
+        except Exception as e:
+            logger.error(f"❌ Whisper subtitle generation failed for {version_info}: {str(e)}")
+            # Create simple subtitle from script as fallback
+            logger.info(f"Creating simple subtitle from script for {version_info}...")
+            try:
+                from app.services import voice
+                # Try to create subtitle using script timing estimation
+                voice.create_simple_subtitle_from_script(
+                    text=video_script, 
+                    subtitle_file=subtitle_path,
+                    audio_duration=None  # Will be calculated from audio file
+                )
+                logger.info(f"✅ Simple subtitle created for {version_info}")
+            except Exception as e2:
+                logger.error(f"❌ Simple subtitle creation also failed for {version_info}: {str(e2)}")
+                return ""
 
     subtitle_lines = subtitle.file_to_subtitles(subtitle_path)
     if not subtitle_lines:
@@ -177,6 +302,39 @@ def generate_subtitle(task_id, params, video_script, sub_maker, audio_file):
 
 
 def get_video_materials(task_id, params, video_terms, audio_duration, video_script=None):
+    # 영어 버전에서 한국어 배경영상 재사용 확인 (korean_task_id가 있으면 재사용)
+    if getattr(params, 'korean_task_id', None):
+        korean_task_id = params.korean_task_id
+        logger.info(f"\n\n## 🔄 Reusing Korean video materials from task: {korean_task_id}")
+        
+        try:
+            # 한국어 태스크의 배경영상 정보 가져오기
+            korean_task_info = sm.state.get_task(korean_task_id)
+            if korean_task_info and korean_task_info.get("materials"):
+                korean_materials = korean_task_info["materials"]
+                logger.info(f"✅ Found {len(korean_materials)} Korean video materials to reuse")
+                
+                # 한국어 배경영상 파일들이 존재하는지 확인
+                valid_materials = []
+                for material_path in korean_materials:
+                    if os.path.exists(material_path):
+                        valid_materials.append(material_path)
+                        logger.info(f"✅ Reusing Korean material: {os.path.basename(material_path)}")
+                    else:
+                        logger.warning(f"⚠️ Korean material not found: {material_path}")
+                
+                if valid_materials:
+                    logger.info(f"🎬 Successfully reusing {len(valid_materials)} Korean video materials for English version")
+                    return valid_materials
+                else:
+                    logger.warning("❌ No valid Korean materials found, falling back to new material search")
+            else:
+                logger.warning("❌ Korean task materials not found, falling back to new material search")
+        except Exception as e:
+            logger.error(f"❌ Failed to reuse Korean materials: {e}, falling back to new material search")
+    
+    # 기본 배경영상 검색 로직
+    
     if params.video_source == "local":
         logger.info("\n\n## preprocess local materials")
         if not params.video_materials:
@@ -309,6 +467,53 @@ def generate_final_videos(
             output_file=final_video_path,
             params=params,
         )
+
+        # 쿠팡파트너스 오버레이 적용 (데이터가 있고 비어있지 않은 경우에만)
+        if (hasattr(params, 'coupang_overlay_data') and 
+            params.coupang_overlay_data is not None and 
+            isinstance(params.coupang_overlay_data, list) and 
+            len(params.coupang_overlay_data) > 0):
+            try:
+                from app.services.product_overlay import get_overlay_manager
+                from moviepy.editor import VideoFileClip
+                
+                logger.info(f"쿠팡파트너스 오버레이 적용 시작: {len(params.coupang_overlay_data)}개 제품")
+                sm.state.update_task(task_id, progress=_progress + 5, message=f"제품 오버레이 적용 중 ({index}/{params.video_count})...")
+                
+                overlay_manager = get_overlay_manager()
+                
+                # 영상 길이 확인
+                with VideoFileClip(final_video_path) as clip:
+                    video_duration = clip.duration
+                
+                # 오버레이가 적용된 영상 경로
+                overlay_output_path = path.join(utils.task_dir(task_id), f"final-{index}-overlay.mp4")
+                
+                # 오버레이 적용
+                result_path = overlay_manager.add_product_overlays_to_video(
+                    video_path=final_video_path,
+                    output_path=overlay_output_path,
+                    product_overlays=params.coupang_overlay_data,
+                    video_duration=video_duration
+                )
+                
+                # 오버레이가 성공적으로 적용되었으면 원본을 교체
+                if result_path != final_video_path and path.exists(result_path):
+                    import shutil
+                    shutil.move(result_path, final_video_path)
+                    logger.info(f"쿠팡파트너스 오버레이 적용 완료: {final_video_path}")
+                    sm.state.update_task(task_id, progress=_progress + 8, message=f"제품 오버레이 적용 완료 ({index}/{params.video_count})")
+                else:
+                    logger.warning(f"쿠팡파트너스 오버레이 적용 실패, 원본 영상 유지: {final_video_path}")
+                    
+            except Exception as e:
+                logger.error(f"쿠팡파트너스 오버레이 적용 중 오류: {str(e)}")
+                # 오류가 발생해도 원본 영상은 유지
+                sm.state.update_task(task_id, progress=_progress + 8, message=f"영상 {index} 준비 완료 (오버레이 적용 실패)")
+        else:
+            # 쿠팡 오버레이가 없는 경우 진행률 업데이트
+            logger.info("쿠팡파트너스 오버레이 없음 - 일반 영상으로 진행")
+            sm.state.update_task(task_id, progress=_progress + 8, message=f"영상 {index} 준비 완료")
 
         _progress += 50 / params.video_count / 2
         sm.state.update_task(task_id, progress=_progress, message=f"영상 {index} 준비 완료.")

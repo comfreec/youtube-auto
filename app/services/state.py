@@ -1,5 +1,4 @@
 import ast
-import time
 from abc import ABC, abstractmethod
 
 from app.config import config
@@ -50,36 +49,9 @@ class MemoryState(BaseState):
             "progress": progress,
             **kwargs,
         }
-        
-        # 🔄 모바일 세션 진행률 업데이트 (자동) - 안정성 강화
-        try:
-            # 모바일 최적화가 활성화된 경우에만
-            import streamlit as st
-            if hasattr(st, 'session_state') and st.session_state.get("generation_in_progress", False):
-                current_task_id = st.session_state.get("current_task_id")
-                if current_task_id == task_id:
-                    # 세션 상태에 진행률 저장 (UI 반영용)
-                    st.session_state["current_progress"] = progress
-                    st.session_state["current_status"] = kwargs.get("message", f"진행률 {progress}%")
-                    st.session_state["last_progress_update"] = time.time()
-                    
-                    # 모바일 세션 매니저 import
-                    try:
-                        from webui.mobile_session_manager import mobile_session_manager
-                        message = kwargs.get("message", f"진행률 {progress}%")
-                        mobile_session_manager.update_generation_progress(task_id, progress, message)
-                    except ImportError:
-                        pass  # 모바일 최적화가 비활성화된 경우
-        except Exception as e:
-            # 오류가 발생해도 메인 작업에는 영향 없도록
-            pass
 
     def get_task(self, task_id: str):
         return self._tasks.get(task_id, None)
-    
-    def get_all_tasks(self):
-        """모든 작업 반환 (모바일 세션 복원용)"""
-        return self._tasks
 
     def delete_task(self, task_id: str):
         if task_id in self._tasks:

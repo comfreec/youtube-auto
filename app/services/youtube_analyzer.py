@@ -107,7 +107,7 @@ def get_video_transcript(video_id: str) -> Optional[str]:
             # 직접 자막 가져오기 시도
             try:
                 # 한국어 자막 우선 시도
-                transcript_data = YouTubeTranscriptApi.get_transcript(video_id, languages=['ko', 'ko-KR'])
+                transcript_data = YouTubeTranscriptApi.fetch(video_id, languages=['ko', 'ko-KR'])
                 full_text = " ".join([item['text'] for item in transcript_data])
                 logger.info(f"Successfully extracted Korean transcript: {len(full_text)} characters")
                 return full_text
@@ -117,7 +117,7 @@ def get_video_transcript(video_id: str) -> Optional[str]:
                 
                 try:
                     # 영어 자막 시도
-                    transcript_data = YouTubeTranscriptApi.get_transcript(video_id, languages=['en', 'en-US'])
+                    transcript_data = YouTubeTranscriptApi.fetch(video_id, languages=['en', 'en-US'])
                     full_text = " ".join([item['text'] for item in transcript_data])
                     logger.info(f"Successfully extracted English transcript: {len(full_text)} characters")
                     return full_text
@@ -127,7 +127,7 @@ def get_video_transcript(video_id: str) -> Optional[str]:
                     
                     try:
                         # 기본 언어로 시도 (언어 지정 없이)
-                        transcript_data = YouTubeTranscriptApi.get_transcript(video_id)
+                        transcript_data = YouTubeTranscriptApi.fetch(video_id)
                         full_text = " ".join([item['text'] for item in transcript_data])
                         logger.info(f"Successfully extracted default transcript: {len(full_text)} characters")
                         return full_text
