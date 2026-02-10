@@ -172,9 +172,9 @@ def _generate_response(prompt: str) -> str:
     
     # Multi-API key rotation for better quota management
     if llm_provider == "gemini":
-        # Collect all available Gemini API keys (up to 5 keys)
+        # Collect all available Gemini API keys (up to 10 keys)
         gemini_keys = []
-        for i in range(1, 6):  # gemini_api_key, gemini_api_key_2, ..., gemini_api_key_5
+        for i in range(1, 11):  # gemini_api_key, gemini_api_key_2, ..., gemini_api_key_10
             if i == 1:
                 key = config.app.get("gemini_api_key")
             else:

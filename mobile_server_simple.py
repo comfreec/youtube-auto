@@ -61,6 +61,57 @@ def run_video_generation(task_id: str, params: VideoParams, auto_upload: bool = 
             # 기존 task.start() 함수 그대로 사용 (한국어 버전)
             tm.start(task_id, params, stop_at="video")
             
+            # 한국어 영상 생성 후 대본 및 키워드 검증
+            logger.info("🔍 Validating Korean video generation...")
+            script_file = os.path.join(task_dir, "script.json")
+            
+            if os.path.exists(script_file):
+                import json
+                with open(script_file, 'r', encoding='utf-8') as f:
+                    script_data = json.load(f)
+                
+                script = script_data.get('script', '')
+                search_terms = script_data.get('search_terms', [])
+                
+                # 대본 검증
+                if not script or len(script) < 50:
+                    logger.error(f"❌ Korean script too short: {len(script)} characters")
+                    
+                    # 생성된 영상 파일 삭제
+                    import shutil
+                    if os.path.exists(task_dir):
+                        shutil.rmtree(task_dir, ignore_errors=True)
+                    
+                    tasks[task_id]["status"] = "failed"
+                    tasks[task_id]["message"] = "⚠️ Gemini API 할당량 소진 - 대본 생성 실패"
+                    sm.state.update_task(task_id, state="failed", message="❌ Gemini API 할당량 소진\n잠시 후 다시 시도하거나 API 키를 확인하세요", progress=0)
+                    return
+                
+                # 키워드 검증 (fallback 키워드 체크)
+                fallback_keywords = ["lifestyle", "people", "modern", "daily life", "professional", "habits", "success", "achievement", "tired", "exhausted", "energy"]
+                
+                # 검색 키워드 중 3개 이상이 fallback 키워드면 실패로 간주
+                fallback_count = sum(1 for term in search_terms if term in fallback_keywords)
+                
+                if fallback_count >= 3:
+                    logger.error(f"❌ Korean video using fallback keywords: {search_terms}")
+                    logger.error(f"   Fallback count: {fallback_count}/{len(search_terms)}")
+                    logger.error(f"   This indicates API quota exhaustion")
+                    
+                    # 생성된 영상 파일 삭제
+                    import shutil
+                    if os.path.exists(task_dir):
+                        shutil.rmtree(task_dir, ignore_errors=True)
+                    
+                    tasks[task_id]["status"] = "failed"
+                    tasks[task_id]["message"] = "⚠️ Gemini API 할당량 소진 - 키워드 생성 실패"
+                    sm.state.update_task(task_id, state="failed", message="❌ Gemini API 할당량 소진\n잠시 후 다시 시도하거나 API 키를 확인하세요", progress=0)
+                    return
+                
+                logger.info(f"✅ Korean video validated")
+                logger.info(f"   - Script length: {len(script)} characters")
+                logger.info(f"   - Keywords: {search_terms}")
+            
             # 완료 상태 업데이트
             tasks[task_id]["status"] = "complete"
             tasks[task_id]["progress"] = 100
@@ -201,23 +252,47 @@ def run_video_generation(task_id: str, params: VideoParams, auto_upload: bool = 
                                 ko_script_data = json.load(f)
                             ko_script = ko_script_data.get('script', '')
                             
-                            # 한국어 대본에서 키워드 추출
-                            terms_en = llm.generate_terms(video_subject=korean_title, video_script=ko_script, amount=5) or []
+                            # 한국어 대본을 영어로 번역 시도
+                            if ko_script:
+                                logger.info("🔄 Translating Korean script to get English title...")
+                                eng_script_temp = llm.translate_to_english(ko_script)
+                                
+                                if eng_script_temp and not re.search(r'[가-힣]', eng_script_temp):
+                                    # 번역된 대본의 첫 문장을 제목으로 사용
+                                    first_sentence = eng_script_temp.split('.')[0].strip()
+                                    if len(first_sentence) > 10 and len(first_sentence) < 100:
+                                        eng_title = first_sentence
+                                        logger.info(f"✅ Generated title from translated script: {eng_title}")
                             
-                            if terms_en:
-                                # 영어 키워드만 필터링
-                                english_terms = [t for t in terms_en if t and not re.search(r'[가-힣]', t)]
-                                if english_terms:
-                                    eng_title = " · ".join(english_terms[:3])
-                                    logger.info(f"✅ Generated title from keywords: {eng_title}")
+                            # 여전히 실패하면 키워드 기반
+                            if not eng_title:
+                                # 한국어 대본에서 키워드 추출
+                                terms_en = llm.generate_terms(video_subject=korean_title, video_script=ko_script, amount=5) or []
+                                
+                                if terms_en:
+                                    # 영어 키워드만 필터링
+                                    english_terms = [t for t in terms_en if t and not re.search(r'[가-힣]', t)]
+                                    if english_terms:
+                                        eng_title = " · ".join(english_terms[:3])
+                                        logger.info(f"✅ Generated title from keywords: {eng_title}")
+                                    else:
+                                        logger.warning("❌ No valid English keywords found")
                                 else:
-                                    logger.warning("❌ No valid English keywords found")
-                            else:
-                                logger.warning("❌ No keywords generated")
+                                    logger.warning("❌ No keywords generated")
                     except Exception as e:
                         logger.warning(f"❌ Keyword-based title generation failed: {e}")
                 
-                # 3. 모든 방법 실패 시 영어 버전 생성 중단
+                # 3. 키워드 기반 제목이 생성되었는지 확인 (API 할당량 소진 의미)
+                if eng_title and " · " in eng_title:
+                    logger.error(f"❌ English title is keyword-based: '{eng_title}'")
+                    logger.error(f"   This indicates API quota exhaustion")
+                    tasks[task_id]["english_status"] = "skipped"
+                    tasks[task_id]["english_error"] = "API 할당량 소진으로 영어 버전 생성 불가"
+                    tasks[task_id]["message"] = "한국어 영상만 생성 완료 (API 할당량 소진)"
+                    sm.state.update_task(task_id, state="complete", message="⚠️ 한국어 영상만 생성 완료 (API 할당량 소진)", progress=100)
+                    return
+                
+                # 4. 모든 방법 실패 시 영어 버전 생성 중단
                 if not eng_title:
                     logger.error(f"❌ Failed to generate English title for '{korean_title}'. Skipping English version.")
                     tasks[task_id]["english_status"] = "skipped"
@@ -228,19 +303,50 @@ def run_video_generation(task_id: str, params: VideoParams, auto_upload: bool = 
                 
                 logger.info(f"✅ English title confirmed: {eng_title}")
                 
-                # 4. 영어 대본 생성 (generate_english_script 사용)
-                logger.info(f"🌍 Generating English script for title: '{eng_title}'")
+                # 4. 한국어 대본을 영어로 번역 (더 정확함)
+                logger.info(f"🌍 Translating Korean script to English...")
                 try:
-                    eng_script = llm.generate_english_script(
-                        video_subject=eng_title,
-                        paragraph_number=3
-                    )
-                    logger.info(f"🌍 English script generated: {len(eng_script) if eng_script else 0} characters")
+                    ko_script_file = os.path.join(task_dir, "script.json")
+                    if os.path.exists(ko_script_file):
+                        import json
+                        with open(ko_script_file, 'r', encoding='utf-8') as f:
+                            ko_script_data = json.load(f)
+                        ko_script = ko_script_data.get('script', '')
+                        
+                        if ko_script:
+                            # 한국어 대본을 영어로 번역
+                            eng_script = llm.translate_to_english(ko_script)
+                            
+                            # 번역 검증
+                            if eng_script and eng_script != ko_script and not re.search(r'[가-힣]', eng_script):
+                                logger.info(f"✅ Korean script translated to English: {len(eng_script)} characters")
+                            else:
+                                logger.warning("❌ Script translation failed, trying generate_english_script...")
+                                eng_script = None
+                        else:
+                            logger.warning("❌ No Korean script found")
+                            eng_script = None
+                    else:
+                        logger.warning("❌ Korean script file not found")
+                        eng_script = None
                 except Exception as e:
-                    logger.error(f"❌ English script generation failed: {e}")
+                    logger.error(f"❌ Script translation failed: {e}")
                     eng_script = None
                 
-                # 5. 대본 검증
+                # 5. 번역 실패 시 generate_english_script 사용 (fallback)
+                if not eng_script:
+                    logger.info(f"🔄 Fallback: Generating English script for title: '{eng_title}'")
+                    try:
+                        eng_script = llm.generate_english_script(
+                            video_subject=eng_title,
+                            paragraph_number=3
+                        )
+                        logger.info(f"🌍 English script generated: {len(eng_script) if eng_script else 0} characters")
+                    except Exception as e:
+                        logger.error(f"❌ English script generation failed: {e}")
+                        eng_script = None
+                
+                # 6. 대본 검증
                 if not eng_script or len(eng_script) < 100:
                     logger.error(f"❌ English script too short or empty (length: {len(eng_script) if eng_script else 0})")
                     tasks[task_id]["english_status"] = "skipped"
@@ -260,8 +366,50 @@ def run_video_generation(task_id: str, params: VideoParams, auto_upload: bool = 
                 logger.info(f"✅ English script validated: {len(eng_script)} characters")
                 logger.info(f"   Script preview: {eng_script[:150]}...")
                 
-                # 영어 키워드 생성
-                eng_terms = llm.generate_terms(video_subject=eng_title, video_script=eng_script, amount=5) or [eng_title]
+                # 영어 키워드 생성 (대본 기반으로 생성하여 정확도 향상)
+                logger.info(f"🌍 Generating English keywords from script...")
+                eng_terms = llm.generate_terms(video_subject=eng_title, video_script=eng_script, amount=5)
+                
+                # 키워드 검증 (한글 포함 여부 체크)
+                if eng_terms:
+                    eng_terms = [t for t in eng_terms if t and not re.search(r'[가-힣]', t)]
+                
+                # 키워드가 없으면 대본에서 직접 추출
+                if not eng_terms:
+                    logger.warning("❌ No valid English keywords generated, extracting from script...")
+                    # 대본 전체에서 주요 명사/형용사 추출 (더 다양한 키워드)
+                    # 불용어 제외
+                    stop_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'should', 'could', 'may', 'might', 'can', 'this', 'that', 'these', 'those', 'it', 'its', 'you', 'your', 'we', 'our', 'they', 'their'}
+                    
+                    # 대본에서 모든 단어 추출
+                    words = re.findall(r'\b[a-zA-Z]{4,}\b', eng_script.lower())
+                    # 불용어 제외하고 빈도수 계산
+                    word_freq = {}
+                    for word in words:
+                        if word not in stop_words:
+                            word_freq[word] = word_freq.get(word, 0) + 1
+                    
+                    # 빈도수 높은 순으로 정렬하여 상위 5개 선택
+                    if word_freq:
+                        eng_terms = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)[:5]
+                        eng_terms = [word for word, freq in eng_terms]
+                        logger.info(f"   Extracted keywords from script: {eng_terms}")
+                    else:
+                        # 제목에서 키워드 추출 (최후의 수단)
+                        title_words = re.findall(r'\b[a-zA-Z]{4,}\b', eng_title.lower())
+                        eng_terms = [w for w in title_words if w not in stop_words][:5]
+                        logger.warning(f"   Using title keywords: {eng_terms}")
+                
+                # 여전히 키워드가 없으면 영상 생성 중단 (API 할당량 소진 가능성)
+                if not eng_terms or len(eng_terms) < 2:
+                    logger.error("❌ Failed to generate English keywords - API quota likely exhausted")
+                    tasks[task_id]["english_status"] = "skipped"
+                    tasks[task_id]["english_error"] = "키워드 생성 실패 (API 할당량 소진 가능성)"
+                    tasks[task_id]["message"] = "한국어 영상만 생성 완료 (영어 키워드 생성 실패)"
+                    sm.state.update_task(task_id, state="complete", message="⚠️ 한국어 영상만 생성 완료", progress=100)
+                    return
+                
+                logger.info(f"✅ English keywords: {eng_terms}")
                 
                 # 영어 버전 VideoParams 생성
                 eng_task_id = str(uuid4())
@@ -286,7 +434,7 @@ def run_video_generation(task_id: str, params: VideoParams, auto_upload: bool = 
                     voice_volume=1.0,
                     bgm_type="random",
                     bgm_file="",
-                    bgm_volume=0.1,  # 배경 음악 볼륨 절반으로 줄임 (0.2 -> 0.1)
+                    bgm_volume=0.05,  # 배경 음악 볼륨 더 줄임 (0.1 -> 0.05)
                     subtitle_enabled=True,
                     subtitle_position="custom",
                     custom_position=75.0,
@@ -476,12 +624,12 @@ async def generate_video(request: VideoRequest, background_tasks: BackgroundTask
             video_script="",  # LLM이 자동 생성
             video_terms="",  # LLM이 자동 생성
             video_language="ko-KR",  # 한국어 명시
-            voice_name=config.app.get("voice_name", "ko-KR-SunHiNeural-Female"),
+            voice_name="gtts:ko-한국어",  # gTTS 한국어 음성
             voice_rate=1.3,  # 1.3배속 (이전 사용 속도)
             voice_volume=1.0,
             bgm_type="random",
             bgm_file="",
-            bgm_volume=0.1,  # 배경 음악 볼륨 절반으로 줄임 (0.2 -> 0.1)
+            bgm_volume=0.05,  # 배경 음악 볼륨 더 줄임 (0.1 -> 0.05)
             subtitle_enabled=True,
             subtitle_position="custom",
             custom_position=75.0,
