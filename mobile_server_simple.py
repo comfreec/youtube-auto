@@ -366,39 +366,73 @@ def run_video_generation(task_id: str, params: VideoParams, auto_upload: bool = 
                 logger.info(f"✅ English script validated: {len(eng_script)} characters")
                 logger.info(f"   Script preview: {eng_script[:150]}...")
                 
-                # 영어 키워드 생성 (대본 기반으로 생성하여 정확도 향상)
-                logger.info(f"🌍 Generating English keywords from script...")
-                eng_terms = llm.generate_terms(video_subject=eng_title, video_script=eng_script, amount=5)
+                # 한국어 영상에서 사용한 키워드 가져오기 (같은 배경영상 사용) - 최우선
+                eng_terms = []
+                korean_keywords = []
+                try:
+                    # 한국어 script.json에서 search_terms 가져오기
+                    korean_script_file = os.path.join(task_dir, "script.json")
+                    if os.path.exists(korean_script_file):
+                        import json
+                        with open(korean_script_file, 'r', encoding='utf-8') as f:
+                            korean_data = json.load(f)
+                            korean_keywords = korean_data.get("search_terms", [])
+                            if korean_keywords:
+                                logger.info(f"🎬 Reusing Korean keywords for same background videos: {korean_keywords}")
+                                # 한국어 키워드를 영어로 번역 (필요시)
+                                try:
+                                    for ko_term in korean_keywords:
+                                        if re.search(r'[가-힣]', ko_term):
+                                            # 한글이면 번역
+                                            en_term = llm.translate_to_english(ko_term)
+                                            if en_term and not re.search(r'[가-힣]', en_term):
+                                                eng_terms.append(en_term)
+                                            else:
+                                                eng_terms.append(ko_term)
+                                        else:
+                                            # 이미 영어면 그대로 사용
+                                            eng_terms.append(ko_term)
+                                    logger.info(f"   ✅ Using Korean keywords (translated): {eng_terms}")
+                                except Exception as e:
+                                    logger.warning(f"   Translation failed, using original: {e}")
+                                    eng_terms = korean_keywords
+                except Exception as e:
+                    logger.warning(f"⚠️ Failed to get Korean keywords: {e}")
                 
-                # 키워드 검증 (한글 포함 여부 체크)
-                if eng_terms:
-                    eng_terms = [t for t in eng_terms if t and not re.search(r'[가-힣]', t)]
-                
-                # 키워드가 없으면 대본에서 직접 추출
+                # 한국어 키워드가 없으면 영어 키워드 생성
                 if not eng_terms:
-                    logger.warning("❌ No valid English keywords generated, extracting from script...")
-                    # 대본 전체에서 주요 명사/형용사 추출 (더 다양한 키워드)
-                    # 불용어 제외
-                    stop_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'should', 'could', 'may', 'might', 'can', 'this', 'that', 'these', 'those', 'it', 'its', 'you', 'your', 'we', 'our', 'they', 'their'}
+                    logger.info(f"🌍 Generating English keywords from script...")
+                    eng_terms = llm.generate_terms(video_subject=eng_title, video_script=eng_script, amount=5)
                     
-                    # 대본에서 모든 단어 추출
-                    words = re.findall(r'\b[a-zA-Z]{4,}\b', eng_script.lower())
-                    # 불용어 제외하고 빈도수 계산
-                    word_freq = {}
-                    for word in words:
-                        if word not in stop_words:
-                            word_freq[word] = word_freq.get(word, 0) + 1
+                    # 키워드 검증 (한글 포함 여부 체크)
+                    if eng_terms:
+                        eng_terms = [t for t in eng_terms if t and not re.search(r'[가-힣]', t)]
                     
-                    # 빈도수 높은 순으로 정렬하여 상위 5개 선택
-                    if word_freq:
-                        eng_terms = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)[:5]
-                        eng_terms = [word for word, freq in eng_terms]
-                        logger.info(f"   Extracted keywords from script: {eng_terms}")
-                    else:
-                        # 제목에서 키워드 추출 (최후의 수단)
-                        title_words = re.findall(r'\b[a-zA-Z]{4,}\b', eng_title.lower())
-                        eng_terms = [w for w in title_words if w not in stop_words][:5]
-                        logger.warning(f"   Using title keywords: {eng_terms}")
+                    # 키워드가 없으면 대본에서 직접 추출
+                    if not eng_terms:
+                        logger.warning("❌ No valid English keywords generated, extracting from script...")
+                        # 대본 전체에서 주요 명사/형용사 추출 (더 다양한 키워드)
+                        # 불용어 제외
+                        stop_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'should', 'could', 'may', 'might', 'can', 'this', 'that', 'these', 'those', 'it', 'its', 'you', 'your', 'we', 'our', 'they', 'their'}
+                        
+                        # 대본에서 모든 단어 추출
+                        words = re.findall(r'\b[a-zA-Z]{4,}\b', eng_script.lower())
+                        # 불용어 제외하고 빈도수 계산
+                        word_freq = {}
+                        for word in words:
+                            if word not in stop_words:
+                                word_freq[word] = word_freq.get(word, 0) + 1
+                        
+                        # 빈도수 높은 순으로 정렬하여 상위 5개 선택
+                        if word_freq:
+                            eng_terms = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)[:5]
+                            eng_terms = [word for word, freq in eng_terms]
+                            logger.info(f"   Extracted keywords from script: {eng_terms}")
+                        else:
+                            # 제목에서 키워드 추출 (최후의 수단)
+                            title_words = re.findall(r'\b[a-zA-Z]{4,}\b', eng_title.lower())
+                            eng_terms = [w for w in title_words if w not in stop_words][:5]
+                            logger.warning(f"   Using title keywords: {eng_terms}")
                 
                 # 여전히 키워드가 없으면 영상 생성 중단 (API 할당량 소진 가능성)
                 if not eng_terms or len(eng_terms) < 2:
@@ -409,7 +443,7 @@ def run_video_generation(task_id: str, params: VideoParams, auto_upload: bool = 
                     sm.state.update_task(task_id, state="complete", message="⚠️ 한국어 영상만 생성 완료", progress=100)
                     return
                 
-                logger.info(f"✅ English keywords: {eng_terms}")
+                logger.info(f"✅ Final English keywords: {eng_terms}")
                 
                 # 영어 버전 VideoParams 생성
                 eng_task_id = str(uuid4())
@@ -418,6 +452,7 @@ def run_video_generation(task_id: str, params: VideoParams, auto_upload: bool = 
                 logger.info(f"   - English script length: {len(eng_script)} characters")
                 logger.info(f"   - English script preview: {eng_script[:100]}...")
                 logger.info(f"   - English title: {eng_title}")
+                logger.info(f"   - Using keywords: {eng_terms}")
                 
                 eng_params = VideoParams(
                     video_subject=eng_title,

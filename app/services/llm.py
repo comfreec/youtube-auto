@@ -172,15 +172,34 @@ def _generate_response(prompt: str) -> str:
     
     # Multi-API key rotation for better quota management
     if llm_provider == "gemini":
-        # Collect all available Gemini API keys (up to 10 keys)
+        # Collect all available Gemini API keys (자동 감지 - 무제한)
         gemini_keys = []
-        for i in range(1, 11):  # gemini_api_key, gemini_api_key_2, ..., gemini_api_key_10
-            if i == 1:
-                key = config.app.get("gemini_api_key")
-            else:
-                key = config.app.get(f"gemini_api_key_{i}")
+        
+        # 첫 번째 키 확인
+        key = config.app.get("gemini_api_key")
+        if key:
+            gemini_keys.append((1, key))
+        
+        # 나머지 키 자동 감지 (gemini_api_key_2, gemini_api_key_3, ...)
+        i = 2
+        while True:
+            key = config.app.get(f"gemini_api_key_{i}")
             if key:
                 gemini_keys.append((i, key))
+                i += 1
+            else:
+                # 연속으로 3개 없으면 중단 (중간에 빈 번호가 있을 수 있으므로)
+                if i > 100:  # 안전장치: 최대 100개까지만
+                    break
+                # 다음 3개 확인
+                found_next = False
+                for j in range(i, i + 3):
+                    if config.app.get(f"gemini_api_key_{j}"):
+                        found_next = True
+                        break
+                if not found_next:
+                    break
+                i += 1
         
         if not gemini_keys:
             logger.error("No Gemini API keys configured")

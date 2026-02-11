@@ -311,6 +311,11 @@ def search_videos_pexels(
             logger.error(f"search videos failed: {response}")
             return video_items
         videos = response["videos"]
+        
+        # 검색 결과를 랜덤하게 섞어서 매번 다른 영상 선택 (주석 처리 - 한국어/영어 영상 일관성 유지)
+        # import random
+        # random.shuffle(videos)
+        
         # loop through each video in the result
         for v in videos:
             duration = v["duration"]
@@ -366,6 +371,11 @@ def search_videos_pixabay(
             logger.error(f"search videos failed: {response}")
             return video_items
         videos = response["hits"]
+        
+        # 검색 결과를 랜덤하게 섞어서 매번 다른 영상 선택 (주석 처리 - 한국어/영어 영상 일관성 유지)
+        # import random
+        # random.shuffle(videos)
+        
         # loop through each video in the result
         for v in videos:
             duration = v["duration"]
@@ -490,6 +500,10 @@ def download_videos(
             search_variations.extend(["smile", "celebration", "positive", "cheerful"])
         elif search_term in ["stress", "pressure"]:
             search_variations.extend(["relaxation", "meditation", "calm", "peaceful"])
+        
+        # 랜덤하게 variation 순서 섞기 (매번 다른 영상 선택)
+        import random
+        random.shuffle(search_variations)
         
         # Try each variation until we find good results
         video_items = []

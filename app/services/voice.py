@@ -1202,28 +1202,50 @@ def tts(
     voice_volume: float = 1.0,
 ) -> Union[SubMaker, None]:
     # TTS 텍스트 전처리 - 발음 개선
-    def preprocess_tts_text(text: str) -> str:
+    def preprocess_tts_text(text: str, language: str = "ko") -> str:
         """TTS를 위한 텍스트 전처리"""
         import re
         
+        # 언어 감지 (voice_name에서 추출)
+        is_korean = language.startswith("ko") or "ko-" in language.lower()
+        
+        if is_korean:
+            # 한국어 전처리
+            # 범위 표현 처리 (20~30분 → 20에서 30분)
+            text = re.sub(r'(\d+)\s*~\s*(\d+)', r'\1에서 \2', text)
+            # 일반 물결표는 "에서"로 변환
+            text = re.sub(r'~', ' 에서 ', text)
+            # 기타 TTS 발음 개선
+            text = re.sub(r'&', ' 그리고 ', text)  # &를 "그리고"로
+            text = re.sub(r'@', ' 골뱅이 ', text)  # @를 "골뱅이"로
+            text = re.sub(r'#', ' 샵 ', text)      # #을 "샵"으로
+            text = re.sub(r'\+', ' 플러스 ', text) # +를 "플러스"로
+            text = re.sub(r'=', ' 같다 ', text)    # =를 "같다"로
+            text = re.sub(r'%', ' 퍼센트 ', text)  # %를 "퍼센트"로
+        else:
+            # 영어 전처리
+            # 범위 표현 처리 (20~30 → 20 to 30)
+            text = re.sub(r'(\d+)\s*~\s*(\d+)', r'\1 to \2', text)
+            # 일반 물결표는 "to"로 변환
+            text = re.sub(r'~', ' to ', text)
+            # 기타 TTS 발음 개선
+            text = re.sub(r'&', ' and ', text)     # &를 "and"로
+            text = re.sub(r'@', ' at ', text)      # @를 "at"로
+            text = re.sub(r'#', ' number ', text)  # #을 "number"로
+            text = re.sub(r'\+', ' plus ', text)   # +를 "plus"로
+            text = re.sub(r'=', ' equals ', text)  # =를 "equals"로
+            text = re.sub(r'%', ' percent ', text) # %를 "percent"로
+        
         # 모든 언어에서 "-" 문자 제거 (음성에서 읽지 않도록)
         text = re.sub(r'-', '', text)
-        
-        # 기타 TTS 발음 개선
-        text = re.sub(r'&', ' 그리고 ', text)  # &를 "그리고"로
-        text = re.sub(r'@', ' 골뱅이 ', text)  # @를 "골뱅이"로
-        text = re.sub(r'#', ' 샵 ', text)      # #을 "샵"으로
-        text = re.sub(r'\+', ' 플러스 ', text) # +를 "플러스"로
-        text = re.sub(r'=', ' 같다 ', text)    # =를 "같다"로
-        text = re.sub(r'%', ' 퍼센트 ', text)  # %를 "퍼센트"로
         
         # 연속된 공백 정리
         text = re.sub(r'\s+', ' ', text).strip()
         
         return text
     
-    # 텍스트 전처리 적용
-    processed_text = preprocess_tts_text(text)
+    # 텍스트 전처리 적용 (언어 파라미터 전달)
+    processed_text = preprocess_tts_text(text, voice_name)
     logger.info(f"TTS 텍스트 전처리: '{text[:50]}...' -> '{processed_text[:50]}...'")
     
     # TTS 폴백 시스템: 기존 TTS 먼저 시도, 실패 시 gTTS로 전환
