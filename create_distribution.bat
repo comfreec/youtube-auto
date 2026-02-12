@@ -1,0 +1,98 @@
+@echo off
+chcp 65001 >nul
+title 배포 패키지 생성
+
+echo ========================================
+echo    배포 패키지 생성
+echo ========================================
+echo.
+
+set DIST_FOLDER=AI쇼츠생성기_배포판
+set VERSION=v1.0
+set ZIP_NAME=AI쇼츠생성기_%VERSION%.zip
+
+echo 버전: %VERSION%
+echo.
+pause
+
+echo.
+echo [1/4] 기존 폴더 정리 중...
+if exist "%DIST_FOLDER%" (
+    rmdir /s /q "%DIST_FOLDER%"
+    echo ✅ 기존 폴더 삭제 완료
+)
+
+echo.
+echo [2/4] 새 폴더 생성 중...
+mkdir "%DIST_FOLDER%"
+echo ✅ 폴더 생성 완료
+
+echo.
+echo [3/4] 필수 파일 복사 중...
+
+REM 프로그램 코드
+xcopy /E /I /Q app "%DIST_FOLDER%\app" >nul
+xcopy /E /I /Q webui "%DIST_FOLDER%\webui" >nul
+
+REM 리소스 파일 (있는 경우)
+if exist "resource" (
+    xcopy /E /I /Q resource "%DIST_FOLDER%\resource" >nul
+)
+
+REM 실행 파일
+copy setup_for_customer.bat "%DIST_FOLDER%\" >nul
+copy 프로그램실행.bat "%DIST_FOLDER%\" >nul
+copy 외부접속.bat "%DIST_FOLDER%\" >nul
+
+REM 문서
+copy 고객용_README.md "%DIST_FOLDER%\README.md" >nul
+
+REM 설정 파일
+copy requirements.txt "%DIST_FOLDER%\" >nul
+copy config.example.toml "%DIST_FOLDER%\" >nul
+
+REM 외부 도구
+if exist "ngrok.exe" (
+    copy ngrok.exe "%DIST_FOLDER%\" >nul
+)
+
+REM 라이선스
+if exist "LICENSE" (
+    copy LICENSE "%DIST_FOLDER%\" >nul
+)
+
+echo ✅ 파일 복사 완료
+
+echo.
+echo [4/4] 불필요한 파일 제거 중...
+
+REM __pycache__ 폴더 제거
+for /d /r "%DIST_FOLDER%" %%d in (__pycache__) do @if exist "%%d" rd /s /q "%%d"
+
+REM .pyc 파일 제거
+del /s /q "%DIST_FOLDER%\*.pyc" >nul 2>&1
+
+REM 테스트 파일 제거
+del /q "%DIST_FOLDER%\test_*.py" >nul 2>&1
+del /q "%DIST_FOLDER%\debug_*.py" >nul 2>&1
+
+echo ✅ 정리 완료
+
+echo.
+echo ========================================
+echo    배포 패키지 생성 완료!
+echo ========================================
+echo.
+echo 폴더: %DIST_FOLDER%
+echo.
+echo 다음 단계:
+echo 1. %DIST_FOLDER% 폴더를 ZIP으로 압축
+echo 2. 고객에게 전달
+echo 3. 라이선스 키 생성 (dist\라이선스생성기.exe)
+echo.
+echo 압축 방법:
+echo - %DIST_FOLDER% 폴더 우클릭
+echo - "보내기" → "압축(ZIP) 폴더"
+echo - 파일명: %ZIP_NAME%
+echo.
+pause
