@@ -24,8 +24,24 @@ from app.models.schema import VideoParams, VideoAspect, VideoConcatMode, VideoTr
 from app.config import config
 from app.utils import utils
 from app.utils.youtube import get_authenticated_service, upload_video
+from app.services.license import license_manager
 
 app = FastAPI(title="AI 영상 생성 모바일 서버")
+
+# 라이선스 검증
+is_valid, message = license_manager.verify_license()
+if not is_valid:
+    logger.error(f"❌ 라이선스 검증 실패: {message}")
+    print("\n" + "=" * 60)
+    print("❌ 라이선스 인증이 필요합니다")
+    print("=" * 60)
+    print(f"\n{message}\n")
+    print("라이선스 키를 활성화하려면 웹 UI를 실행하세요:")
+    print("  streamlit run webui/Main.py")
+    print("\n" + "=" * 60)
+    sys.exit(1)
+else:
+    logger.info(f"✅ 라이선스 검증 성공: {message}")
 
 # 요청 모델
 class VideoRequest(BaseModel):
@@ -469,7 +485,7 @@ def run_video_generation(task_id: str, params: VideoParams, auto_upload: bool = 
                     voice_volume=1.0,
                     bgm_type="random",
                     bgm_file="",
-                    bgm_volume=0.05,  # 배경 음악 볼륨 더 줄임 (0.1 -> 0.05)
+                    bgm_volume=0.03,  # 배경 음악 볼륨 (음성이 잘 들리도록)
                     subtitle_enabled=True,
                     subtitle_position="custom",
                     custom_position=75.0,
@@ -664,7 +680,7 @@ async def generate_video(request: VideoRequest, background_tasks: BackgroundTask
             voice_volume=1.0,
             bgm_type="random",
             bgm_file="",
-            bgm_volume=0.05,  # 배경 음악 볼륨 더 줄임 (0.1 -> 0.05)
+            bgm_volume=0.03,  # 배경 음악 볼륨 (음성이 잘 들리도록)
             subtitle_enabled=True,
             subtitle_position="custom",
             custom_position=75.0,

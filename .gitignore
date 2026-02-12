@@ -43,3 +43,12 @@ streamlit.log
 # Secrets
 token.pickle
 client_secrets.json
+
+# PyInstaller build files
+build/
+dist/
+*.spec
+
+# License files
+license.dat
+license_database.json

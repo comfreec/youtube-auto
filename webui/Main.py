@@ -25,6 +25,7 @@ from app.config import config
 from app.services import task
 from app.services import state as sm
 from app.models import const
+from app.services.license import license_manager
 
 # Import mobile optimization
 try:
@@ -36,6 +37,14 @@ try:
     MOBILE_OPTIMIZATION_AVAILABLE = True
 except ImportError:
     MOBILE_OPTIMIZATION_AVAILABLE = False
+
+# Import API help guides
+try:
+    from webui.api_help_guides import show_api_help_button
+    API_HELP_AVAILABLE = True
+except ImportError:
+    show_api_help_button = None
+    API_HELP_AVAILABLE = False
 
 # Import animation shorts UI
 try:
@@ -197,6 +206,59 @@ def add_pwa_elements():
 
 # PWA 요소 추가
 add_pwa_elements()
+
+# ===== 라이선스 검증 =====
+def check_license():
+    """라이선스 검증 및 활성화 UI"""
+    is_valid, message = license_manager.verify_license()
+    
+    if not is_valid:
+        st.error("🔒 라이선스 인증이 필요합니다")
+        st.warning(message)
+        
+        with st.form("license_activation"):
+            st.markdown("### 라이선스 활성화")
+            license_key = st.text_input(
+                "라이선스 키를 입력하세요",
+                placeholder="XXXX-XXXX-XXXX-XXXX",
+                help="판매자로부터 받은 라이선스 키를 입력하세요"
+            )
+            
+            submitted = st.form_submit_button("🔓 활성화", use_container_width=True, type="primary")
+            
+            if submitted:
+                if license_key:
+                    success, msg = license_manager.activate_license(license_key.strip().upper())
+                    if success:
+                        st.success(msg)
+                        st.balloons()
+                        time.sleep(2)
+                        st.rerun()
+                    else:
+                        st.error(msg)
+                else:
+                    st.error("라이선스 키를 입력해주세요")
+        
+        st.info("""
+        **💡 라이선스 구매 문의**
+        
+        이 프로그램을 사용하려면 유효한 라이선스가 필요합니다.
+        구매 문의는 판매자에게 연락하세요.
+        """)
+        
+        st.stop()  # 라이선스가 없으면 여기서 중단
+    
+    # 라이선스 정보 표시 (사이드바에)
+    license_info = license_manager.get_license_info()
+    if license_info:
+        days_left = license_info.get("days_left", 0)
+        if days_left <= 30:
+            st.sidebar.warning(f"⚠️ 라이선스 만료 {days_left}일 전")
+        else:
+            st.sidebar.success(f"✅ 라이선스 유효 ({days_left}일 남음)")
+
+# 라이선스 검증 실행
+check_license()
 
 # IMMEDIATE MENU HIDING - 페이지 로딩 즉시 적용
 immediate_hide_css = """
@@ -1556,18 +1618,7 @@ if "shorts_optimization_applied" not in st.session_state:
     st.session_state["settings_video_transition"] = 1  # Shuffle
     st.session_state["settings_clip_duration"] = 3
     st.session_state["settings_video_count"] = 1
-    st.session_state["settings_voice_rate"] = 1.2  # 최적화된 템포
-    st.session_state["settings_voice_volume"] = 1.0
-    st.session_state["settings_korean_speed_boost"] = 1.3  # 한국어 1.3배속
-    st.session_state["settings_english_speed_boost"] = 1.1  # 영어 1.1배속
     st.session_state["settings_bgm_type"] = 1
-    st.session_state["settings_bgm_volume"] = 0.05
-    st.session_state["settings_subtitle_enabled"] = True
-    st.session_state["settings_subtitle_position"] = 2
-    st.session_state["settings_font_color"] = "#FFFFFF"
-    st.session_state["settings_stroke_color"] = "#000000"
-    st.session_state["settings_font_size"] = 50
-    st.session_state["settings_stroke_width"] = 3.0
     
     config.ui["font_size"] = 50
     config.ui["text_fore_color"] = "#FFFFFF"
@@ -2065,18 +2116,7 @@ with tab_main:
                 st.session_state["settings_video_transition"] = 1  # Shuffle
                 st.session_state["settings_clip_duration"] = 3
                 st.session_state["settings_video_count"] = 1
-                st.session_state["settings_voice_rate"] = 1.2
-                st.session_state["settings_voice_volume"] = 1.0
-                st.session_state["settings_korean_speed_boost"] = 1.3  # 한국어 1.3배속
-                st.session_state["settings_english_speed_boost"] = 1.1  # 영어 1.1배속
                 st.session_state["settings_bgm_type"] = 1
-                st.session_state["settings_bgm_volume"] = 0.05
-                st.session_state["settings_subtitle_enabled"] = True
-                st.session_state["settings_subtitle_position"] = 2
-                st.session_state["settings_font_color"] = "#FFFFFF"
-                st.session_state["settings_stroke_color"] = "#000000"
-                st.session_state["settings_font_size"] = 50
-                st.session_state["settings_stroke_width"] = 3.0
                 
                 config.ui["font_size"] = 50
                 config.ui["text_fore_color"] = "#FFFFFF"
@@ -4587,11 +4627,38 @@ with tab_analytics:
             if st.button("💾 설정 백업", use_container_width=True):
                 try:
                     import json
+                    import base64
+                    
                     backup_data = {
                         "config": dict(config.app),
                         "ui_settings": dict(config.ui),
                         "timestamp": time.time()
                     }
+                    
+                    # YouTube 인증 파일들 백업 (Base64 인코딩)
+                    youtube_files = {}
+                    
+                    # client_secrets.json
+                    client_secrets_path = os.path.join(root_dir, "client_secrets.json")
+                    if os.path.exists(client_secrets_path):
+                        with open(client_secrets_path, "rb") as f:
+                            youtube_files["client_secrets"] = base64.b64encode(f.read()).decode('utf-8')
+                    
+                    # token.pickle (메인 채널)
+                    token_path = os.path.join(root_dir, "token.pickle")
+                    if os.path.exists(token_path):
+                        with open(token_path, "rb") as f:
+                            youtube_files["token"] = base64.b64encode(f.read()).decode('utf-8')
+                    
+                    # token_timer.pickle (타이머 채널)
+                    token_timer_path = os.path.join(root_dir, "token_timer.pickle")
+                    if os.path.exists(token_timer_path):
+                        with open(token_timer_path, "rb") as f:
+                            youtube_files["token_timer"] = base64.b64encode(f.read()).decode('utf-8')
+                    
+                    if youtube_files:
+                        backup_data["youtube_auth"] = youtube_files
+                    
                     backup_json = json.dumps(backup_data, indent=2, ensure_ascii=False)
                     st.download_button(
                         "📥 백업 파일 다운로드",
@@ -4600,6 +4667,18 @@ with tab_analytics:
                         mime="application/json",
                         use_container_width=True
                     )
+                    
+                    # 백업 내용 표시
+                    backup_info = ["✅ 설정 파일 (config.toml)"]
+                    if "client_secrets" in youtube_files:
+                        backup_info.append("✅ YouTube 인증 파일 (client_secrets.json)")
+                    if "token" in youtube_files:
+                        backup_info.append("✅ YouTube 메인 채널 토큰")
+                    if "token_timer" in youtube_files:
+                        backup_info.append("✅ YouTube 타이머 채널 토큰")
+                    
+                    st.success("백업 생성 완료!\n\n" + "\n".join(backup_info))
+                    
                 except Exception as e:
                     st.error(f"백업 생성 실패: {e}")
             
@@ -4607,12 +4686,49 @@ with tab_analytics:
             if uploaded_backup:
                 try:
                     import json
+                    import base64
+                    
                     backup_data = json.load(uploaded_backup)
+                    
+                    # 설정 복원
                     if "config" in backup_data:
                         config.app.update(backup_data["config"])
                         config.save_config()
-                        st.success("설정이 복원되었습니다!")
-                        st.rerun()
+                    
+                    # YouTube 인증 파일 복원
+                    restored_files = []
+                    if "youtube_auth" in backup_data:
+                        youtube_files = backup_data["youtube_auth"]
+                        
+                        # client_secrets.json 복원
+                        if "client_secrets" in youtube_files:
+                            client_secrets_path = os.path.join(root_dir, "client_secrets.json")
+                            with open(client_secrets_path, "wb") as f:
+                                f.write(base64.b64decode(youtube_files["client_secrets"]))
+                            restored_files.append("client_secrets.json")
+                        
+                        # token.pickle 복원
+                        if "token" in youtube_files:
+                            token_path = os.path.join(root_dir, "token.pickle")
+                            with open(token_path, "wb") as f:
+                                f.write(base64.b64decode(youtube_files["token"]))
+                            restored_files.append("token.pickle")
+                        
+                        # token_timer.pickle 복원
+                        if "token_timer" in youtube_files:
+                            token_timer_path = os.path.join(root_dir, "token_timer.pickle")
+                            with open(token_timer_path, "wb") as f:
+                                f.write(base64.b64decode(youtube_files["token_timer"]))
+                            restored_files.append("token_timer.pickle")
+                    
+                    success_msg = "✅ 설정이 복원되었습니다!"
+                    if restored_files:
+                        success_msg += f"\n\n복원된 파일:\n" + "\n".join([f"✅ {f}" for f in restored_files])
+                    
+                    st.success(success_msg)
+                    time.sleep(2)
+                    st.rerun()
+                    
                 except Exception as e:
                     st.error(f"복원 실패: {e}")
 
@@ -4868,77 +4984,42 @@ with tab_settings:
         with col_audio_settings:
             st.markdown("#### 🎚️ 오디오 조정")
             
-            col_vol, col_rate = st.columns(2)
-            with col_vol:
-                params.voice_volume = st.selectbox(
-                    "🔊 음성 볼륨", 
-                    options=[0.6, 0.8, 1.0, 1.2, 1.5, 2.0], 
-                    index=2, 
-                    key="settings_voice_volume",
-                    help="1.0이 기본값입니다"
-                )
-            with col_rate:
-                params.voice_rate = st.selectbox(
-                    "⚡ 음성 속도", 
-                    options=[0.8, 0.9, 1.0, 1.1, 1.2, 1.3], 
-                    index=5, 
-                    key="settings_voice_rate",
-                    help="쇼츠 최적화: 1.2배 속도 (최적화된 템포)"
-                )
+            # 고정값 설정 (변경 불가)
+            params.voice_rate = 1.0  # 기본 속도
+            params.voice_volume = 1.0  # 기본 볼륨
             
-            # 언어별 속도 미세 조정
-            st.markdown("##### 🌍 언어별 속도 미세 조정")
-            col_ko_speed, col_en_speed = st.columns(2)
+            # 언어별 속도는 코드에서 자동 적용
+            # 한국어: 1.3배속, 영어: 1.0배속
             
-            with col_ko_speed:
-                if "settings_korean_speed_boost" not in st.session_state:
-                    st.session_state["settings_korean_speed_boost"] = 1.3
-                
-                korean_speed = st.selectbox(
-                    "🇰🇷 한국어 추가 속도",
-                    options=[1.0, 1.1, 1.2, 1.3, 1.4, 1.5],
-                    index=3,  # 1.3 기본값
-                    key="settings_korean_speed_boost",
-                    help="한국어 gTTS는 느려서 1.3배속 추천"
-                )
+            st.info("""
+            **🎯 최적화된 음성 설정 (자동 적용)**
             
-            with col_en_speed:
-                if "settings_english_speed_boost" not in st.session_state:
-                    st.session_state["settings_english_speed_boost"] = 1.1
-                
-                english_speed = st.selectbox(
-                    "🇺🇸 영어 추가 속도",
-                    options=[1.0, 1.1, 1.2, 1.3, 1.4, 1.5],
-                    index=1,  # 1.1 기본값
-                    key="settings_english_speed_boost",
-                    help="영어도 1.1배속으로 쇼츠 최적화"
-                )
+            - 🇰🇷 한국어: 1.3배속 (gTTS 최적화)
+            - 🇺🇸 영어: 1.0배속 (자연스러운 속도)
+            - 🔊 음성 볼륨: 1.0 (기본값)
+            """)
 
             st.markdown("#### 🎵 배경음악 설정")
+            
+            # BGM 볼륨 고정
+            params.bgm_volume = 0.03
+            
             bgm_options = [
                 ("🚫 배경음악 없음", ""),
                 ("🎲 무작위 선택 (추천)", "random"),
                 ("📁 사용자 지정", "custom"),
             ]
             
-            col_bgm, col_bgm_vol = st.columns(2)
-            with col_bgm:
-                selected_index = st.selectbox(
-                    "배경음악 타입",
-                    index=1,
-                    options=range(len(bgm_options)),
-                    format_func=lambda x: bgm_options[x][0],
-                    key="settings_bgm_type"
-                )
-                params.bgm_type = bgm_options[selected_index][1]
-            with col_bgm_vol:
-                params.bgm_volume = st.selectbox(
-                    "🎵 BGM 볼륨", 
-                    options=[0.02, 0.05, 0.08, 0.1, 0.15, 0.2], 
-                    index=1, 
-                    key="settings_bgm_volume",
-                    help="너무 크면 음성이 묻힐 수 있습니다"
-                )
+            selected_index = st.selectbox(
+                "배경음악 타입",
+                index=1,
+                options=range(len(bgm_options)),
+                format_func=lambda x: bgm_options[x][0],
+                key="settings_bgm_type"
+            )
+            params.bgm_type = bgm_options[selected_index][1]
+            
+            st.info("**🎵 BGM 볼륨: 0.03 (자동 최적화)**")
 
     # Premium BGM Manager (Separate expander to avoid nesting)
     with st.expander("🎵 **배경음악 라이브러리 관리**", expanded=False):
@@ -5010,89 +5091,36 @@ with tab_settings:
         col_subtitle_basic, col_subtitle_style = st.columns(2)
         
         with col_subtitle_basic:
-            st.markdown("#### 📝 자막 기본 설정")
+            st.markdown("#### 📝 자막 설정")
             
-            col_enable, col_pos = st.columns(2)
-            with col_enable:
-                params.subtitle_enabled = st.checkbox(
-                    "자막 활성화", 
-                    value=True, 
-                    key="settings_subtitle_enabled",
-                    help="자막을 끄면 음성만 나옵니다"
-                )
+            # 고정값 설정 (변경 불가)
+            params.subtitle_enabled = True
+            params.subtitle_position = "bottom"
+            params.text_fore_color = "#FFFFFF"
+            params.font_size = 50
+            params.stroke_color = "#000000"
+            params.stroke_width = 1.5
             
-            with col_pos:
-                subtitle_positions = [
-                    ("⬆️ 상단", "top"),
-                    ("🎯 중앙", "center"),
-                    ("⬇️ 하단 (추천)", "bottom"),
-                    ("📐 사용자 지정", "custom"),
-                ]
-                selected_index = st.selectbox(
-                    "자막 위치",
-                    index=2,
-                    options=range(len(subtitle_positions)),
-                    format_func=lambda x: subtitle_positions[x][0],
-                    key="settings_subtitle_position",
-                    help="쇼츠용은 하단이 가장 적합합니다"
-                )
-                params.subtitle_position = subtitle_positions[selected_index][1]
+            st.info("""
+            **🎯 최적화된 자막 설정 (자동 적용)**
             
-            if params.subtitle_position == "custom":
-                params.custom_position = st.slider(
-                    "사용자 지정 위치 (%)", 
-                    0.0, 
-                    100.0, 
-                    70.0, 
-                    key="settings_custom_position",
-                    help="0%는 최상단, 100%는 최하단"
-                )
+            - ✅ 자막: 활성화
+            - 📍 위치: 하단 (쇼츠 최적화)
+            - 🎨 폰트 색상: 흰색 (#FFFFFF)
+            - 📏 폰트 크기: 50
+            - 🖼️ 테두리 색상: 검은색 (#000000)
+            - 📐 테두리 두께: 1.5
+            """)
         
         with col_subtitle_style:
-            st.markdown("#### 🎨 자막 스타일")
+            st.markdown("#### 💡 자막 팁")
+            st.success("""
+            **자막이 자동으로 최적화되어 있습니다!**
             
-            col_color, col_size = st.columns(2)
-            with col_color:
-                saved_text_fore_color = config.ui.get("text_fore_color", "#FFFFFF")
-                params.text_fore_color = st.color_picker(
-                    "🎨 폰트 색상", 
-                    saved_text_fore_color, 
-                    key="settings_font_color",
-                    help="흰색이 가장 가독성이 좋습니다"
-                )
-                config.ui["text_fore_color"] = params.text_fore_color
-                
-            with col_size:
-                saved_font_size = config.ui.get("font_size", 50)
-                params.font_size = st.slider(
-                    "📏 폰트 크기", 
-                    30, 
-                    100, 
-                    saved_font_size, 
-                    key="settings_font_size",
-                    help="쇼츠용은 50-60이 적당합니다"
-                )
-                config.ui["font_size"] = params.font_size
-
-            col_stroke_color, col_stroke_width = st.columns(2)
-            with col_stroke_color:
-                params.stroke_color = st.color_picker(
-                    "🖼️ 테두리 색상", 
-                    "#000000", 
-                    key="settings_stroke_color",
-                    help="검은색 테두리가 가독성을 높입니다"
-                )
-            with col_stroke_width:
-                params.stroke_width = st.slider(
-                    "📐 테두리 두께", 
-                    0.0, 
-                    10.0, 
-                    1.5, 
-                    key="settings_stroke_width",
-                    help="2-3 정도가 적당합니다"
-                )
-        
-        # Font preview removed - no longer needed
+            - 흰색 글자 + 검은색 테두리 = 최고의 가독성
+            - 하단 위치 = 쇼츠 표준 위치
+            - 크기 50 = 모바일에서 완벽한 크기
+            """)
         
     with st.expander("⚙️ **시스템 및 API 설정**", expanded=False):
         st.markdown("#### 🤖 AI 언어 모델 설정")
@@ -5133,6 +5161,11 @@ with tab_settings:
         
         # API Key input
         llm_api_key = config.app.get(f"{llm_provider}_api_key", "")
+        
+        # API 발급 도움말 버튼 추가
+        if API_HELP_AVAILABLE and llm_provider == "gemini":
+            show_api_help_button(llm_provider)
+        
         st_llm_api_key = st.text_input(
             f"🔑 {llm_provider.upper()} API 키", 
             value=llm_api_key, 
@@ -5237,6 +5270,11 @@ with tab_settings:
         
         with col_pexels:
             st.markdown("**🌟 Pexels API**")
+            
+            # Pexels API 발급 도움말 버튼
+            if API_HELP_AVAILABLE:
+                show_api_help_button("pexels")
+            
             new_pexels_key = st.text_input(
                 "새 Pexels API 키", 
                 key="new_pexels_key", 
@@ -5279,6 +5317,11 @@ with tab_settings:
 
         with col_pixabay:
             st.markdown("**🎨 Pixabay API**")
+            
+            # Pixabay API 발급 도움말 버튼
+            if API_HELP_AVAILABLE:
+                show_api_help_button("pixabay")
+            
             new_pixabay_key = st.text_input(
                 "새 Pixabay API 키", 
                 key="new_pixabay_key", 
@@ -5329,6 +5372,10 @@ with tab_settings:
             </p>
         </div>
         """, unsafe_allow_html=True)
+        
+        # YouTube OAuth 발급 도움말 버튼
+        if API_HELP_AVAILABLE:
+            show_api_help_button("youtube")
         
         col_upload_setup, col_upload_settings = st.columns(2)
         

@@ -104119,3 +104119,1952 @@ Please retry in 5.315921071s. [links {
 2026-02-07 15:25:03 | INFO | "./app\utils\youtube.py:92": upload_video - 업로드 검증 중... (30초 대기)
 2026-02-07 15:25:34 | WARNING | "./app\utils\youtube.py:116": upload_video - ⚠️ 업로드 검증 실패 (하지만 업로드는 성공): <HttpError 403 when requesting https://youtube.googleapis.com/youtube/v3/videos?part=snippet%2Cstatus&id=dlYfL-1CeZQ&alt=json returned "Request had insufficient authentication scopes.". Details: "[{'message': 'Insufficient Permission', 'domain': 'global', 'reason': 'insufficientPermissions'}]">
 2026-02-07 15:25:34 | INFO | "./webui\Main.py:6074": <module> - Updated video list with 1 new videos. Total: 1
+2026-02-12 21:29:06 | INFO | "./app\config\config.py:23": load_config - load config from file: ./config.toml
+2026-02-12 21:29:06 | INFO | "./app\config\config.py:52": reload - Config reloaded
+2026-02-12 21:29:06 | INFO | "./app\services\llm.py:171": _generate_response - llm provider: gemini
+2026-02-12 21:29:06 | INFO | "./app\services\llm.py:208": _generate_response - Found 10 Gemini API keys for rotation
+2026-02-12 21:29:06 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #1 (10 total)
+2026-02-12 21:29:06 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #1
+2026-02-12 21:29:07 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #1: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 52.9250938s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 52
+}
+]
+2026-02-12 21:29:07 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #1 quota exceeded, trying next key...
+2026-02-12 21:29:07 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #2 (10 total)
+2026-02-12 21:29:07 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #2
+2026-02-12 21:29:08 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #2: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 52.267515289s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 52
+}
+]
+2026-02-12 21:29:08 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #2 quota exceeded, trying next key...
+2026-02-12 21:29:08 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #3 (10 total)
+2026-02-12 21:29:08 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #3
+2026-02-12 21:29:08 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #3: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 51.614233514s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 51
+}
+]
+2026-02-12 21:29:08 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #3 quota exceeded, trying next key...
+2026-02-12 21:29:08 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #4 (10 total)
+2026-02-12 21:29:08 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #4
+2026-02-12 21:29:22 | SUCCESS | "./app\services\llm.py:233": _generate_response - ✅ Success with API key #4 and model gemini-2.5-flash
+2026-02-12 21:29:22 | INFO | "./app\services\llm.py:502": generate_terms - Starting enhanced script-content matching keyword generation for subject: 비타민을 먹어야되는 이유
+2026-02-12 21:29:22 | INFO | "./app\services\llm.py:540": generate_terms - Generating script-content-matched keywords using advanced LLM analysis...
+2026-02-12 21:29:22 | INFO | "./app\config\config.py:23": load_config - load config from file: ./config.toml
+2026-02-12 21:29:22 | INFO | "./app\config\config.py:52": reload - Config reloaded
+2026-02-12 21:29:22 | INFO | "./app\services\llm.py:171": _generate_response - llm provider: gemini
+2026-02-12 21:29:22 | INFO | "./app\services\llm.py:208": _generate_response - Found 10 Gemini API keys for rotation
+2026-02-12 21:29:22 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #1 (10 total)
+2026-02-12 21:29:22 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #1
+2026-02-12 21:29:22 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #1: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 37.317204049s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 37
+}
+]
+2026-02-12 21:29:22 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #1 quota exceeded, trying next key...
+2026-02-12 21:29:22 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #2 (10 total)
+2026-02-12 21:29:22 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #2
+2026-02-12 21:29:23 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #2: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 36.805546228s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 36
+}
+]
+2026-02-12 21:29:23 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #2 quota exceeded, trying next key...
+2026-02-12 21:29:23 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #3 (10 total)
+2026-02-12 21:29:23 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #3
+2026-02-12 21:29:23 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #3: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 36.34433285s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 36
+}
+]
+2026-02-12 21:29:23 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #3 quota exceeded, trying next key...
+2026-02-12 21:29:23 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #4 (10 total)
+2026-02-12 21:29:23 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #4
+2026-02-12 21:29:38 | SUCCESS | "./app\services\llm.py:233": _generate_response - ✅ Success with API key #4 and model gemini-2.5-flash
+2026-02-12 21:29:38 | INFO | "./app\services\llm.py:542": generate_terms - LLM keyword response: exhausted worker, unhealthy diet, taking vitamin, immune system, energetic family
+2026-02-12 21:29:38 | INFO | "./app\services\llm.py:581": generate_terms - Script-matched valid terms: ['unhealthy diet', 'taking vitamin', 'immune system', 'energetic family']
+2026-02-12 21:29:38 | INFO | "./app\services\llm.py:586": generate_terms - Final script-content-matched keywords: ['unhealthy diet', 'taking vitamin', 'immune system', 'energetic family']
+2026-02-12 21:29:38 | INFO | "./webui\Main.py:1969": <module> - Generated terms: ['unhealthy diet', 'taking vitamin', 'immune system', 'energetic family']
+2026-02-12 21:29:59 | INFO | "./app\services\coupang_partners.py:37": extract_product_info_from_coupang_url - 쿠팡 제품 정보 추출 중: https://link.coupang.com/a/dLjqzR
+2026-02-12 21:30:01 | ERROR | "./app\services\coupang_partners.py:76": extract_product_info_from_coupang_url - 쿠팡 제품 정보 추출 실패: 403 Client Error: Forbidden for url: https://www.coupang.com/vp/products/6743604050?itemId=18115015920&src=1139000&spec=10799999&addtag=400&ctag=6743604050&lptag=AF3987591&itime=20260212213000&pageType=PRODUCT&pageValue=6743604050&wPcid=17708994004276379795041&wRef=&wTime=20260212213000&redirect=landing&traceid=V0-101-eeddc1fa991cb2a2&mcid=681daddbd7f5435bb45c54c041349a16&campaignid=&clickBeacon=&imgsize=&pageid=&sig=&subid=&campaigntype=&puid=&ctime=&portal=&landing_exp=&placementid=&puidType=&contentcategory=&tsource=&deviceid=&contenttype=&token=&impressionid=&requestid=&contentkeyword=&offerId=&sfId=&subparam=
+2026-02-12 21:30:07 | INFO | "./webui\Main.py:5480": <module> - 🔗 Added task_id to URL: 90604bb7-7767-4704-8dd6-634bf64557bb
+2026-02-12 21:30:07 | INFO | "./app\services\coupang_partners.py:229": create_product_overlay_data - 제품 오버레이 데이터 생성 중: https://link.coupang.com/a/dLjqzR
+2026-02-12 21:30:07 | INFO | "./app\services\coupang_partners.py:37": extract_product_info_from_coupang_url - 쿠팡 제품 정보 추출 중: https://link.coupang.com/a/dLjqzR
+2026-02-12 21:30:08 | ERROR | "./app\services\coupang_partners.py:76": extract_product_info_from_coupang_url - 쿠팡 제품 정보 추출 실패: 403 Client Error: Forbidden for url: https://www.coupang.com/vp/products/6743604050?itemId=18115015920&src=1139000&spec=10799999&addtag=400&ctag=6743604050&lptag=AF3987591&itime=20260212213007&pageType=PRODUCT&pageValue=6743604050&wPcid=17708994076835439687065&wRef=&wTime=20260212213007&redirect=landing&traceid=V0-101-eeddc1fa991cb2a2&mcid=30e58c025217462b8bdfd48beb7ec3df&campaignid=&clickBeacon=&imgsize=&pageid=&sig=&subid=&campaigntype=&puid=&ctime=&portal=&landing_exp=&placementid=&puidType=&contentcategory=&tsource=&deviceid=&contenttype=&token=&impressionid=&requestid=&contentkeyword=&offerId=&sfId=&subparam=
+2026-02-12 21:30:08 | INFO | "./app\services\coupang_partners.py:253": create_product_overlay_data - 오버레이 데이터 생성 완료: 제품명을 가져올 수 없습니다
+2026-02-12 21:30:08 | INFO | "./app\services\task.py:528": start - start task: c34819fc-1231-45d0-8bed-99ec5a972ab2, stop_at: video
+2026-02-12 21:30:08 | INFO | "./app\services\task.py:69": generate_script - 
+
+## generating video script
+2026-02-12 21:30:08 | DEBUG | "./app\services\task.py:87": generate_script - video script: 
+늘어나는 피로감, 잦은 감기, 그리고 왠지 모를 무기력함에 시달리고 있다면, 단순히 잠이 부족해서가 아닐 수 있습니다. 현대인의 불규칙한 식습관과 스트레스는 우리 몸이 필요로 하는 필수 비타민과 미네랄을 고갈시키기 쉽습니다. 이러한 영양소 결핍은 면역력 약화는 물론, 집중력 저하와 만성 피로로 이어져 당신의 일상을 잠식해버릴 수 있습니다. 지금 바로 당신의 몸에 숨겨진 잠재력을 깨울 비밀을 공개합니다. 비타민은 우리 몸의 복잡한 시스템을 원활하게 작동시키는 핵심 윤활유와 같습니다. 예를 들어, 비타민 B군은 에너지를 생성하고 신경 기능을 유지하여 활기찬 하루를 선사하며, 비타민 C는 강력한 항산화제로 외부 유해 물질로부터 세포를 보호하고 면역 체계를 강화합니다. 또한, 뼈 건강에 필수적인 비타민 D는 기분 조절에도 중요한 역할을 하여 우울감 해소에 도움을 줍니다. 이처럼 각 비타민은 우리 몸의 특정 기능을 담당하며 전반적인 건강 유지에 필수적입니다. 매일 신선한 과일과 채소를 충분히 섭취한다고 생각해도, 현대 농법으로 인해 토양의 영양분은 과거보다 훨씬 감소했고, 식품 가공 과정에서 많은 비타민이 파괴됩니다. 따라서 우리는 식단만으로는 우리 몸이 필요로 하는 모든 비타민을 충분히 얻기 어려워졌습니다. 각자의 생활 습관, 나이, 건강 상태에 따라 필요한 비타민의 종류와 양이 다르므로, 전문가와 상담하여 나에게 맞는 비타민을 선택하고 꾸준히 섭취하는 것이 현명합니다. 영양제는 부족한 부분을 채워주는 보충제라는 점을 기억해야 합니다. 비타민을 챙겨 먹는 것은 단순히 질병을 예방하는 것을 넘어, 삶의 질을 근본적으로 향상시키는 투자입니다. 당신의 몸이 최상의 상태를 유지할 때, 업무 효율은 물론 학습 능력까지 향상되며, 가족과 친구들과 함께하는 시간 또한 더욱 즐거워질 것입니다. 지금부터 매일 비타민으로 당신의 몸을 건강하게 무장시켜, 활기 넘치고 빛나는 미래를 스스로 만들어나가세요. 비타민이 선사하는 놀라운 변화를 직접 경험하게 될 것입니다!
+2026-02-12 21:30:08 | INFO | "./app\services\task.py:98": generate_terms - 
+
+## generating video terms
+2026-02-12 21:30:08 | DEBUG | "./app\services\task.py:112": generate_terms - video terms: [
+    "unhealthy diet",
+    "taking vitamin",
+    "immune system",
+    "energetic family"
+]
+2026-02-12 21:30:08 | INFO | "./app\services\task.py:576": start - Calling generate_audio...
+2026-02-12 21:30:08 | INFO | "./app\services\task.py:145": generate_audio - 
+
+## generating audio
+2026-02-12 21:30:08 | INFO | "./app\services\task.py:153": generate_audio - no custom audio file provided, using TTS to generate audio.
+2026-02-12 21:30:08 | INFO | "./app\services\voice.py:1284": tts - TTS 텍스트 전처리: '늘어나는 피로감, 잦은 감기, 그리고 왠지 모를 무기력함에 시달리고 있다면, 단순히 잠이 ...' -> '늘어나는 피로감, 잦은 감기, 그리고 왠지 모를 무기력함에 시달리고 있다면, 단순히 잠이 ...'
+2026-02-12 21:30:08 | INFO | "./app\services\voice.py:1381": azure_tts_v1 - start, voice name: ko-KR-HyunsuMultilingualNeural, try: 1
+2026-02-12 21:30:08 | INFO | "./app\services\voice.py:1400": azure_tts_v1 - Running asyncio.run(_do()) with 60s timeout
+2026-02-12 21:30:08 | DEBUG | "./app\services\voice.py:1384": _do - Creating Communicate object for ko-KR-HyunsuMultilingualNeural
+2026-02-12 21:30:08 | DEBUG | "./app\services\voice.py:1387": _do - Opening file .\storage\tasks\c34819fc-1231-45d0-8bed-99ec5a972ab2\audio.mp3 for writing
+2026-02-12 21:30:08 | DEBUG | "./app\services\voice.py:1389": _do - Starting communicate.stream()
+2026-02-12 21:30:09 | ERROR | "./app\services\voice.py:1414": azure_tts_v1 - failed, error: 403, message='Invalid response status', url='wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1?TrustedClientToken=6A5AA1D4EAFF4E9FB37E23D68491D6F4&Sec-MS-GEC=8D121E8367C633A5A51422C1ECE82A18BCCE7F333980658C31FDADB3DC316770&Sec-MS-GEC-Version=1-130.0.2849.68&ConnectionId=fedfb17c365a46d387a43d01c640aec9'
+2026-02-12 21:30:09 | INFO | "./app\services\voice.py:1381": azure_tts_v1 - start, voice name: ko-KR-HyunsuMultilingualNeural, try: 2
+2026-02-12 21:30:09 | INFO | "./app\services\voice.py:1400": azure_tts_v1 - Running asyncio.run(_do()) with 60s timeout
+2026-02-12 21:30:09 | DEBUG | "./app\services\voice.py:1384": _do - Creating Communicate object for ko-KR-HyunsuMultilingualNeural
+2026-02-12 21:30:09 | DEBUG | "./app\services\voice.py:1387": _do - Opening file .\storage\tasks\c34819fc-1231-45d0-8bed-99ec5a972ab2\audio.mp3 for writing
+2026-02-12 21:30:09 | DEBUG | "./app\services\voice.py:1389": _do - Starting communicate.stream()
+2026-02-12 21:30:10 | ERROR | "./app\services\voice.py:1414": azure_tts_v1 - failed, error: 403, message='Invalid response status', url='wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1?TrustedClientToken=6A5AA1D4EAFF4E9FB37E23D68491D6F4&Sec-MS-GEC=8D121E8367C633A5A51422C1ECE82A18BCCE7F333980658C31FDADB3DC316770&Sec-MS-GEC-Version=1-130.0.2849.68&ConnectionId=912a336595114e64aeada88dcef1dbab'
+2026-02-12 21:30:10 | INFO | "./app\services\voice.py:1381": azure_tts_v1 - start, voice name: ko-KR-HyunsuMultilingualNeural, try: 3
+2026-02-12 21:30:10 | INFO | "./app\services\voice.py:1400": azure_tts_v1 - Running asyncio.run(_do()) with 60s timeout
+2026-02-12 21:30:10 | DEBUG | "./app\services\voice.py:1384": _do - Creating Communicate object for ko-KR-HyunsuMultilingualNeural
+2026-02-12 21:30:10 | DEBUG | "./app\services\voice.py:1387": _do - Opening file .\storage\tasks\c34819fc-1231-45d0-8bed-99ec5a972ab2\audio.mp3 for writing
+2026-02-12 21:30:10 | DEBUG | "./app\services\voice.py:1389": _do - Starting communicate.stream()
+2026-02-12 21:30:12 | ERROR | "./app\services\voice.py:1414": azure_tts_v1 - failed, error: 403, message='Invalid response status', url='wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1?TrustedClientToken=6A5AA1D4EAFF4E9FB37E23D68491D6F4&Sec-MS-GEC=8D121E8367C633A5A51422C1ECE82A18BCCE7F333980658C31FDADB3DC316770&Sec-MS-GEC-Version=1-130.0.2849.68&ConnectionId=abc40faaaa5845be83203aa93f50db13'
+2026-02-12 21:30:12 | WARNING | "./app\services\voice.py:1359": tts - Primary TTS failed for voice 'ko-KR-HyunsuMultilingualNeural', trying gTTS fallback...
+2026-02-12 21:30:12 | INFO | "./app\services\voice.py:1343": try_fallback_gtts - Falling back to gTTS: gtts:ko-한국어
+2026-02-12 21:30:12 | INFO | "./app\services\voice.py:2378": gtts_synthesize - gTTS synthesis started - Language: ko, Text length: 987
+2026-02-12 21:30:12 | INFO | "./app\services\voice.py:2382": gtts_synthesize - Target speed: 1.2x
+2026-02-12 21:30:12 | INFO | "./app\services\voice.py:2392": gtts_synthesize - Split into 32 sentences
+2026-02-12 21:30:12 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 1/32: 1.63s - 늘어나는 피로감...
+2026-02-12 21:30:13 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 2/32: 1.51s - 잦은 감기...
+2026-02-12 21:30:14 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 3/32: 4.18s - 그리고 왠지 모를 무기력함에 시달리고 있다면...
+2026-02-12 21:30:14 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 4/32: 3.72s - 단순히 잠이 부족해서가 아닐 수 있습니다...
+2026-02-12 21:30:15 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 5/32: 10.39s - 현대인의 불규칙한 식습관과 스트레스는 우리 몸이 필요로...
+2026-02-12 21:30:16 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 6/32: 4.22s - 이러한 영양소 결핍은 면역력 약화는 물론...
+2026-02-12 21:30:16 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 7/32: 6.50s - 집중력 저하와 만성 피로로 이어져 당신의 일상을 잠식해...
+2026-02-12 21:30:17 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 8/32: 5.86s - 지금 바로 당신의 몸에 숨겨진 잠재력을 깨울 비밀을 공...
+2026-02-12 21:30:18 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 9/32: 7.61s - 비타민은 우리 몸의 복잡한 시스템을 원활하게 작동시키는...
+2026-02-12 21:30:18 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 10/32: 1.15s - 예를 들어...
+2026-02-12 21:30:19 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 11/32: 7.54s - 비타민 B군은 에너지를 생성하고 신경 기능을 유지하여 ...
+2026-02-12 21:30:20 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 12/32: 9.19s - 비타민 C는 강력한 항산화제로 외부 유해 물질로부터 세...
+2026-02-12 21:30:20 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 13/32: 0.94s - 또한...
+2026-02-12 21:30:21 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 14/32: 8.88s - 뼈 건강에 필수적인 비타민 D는 기분 조절에도 중요한 ...
+2026-02-12 21:30:21 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 15/32: 8.45s - 이처럼 각 비타민은 우리 몸의 특정 기능을 담당하며 전...
+2026-02-12 21:30:22 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 16/32: 5.23s - 매일 신선한 과일과 채소를 충분히 섭취한다고 생각해도...
+2026-02-12 21:30:23 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 17/32: 5.88s - 현대 농법으로 인해 토양의 영양분은 과거보다 훨씬 감소...
+2026-02-12 21:30:23 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 18/32: 4.39s - 식품 가공 과정에서 많은 비타민이 파괴됩니다...
+2026-02-12 21:30:24 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 19/32: 8.62s - 따라서 우리는 식단만으로는 우리 몸이 필요로 하는 모든...
+2026-02-12 21:30:24 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 20/32: 2.09s - 각자의 생활 습관...
+2026-02-12 21:30:25 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 21/32: 0.91s - 나이...
+2026-02-12 21:30:26 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 22/32: 5.02s - 건강 상태에 따라 필요한 비타민의 종류와 양이 다르므로...
+2026-02-12 21:30:26 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 23/32: 7.58s - 전문가와 상담하여 나에게 맞는 비타민을 선택하고 꾸준히...
+2026-02-12 21:30:27 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 24/32: 5.83s - 영양제는 부족한 부분을 채워주는 보충제라는 점을 기억해...
+2026-02-12 21:30:28 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 25/32: 5.57s - 비타민을 챙겨 먹는 것은 단순히 질병을 예방하는 것을 ...
+2026-02-12 21:30:28 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 26/32: 4.27s - 삶의 질을 근본적으로 향상시키는 투자입니다...
+2026-02-12 21:30:29 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 27/32: 3.67s - 당신의 몸이 최상의 상태를 유지할 때...
+2026-02-12 21:30:29 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 28/32: 4.30s - 업무 효율은 물론 학습 능력까지 향상되며...
+2026-02-12 21:30:30 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 29/32: 5.50s - 가족과 친구들과 함께하는 시간 또한 더욱 즐거워질 것입...
+2026-02-12 21:30:31 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 30/32: 5.57s - 지금부터 매일 비타민으로 당신의 몸을 건강하게 무장시켜...
+2026-02-12 21:30:31 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 31/32: 4.56s - 활기 넘치고 빛나는 미래를 스스로 만들어나가세요...
+2026-02-12 21:30:32 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 32/32: 5.38s - 비타민이 선사하는 놀라운 변화를 직접 경험하게 될 것입...
+2026-02-12 21:30:32 | INFO | "./app\services\voice.py:2417": gtts_synthesize - Total original duration: 166.14s
+2026-02-12 21:30:32 | INFO | "./app\services\voice.py:2436": gtts_synthesize - ✅ Subtitle created with accurate timing based on actual audio durations
+2026-02-12 21:30:43 | INFO | "./app\services\voice.py:2456": gtts_synthesize - Adjusting audio speed to 1.2x...
+2026-02-12 21:30:45 | INFO | "./app\services\voice.py:2470": gtts_synthesize - ✅ Audio speed adjusted to 1.2x
+2026-02-12 21:30:45 | INFO | "./app\services\voice.py:2181": adjust_speed - Adjusted 32 subtitle timings by 1.2x
+2026-02-12 21:30:45 | INFO | "./app\services\voice.py:2474": gtts_synthesize - ✅ Subtitle timing adjusted to 1.2x
+2026-02-12 21:30:45 | INFO | "./app\services\voice.py:2484": gtts_synthesize - gTTS synthesis completed - Final duration: 138.53s
+2026-02-12 21:30:45 | INFO | "./app\services\task.py:580": start - generate_audio returned: .\storage\tasks\c34819fc-1231-45d0-8bed-99ec5a972ab2\audio.mp3, 139
+2026-02-12 21:30:45 | INFO | "./app\services\task.py:193": generate_subtitle - 
+
+## generating subtitle
+2026-02-12 21:30:45 | INFO | "./app\services\task.py:211": generate_subtitle - 
+
+## generating subtitle for 🇰🇷 Korean version, provider: edge
+2026-02-12 21:30:45 | INFO | "./app\services\task.py:212": generate_subtitle - Audio file for subtitle timing: .\storage\tasks\c34819fc-1231-45d0-8bed-99ec5a972ab2\audio.mp3
+2026-02-12 21:30:45 | INFO | "./app\services\task.py:213": generate_subtitle - Video script length: 987 characters
+2026-02-12 21:30:45 | INFO | "./app\services\task.py:222": generate_subtitle - Using gTTS-based subtitle generation
+2026-02-12 21:30:45 | INFO | "./app\services\voice.py:2501": create_gtts_subtitle - Creating gTTS subtitle: .\storage\tasks\c34819fc-1231-45d0-8bed-99ec5a972ab2\subtitle.srt
+2026-02-12 21:30:45 | INFO | "./app\services\voice.py:2535": create_gtts_subtitle - gTTS subtitle created successfully: .\storage\tasks\c34819fc-1231-45d0-8bed-99ec5a972ab2\subtitle.srt
+2026-02-12 21:30:45 | INFO | "./app\services\voice.py:2536": create_gtts_subtitle - Subtitle items: 32, Duration: 138.45s
+2026-02-12 21:30:45 | INFO | "./app\services\task.py:228": generate_subtitle - ✅ gTTS subtitle created successfully
+2026-02-12 21:30:45 | INFO | "./app\services\task.py:358": get_video_materials - 
+
+## 🎯 Using segment-based video matching
+2026-02-12 21:30:45 | INFO | "./app\services\script_segment_matcher.py:170": match_segments_to_videos - Matching script to videos: duration=139s, target_segments=10
+2026-02-12 21:30:45 | INFO | "./app\services\script_segment_matcher.py:59": split_script_into_segments - Split script into 10 segments
+2026-02-12 21:30:45 | DEBUG | "./app\services\script_segment_matcher.py:61": split_script_into_segments - Segment 1: 늘어나는 피로감, 잦은 감기, 그리고 왠지 모를 무기력함에 시달리고 있다면, 단순히 잠이 부족해서가 아닐 수 있습니다. 현대인의 불규칙한 식습관과 스트레스는 우리 몸이 필요로 하는...
+2026-02-12 21:30:45 | DEBUG | "./app\services\script_segment_matcher.py:61": split_script_into_segments - Segment 2: 이러한 영양소 결핍은 면역력 약화는 물론, 집중력 저하와 만성 피로로 이어져 당신의 일상을 잠식해버릴 수 있습니다. 지금 바로 당신의 몸에 숨겨진 잠재력을 깨울 비밀을 공개합니다....
+2026-02-12 21:30:45 | DEBUG | "./app\services\script_segment_matcher.py:61": split_script_into_segments - Segment 3: 비타민은 우리 몸의 복잡한 시스템을 원활하게 작동시키는 핵심 윤활유와 같습니다. 예를 들어, 비타민 B군은 에너지를 생성하고 신경 기능을 유지하여 활기찬 하루를 선사하며, 비타민 ...
+2026-02-12 21:30:45 | DEBUG | "./app\services\script_segment_matcher.py:61": split_script_into_segments - Segment 4: 또한, 뼈 건강에 필수적인 비타민 D는 기분 조절에도 중요한 역할을 하여 우울감 해소에 도움을 줍니다. 이처럼 각 비타민은 우리 몸의 특정 기능을 담당하며 전반적인 건강 유지에 필...
+2026-02-12 21:30:45 | DEBUG | "./app\services\script_segment_matcher.py:61": split_script_into_segments - Segment 5: 매일 신선한 과일과 채소를 충분히 섭취한다고 생각해도, 현대 농법으로 인해 토양의 영양분은 과거보다 훨씬 감소했고, 식품 가공 과정에서 많은 비타민이 파괴됩니다. 따라서 우리는 식...
+2026-02-12 21:30:45 | DEBUG | "./app\services\script_segment_matcher.py:61": split_script_into_segments - Segment 6: 각자의 생활 습관, 나이, 건강 상태에 따라 필요한 비타민의 종류와 양이 다르므로, 전문가와 상담하여 나에게 맞는 비타민을 선택하고 꾸준히 섭취하는 것이 현명합니다. 영양제는 부족...
+2026-02-12 21:30:45 | DEBUG | "./app\services\script_segment_matcher.py:61": split_script_into_segments - Segment 7: 비타민을 챙겨 먹는 것은 단순히 질병을 예방하는 것을 넘어, 삶의 질을 근본적으로 향상시키는 투자입니다....
+2026-02-12 21:30:45 | DEBUG | "./app\services\script_segment_matcher.py:61": split_script_into_segments - Segment 8: 당신의 몸이 최상의 상태를 유지할 때, 업무 효율은 물론 학습 능력까지 향상되며, 가족과 친구들과 함께하는 시간 또한 더욱 즐거워질 것입니다....
+2026-02-12 21:30:45 | DEBUG | "./app\services\script_segment_matcher.py:61": split_script_into_segments - Segment 9: 지금부터 매일 비타민으로 당신의 몸을 건강하게 무장시켜, 활기 넘치고 빛나는 미래를 스스로 만들어나가세요....
+2026-02-12 21:30:45 | DEBUG | "./app\services\script_segment_matcher.py:61": split_script_into_segments - Segment 10: 비타민이 선사하는 놀라운 변화를 직접 경험하게 될 것입니다....
+2026-02-12 21:30:45 | INFO | "./app\services\llm.py:502": generate_terms - Starting enhanced script-content matching keyword generation for subject: 
+2026-02-12 21:30:45 | INFO | "./app\services\llm.py:540": generate_terms - Generating script-content-matched keywords using advanced LLM analysis...
+2026-02-12 21:30:45 | INFO | "./app\config\config.py:23": load_config - load config from file: ./config.toml
+2026-02-12 21:30:45 | INFO | "./app\config\config.py:52": reload - Config reloaded
+2026-02-12 21:30:45 | INFO | "./app\services\llm.py:171": _generate_response - llm provider: gemini
+2026-02-12 21:30:45 | INFO | "./app\services\llm.py:208": _generate_response - Found 10 Gemini API keys for rotation
+2026-02-12 21:30:45 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #1 (10 total)
+2026-02-12 21:30:45 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #1
+2026-02-12 21:30:46 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #1: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 13.963026911s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 13
+}
+]
+2026-02-12 21:30:46 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #1 quota exceeded, trying next key...
+2026-02-12 21:30:46 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #2 (10 total)
+2026-02-12 21:30:46 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #2
+2026-02-12 21:30:46 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #2: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 13.333324566s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 13
+}
+]
+2026-02-12 21:30:46 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #2 quota exceeded, trying next key...
+2026-02-12 21:30:46 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #3 (10 total)
+2026-02-12 21:30:46 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #3
+2026-02-12 21:30:47 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #3: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 12.67660271s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 12
+}
+]
+2026-02-12 21:30:47 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #3 quota exceeded, trying next key...
+2026-02-12 21:30:47 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #4 (10 total)
+2026-02-12 21:30:47 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #4
+2026-02-12 21:30:56 | SUCCESS | "./app\services\llm.py:233": _generate_response - ✅ Success with API key #4 and model gemini-2.5-flash
+2026-02-12 21:30:56 | INFO | "./app\services\llm.py:542": generate_terms - LLM keyword response: Fatigue, Sick person, Stressed person
+2026-02-12 21:30:56 | INFO | "./app\services\llm.py:581": generate_terms - Script-matched valid terms: ['fatigue', 'sick person', 'stressed person']
+2026-02-12 21:30:56 | INFO | "./app\services\llm.py:586": generate_terms - Final script-content-matched keywords: ['fatigue', 'sick person', 'stressed person']
+2026-02-12 21:30:56 | INFO | "./app\services\script_segment_matcher.py:85": generate_segment_keywords - Generated keywords for segment: ['fatigue', 'sick person', 'stressed person']
+2026-02-12 21:30:56 | INFO | "./app\services\script_segment_matcher.py:193": match_segments_to_videos - Segment 1/10: keywords=['fatigue', 'sick person', 'stressed person'], duration=13.9s
+2026-02-12 21:30:56 | INFO | "./app\services\llm.py:502": generate_terms - Starting enhanced script-content matching keyword generation for subject: 
+2026-02-12 21:30:56 | INFO | "./app\services\llm.py:540": generate_terms - Generating script-content-matched keywords using advanced LLM analysis...
+2026-02-12 21:30:56 | INFO | "./app\config\config.py:23": load_config - load config from file: ./config.toml
+2026-02-12 21:30:56 | INFO | "./app\config\config.py:52": reload - Config reloaded
+2026-02-12 21:30:56 | INFO | "./app\services\llm.py:171": _generate_response - llm provider: gemini
+2026-02-12 21:30:56 | INFO | "./app\services\llm.py:208": _generate_response - Found 10 Gemini API keys for rotation
+2026-02-12 21:30:56 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #1 (10 total)
+2026-02-12 21:30:56 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #1
+2026-02-12 21:30:57 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #1: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 3.180448962s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 3
+}
+]
+2026-02-12 21:30:57 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #1 quota exceeded, trying next key...
+2026-02-12 21:30:57 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #2 (10 total)
+2026-02-12 21:30:57 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #2
+2026-02-12 21:30:57 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #2: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 2.704246776s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 2
+}
+]
+2026-02-12 21:30:57 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #2 quota exceeded, trying next key...
+2026-02-12 21:30:57 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #3 (10 total)
+2026-02-12 21:30:57 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #3
+2026-02-12 21:30:58 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #3: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 2.236750927s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 2
+}
+]
+2026-02-12 21:30:58 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #3 quota exceeded, trying next key...
+2026-02-12 21:30:58 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #4 (10 total)
+2026-02-12 21:30:58 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #4
+2026-02-12 21:31:06 | SUCCESS | "./app\services\llm.py:233": _generate_response - ✅ Success with API key #4 and model gemini-2.5-flash
+2026-02-12 21:31:06 | INFO | "./app\services\llm.py:542": generate_terms - LLM keyword response: Fatigue, Lack focus, Unleash potential
+2026-02-12 21:31:06 | INFO | "./app\services\llm.py:581": generate_terms - Script-matched valid terms: ['fatigue', 'lack focus', 'unleash potential']
+2026-02-12 21:31:06 | INFO | "./app\services\llm.py:586": generate_terms - Final script-content-matched keywords: ['fatigue', 'lack focus', 'unleash potential']
+2026-02-12 21:31:06 | INFO | "./app\services\script_segment_matcher.py:85": generate_segment_keywords - Generated keywords for segment: ['fatigue', 'lack focus', 'unleash potential']
+2026-02-12 21:31:06 | INFO | "./app\services\script_segment_matcher.py:193": match_segments_to_videos - Segment 2/10: keywords=['fatigue', 'lack focus', 'unleash potential'], duration=13.9s
+2026-02-12 21:31:06 | INFO | "./app\services\llm.py:502": generate_terms - Starting enhanced script-content matching keyword generation for subject: 
+2026-02-12 21:31:06 | INFO | "./app\services\llm.py:540": generate_terms - Generating script-content-matched keywords using advanced LLM analysis...
+2026-02-12 21:31:06 | INFO | "./app\config\config.py:23": load_config - load config from file: ./config.toml
+2026-02-12 21:31:06 | INFO | "./app\config\config.py:52": reload - Config reloaded
+2026-02-12 21:31:06 | INFO | "./app\services\llm.py:171": _generate_response - llm provider: gemini
+2026-02-12 21:31:06 | INFO | "./app\services\llm.py:208": _generate_response - Found 10 Gemini API keys for rotation
+2026-02-12 21:31:06 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #1 (10 total)
+2026-02-12 21:31:06 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #1
+2026-02-12 21:31:06 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #1: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 53.478721202s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 53
+}
+]
+2026-02-12 21:31:06 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #1 quota exceeded, trying next key...
+2026-02-12 21:31:06 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #2 (10 total)
+2026-02-12 21:31:06 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #2
+2026-02-12 21:31:07 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #2: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 53.036742353s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 53
+}
+]
+2026-02-12 21:31:07 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #2 quota exceeded, trying next key...
+2026-02-12 21:31:07 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #3 (10 total)
+2026-02-12 21:31:07 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #3
+2026-02-12 21:31:07 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #3: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 52.552779923s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 52
+}
+]
+2026-02-12 21:31:07 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #3 quota exceeded, trying next key...
+2026-02-12 21:31:07 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #4 (10 total)
+2026-02-12 21:31:07 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #4
+2026-02-12 21:31:19 | SUCCESS | "./app\services\llm.py:233": _generate_response - ✅ Success with API key #4 and model gemini-2.5-flash
+2026-02-12 21:31:19 | INFO | "./app\services\llm.py:542": generate_terms - LLM keyword response: Daily energy, Nerve health, Immune system
+2026-02-12 21:31:19 | INFO | "./app\services\llm.py:581": generate_terms - Script-matched valid terms: ['daily energy', 'nerve health', 'immune system']
+2026-02-12 21:31:19 | INFO | "./app\services\llm.py:586": generate_terms - Final script-content-matched keywords: ['daily energy', 'nerve health', 'immune system']
+2026-02-12 21:31:19 | INFO | "./app\services\script_segment_matcher.py:85": generate_segment_keywords - Generated keywords for segment: ['daily energy', 'nerve health', 'immune system']
+2026-02-12 21:31:19 | INFO | "./app\services\script_segment_matcher.py:193": match_segments_to_videos - Segment 3/10: keywords=['daily energy', 'nerve health', 'immune system'], duration=13.9s
+2026-02-12 21:31:19 | INFO | "./app\services\llm.py:502": generate_terms - Starting enhanced script-content matching keyword generation for subject: 
+2026-02-12 21:31:19 | INFO | "./app\services\llm.py:540": generate_terms - Generating script-content-matched keywords using advanced LLM analysis...
+2026-02-12 21:31:19 | INFO | "./app\config\config.py:23": load_config - load config from file: ./config.toml
+2026-02-12 21:31:19 | INFO | "./app\config\config.py:52": reload - Config reloaded
+2026-02-12 21:31:19 | INFO | "./app\services\llm.py:171": _generate_response - llm provider: gemini
+2026-02-12 21:31:19 | INFO | "./app\services\llm.py:208": _generate_response - Found 10 Gemini API keys for rotation
+2026-02-12 21:31:19 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #1 (10 total)
+2026-02-12 21:31:19 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #1
+2026-02-12 21:31:20 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #1: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 40.117854398s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 40
+}
+]
+2026-02-12 21:31:20 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #1 quota exceeded, trying next key...
+2026-02-12 21:31:20 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #2 (10 total)
+2026-02-12 21:31:20 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #2
+2026-02-12 21:31:20 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #2: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 39.621272046s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 39
+}
+]
+2026-02-12 21:31:20 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #2 quota exceeded, trying next key...
+2026-02-12 21:31:20 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #3 (10 total)
+2026-02-12 21:31:20 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #3
+2026-02-12 21:31:21 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #3: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 39.186867016s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 39
+}
+]
+2026-02-12 21:31:21 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #3 quota exceeded, trying next key...
+2026-02-12 21:31:21 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #4 (10 total)
+2026-02-12 21:31:21 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #4
+2026-02-12 21:31:29 | SUCCESS | "./app\services\llm.py:233": _generate_response - ✅ Success with API key #4 and model gemini-2.5-flash
+2026-02-12 21:31:29 | INFO | "./app\services\llm.py:542": generate_terms - LLM keyword response: Vitamin D, Bone health, Mood boost
+2026-02-12 21:31:29 | INFO | "./app\services\llm.py:581": generate_terms - Script-matched valid terms: ['vitamin d', 'bone health', 'mood boost']
+2026-02-12 21:31:29 | INFO | "./app\services\llm.py:586": generate_terms - Final script-content-matched keywords: ['vitamin d', 'bone health', 'mood boost']
+2026-02-12 21:31:29 | INFO | "./app\services\script_segment_matcher.py:85": generate_segment_keywords - Generated keywords for segment: ['vitamin d', 'bone health', 'mood boost']
+2026-02-12 21:31:29 | INFO | "./app\services\script_segment_matcher.py:193": match_segments_to_videos - Segment 4/10: keywords=['vitamin d', 'bone health', 'mood boost'], duration=13.9s
+2026-02-12 21:31:29 | INFO | "./app\services\llm.py:502": generate_terms - Starting enhanced script-content matching keyword generation for subject: 
+2026-02-12 21:31:29 | INFO | "./app\services\llm.py:540": generate_terms - Generating script-content-matched keywords using advanced LLM analysis...
+2026-02-12 21:31:29 | INFO | "./app\config\config.py:23": load_config - load config from file: ./config.toml
+2026-02-12 21:31:29 | INFO | "./app\config\config.py:52": reload - Config reloaded
+2026-02-12 21:31:29 | INFO | "./app\services\llm.py:171": _generate_response - llm provider: gemini
+2026-02-12 21:31:29 | INFO | "./app\services\llm.py:208": _generate_response - Found 10 Gemini API keys for rotation
+2026-02-12 21:31:29 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #1 (10 total)
+2026-02-12 21:31:29 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #1
+2026-02-12 21:31:30 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #1: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 30.01350442s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 30
+}
+]
+2026-02-12 21:31:30 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #1 quota exceeded, trying next key...
+2026-02-12 21:31:30 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #2 (10 total)
+2026-02-12 21:31:30 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #2
+2026-02-12 21:31:30 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #2: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 29.568247262s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 29
+}
+]
+2026-02-12 21:31:30 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #2 quota exceeded, trying next key...
+2026-02-12 21:31:30 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #3 (10 total)
+2026-02-12 21:31:30 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #3
+2026-02-12 21:31:31 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #3: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 29.110739821s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 29
+}
+]
+2026-02-12 21:31:31 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #3 quota exceeded, trying next key...
+2026-02-12 21:31:31 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #4 (10 total)
+2026-02-12 21:31:31 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #4
+2026-02-12 21:31:40 | SUCCESS | "./app\services\llm.py:233": _generate_response - ✅ Success with API key #4 and model gemini-2.5-flash
+2026-02-12 21:31:40 | INFO | "./app\services\llm.py:542": generate_terms - LLM keyword response: Fresh produce, depleted soil, food processing
+2026-02-12 21:31:40 | INFO | "./app\services\llm.py:581": generate_terms - Script-matched valid terms: ['fresh produce', 'depleted soil', 'food processing']
+2026-02-12 21:31:40 | INFO | "./app\services\llm.py:586": generate_terms - Final script-content-matched keywords: ['fresh produce', 'depleted soil', 'food processing']
+2026-02-12 21:31:40 | INFO | "./app\services\script_segment_matcher.py:85": generate_segment_keywords - Generated keywords for segment: ['fresh produce', 'depleted soil', 'food processing']
+2026-02-12 21:31:40 | INFO | "./app\services\script_segment_matcher.py:193": match_segments_to_videos - Segment 5/10: keywords=['fresh produce', 'depleted soil', 'food processing'], duration=13.9s
+2026-02-12 21:31:40 | INFO | "./app\services\llm.py:502": generate_terms - Starting enhanced script-content matching keyword generation for subject: 
+2026-02-12 21:31:40 | INFO | "./app\services\llm.py:540": generate_terms - Generating script-content-matched keywords using advanced LLM analysis...
+2026-02-12 21:31:40 | INFO | "./app\config\config.py:23": load_config - load config from file: ./config.toml
+2026-02-12 21:31:40 | INFO | "./app\config\config.py:52": reload - Config reloaded
+2026-02-12 21:31:40 | INFO | "./app\services\llm.py:171": _generate_response - llm provider: gemini
+2026-02-12 21:31:40 | INFO | "./app\services\llm.py:208": _generate_response - Found 10 Gemini API keys for rotation
+2026-02-12 21:31:40 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #1 (10 total)
+2026-02-12 21:31:40 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #1
+2026-02-12 21:31:40 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #1: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 19.559408031s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 19
+}
+]
+2026-02-12 21:31:40 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #1 quota exceeded, trying next key...
+2026-02-12 21:31:40 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #2 (10 total)
+2026-02-12 21:31:40 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #2
+2026-02-12 21:31:41 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #2: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 19.075023901s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 19
+}
+]
+2026-02-12 21:31:41 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #2 quota exceeded, trying next key...
+2026-02-12 21:31:41 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #3 (10 total)
+2026-02-12 21:31:41 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #3
+2026-02-12 21:31:41 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #3: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 18.585438707s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 18
+}
+]
+2026-02-12 21:31:41 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #3 quota exceeded, trying next key...
+2026-02-12 21:31:41 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #4 (10 total)
+2026-02-12 21:31:41 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #4
+2026-02-12 21:31:50 | SUCCESS | "./app\services\llm.py:233": _generate_response - ✅ Success with API key #4 and model gemini-2.5-flash
+2026-02-12 21:31:50 | INFO | "./app\services\llm.py:542": generate_terms - LLM keyword response: Health consultation, Taking vitamins, Supplement choice
+2026-02-12 21:31:50 | INFO | "./app\services\llm.py:581": generate_terms - Script-matched valid terms: ['health consultation', 'taking vitamins', 'supplement choice']
+2026-02-12 21:31:50 | INFO | "./app\services\llm.py:586": generate_terms - Final script-content-matched keywords: ['health consultation', 'taking vitamins', 'supplement choice']
+2026-02-12 21:31:50 | INFO | "./app\services\script_segment_matcher.py:85": generate_segment_keywords - Generated keywords for segment: ['health consultation', 'taking vitamins', 'supplement choice']
+2026-02-12 21:31:50 | INFO | "./app\services\script_segment_matcher.py:193": match_segments_to_videos - Segment 6/10: keywords=['health consultation', 'taking vitamins', 'supplement choice'], duration=13.9s
+2026-02-12 21:31:50 | INFO | "./app\services\llm.py:502": generate_terms - Starting enhanced script-content matching keyword generation for subject: 
+2026-02-12 21:31:50 | INFO | "./app\services\llm.py:540": generate_terms - Generating script-content-matched keywords using advanced LLM analysis...
+2026-02-12 21:31:50 | INFO | "./app\config\config.py:23": load_config - load config from file: ./config.toml
+2026-02-12 21:31:50 | INFO | "./app\config\config.py:52": reload - Config reloaded
+2026-02-12 21:31:50 | INFO | "./app\services\llm.py:171": _generate_response - llm provider: gemini
+2026-02-12 21:31:50 | INFO | "./app\services\llm.py:208": _generate_response - Found 10 Gemini API keys for rotation
+2026-02-12 21:31:50 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #1 (10 total)
+2026-02-12 21:31:50 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #1
+2026-02-12 21:31:50 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #1: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 9.546090765s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 9
+}
+]
+2026-02-12 21:31:50 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #1 quota exceeded, trying next key...
+2026-02-12 21:31:50 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #2 (10 total)
+2026-02-12 21:31:50 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #2
+2026-02-12 21:31:51 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #2: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 9.070408881s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 9
+}
+]
+2026-02-12 21:31:51 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #2 quota exceeded, trying next key...
+2026-02-12 21:31:51 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #3 (10 total)
+2026-02-12 21:31:51 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #3
+2026-02-12 21:31:51 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #3: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 8.620058578s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 8
+}
+]
+2026-02-12 21:31:51 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #3 quota exceeded, trying next key...
+2026-02-12 21:31:51 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #4 (10 total)
+2026-02-12 21:31:51 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #4
+2026-02-12 21:31:52 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #4: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 8.152958873s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 8
+}
+]
+2026-02-12 21:31:52 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #4 quota exceeded, trying next key...
+2026-02-12 21:31:52 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #5 (10 total)
+2026-02-12 21:31:52 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #5
+2026-02-12 21:32:02 | SUCCESS | "./app\services\llm.py:233": _generate_response - ✅ Success with API key #5 and model gemini-2.5-flash
+2026-02-12 21:32:02 | INFO | "./app\services\llm.py:542": generate_terms - LLM keyword response: taking vitamins, healthy lifestyle, personal investment
+2026-02-12 21:32:02 | INFO | "./app\services\llm.py:581": generate_terms - Script-matched valid terms: ['taking vitamins', 'healthy lifestyle', 'personal investment']
+2026-02-12 21:32:02 | INFO | "./app\services\llm.py:586": generate_terms - Final script-content-matched keywords: ['taking vitamins', 'healthy lifestyle', 'personal investment']
+2026-02-12 21:32:02 | INFO | "./app\services\script_segment_matcher.py:85": generate_segment_keywords - Generated keywords for segment: ['taking vitamins', 'healthy lifestyle', 'personal investment']
+2026-02-12 21:32:02 | INFO | "./app\services\script_segment_matcher.py:193": match_segments_to_videos - Segment 7/10: keywords=['taking vitamins', 'healthy lifestyle', 'personal investment'], duration=13.9s
+2026-02-12 21:32:02 | INFO | "./app\services\llm.py:502": generate_terms - Starting enhanced script-content matching keyword generation for subject: 
+2026-02-12 21:32:02 | INFO | "./app\services\llm.py:540": generate_terms - Generating script-content-matched keywords using advanced LLM analysis...
+2026-02-12 21:32:02 | INFO | "./app\config\config.py:23": load_config - load config from file: ./config.toml
+2026-02-12 21:32:02 | INFO | "./app\config\config.py:52": reload - Config reloaded
+2026-02-12 21:32:02 | INFO | "./app\services\llm.py:171": _generate_response - llm provider: gemini
+2026-02-12 21:32:02 | INFO | "./app\services\llm.py:208": _generate_response - Found 10 Gemini API keys for rotation
+2026-02-12 21:32:02 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #1 (10 total)
+2026-02-12 21:32:02 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #1
+2026-02-12 21:32:03 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #1: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 57.26187786s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 57
+}
+]
+2026-02-12 21:32:03 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #1 quota exceeded, trying next key...
+2026-02-12 21:32:03 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #2 (10 total)
+2026-02-12 21:32:03 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #2
+2026-02-12 21:32:03 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #2: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 56.817895776s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 56
+}
+]
+2026-02-12 21:32:03 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #2 quota exceeded, trying next key...
+2026-02-12 21:32:03 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #3 (10 total)
+2026-02-12 21:32:03 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #3
+2026-02-12 21:32:03 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #3: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 56.336803835s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 56
+}
+]
+2026-02-12 21:32:03 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #3 quota exceeded, trying next key...
+2026-02-12 21:32:03 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #4 (10 total)
+2026-02-12 21:32:03 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #4
+2026-02-12 21:32:04 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #4: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 55.890796482s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 55
+}
+]
+2026-02-12 21:32:04 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #4 quota exceeded, trying next key...
+2026-02-12 21:32:04 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #5 (10 total)
+2026-02-12 21:32:04 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #5
+2026-02-12 21:32:12 | SUCCESS | "./app\services\llm.py:233": _generate_response - ✅ Success with API key #5 and model gemini-2.5-flash
+2026-02-12 21:32:12 | INFO | "./app\services\llm.py:542": generate_terms - LLM keyword response: Productive work, Learning success, Joyful connections
+2026-02-12 21:32:12 | INFO | "./app\services\llm.py:581": generate_terms - Script-matched valid terms: ['learning success', 'joyful connections']
+2026-02-12 21:32:12 | WARNING | "./app\services\llm.py:593": generate_terms - LLM failed. Using enhanced script content analysis fallback...
+2026-02-12 21:32:12 | INFO | "./app\services\llm.py:1354": _generate_enhanced_script_keywords - Performing enhanced script content analysis for: ''
+2026-02-12 21:32:12 | INFO | "./app\services\llm.py:1453": _generate_enhanced_script_keywords - Found script content match: '시간' -> ['time', 'clock']
+2026-02-12 21:32:12 | INFO | "./app\services\llm.py:1453": _generate_enhanced_script_keywords - Found script content match: '가족' -> ['family', 'together']
+2026-02-12 21:32:12 | INFO | "./app\services\llm.py:1453": _generate_enhanced_script_keywords - Found script content match: '친구' -> ['friends', 'social']
+2026-02-12 21:32:12 | INFO | "./app\services\llm.py:1500": _generate_enhanced_script_keywords - Enhanced script analysis final keywords: ['time', 'clock', 'family']
+2026-02-12 21:32:12 | INFO | "./app\services\script_segment_matcher.py:85": generate_segment_keywords - Generated keywords for segment: ['time', 'clock', 'family']
+2026-02-12 21:32:12 | INFO | "./app\services\script_segment_matcher.py:193": match_segments_to_videos - Segment 8/10: keywords=['time', 'clock', 'family'], duration=13.9s
+2026-02-12 21:32:12 | INFO | "./app\services\llm.py:502": generate_terms - Starting enhanced script-content matching keyword generation for subject: 
+2026-02-12 21:32:12 | INFO | "./app\services\llm.py:540": generate_terms - Generating script-content-matched keywords using advanced LLM analysis...
+2026-02-12 21:32:12 | INFO | "./app\config\config.py:23": load_config - load config from file: ./config.toml
+2026-02-12 21:32:12 | INFO | "./app\config\config.py:52": reload - Config reloaded
+2026-02-12 21:32:12 | INFO | "./app\services\llm.py:171": _generate_response - llm provider: gemini
+2026-02-12 21:32:12 | INFO | "./app\services\llm.py:208": _generate_response - Found 10 Gemini API keys for rotation
+2026-02-12 21:32:12 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #1 (10 total)
+2026-02-12 21:32:12 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #1
+2026-02-12 21:32:12 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #1: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 47.693157322s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 47
+}
+]
+2026-02-12 21:32:12 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #1 quota exceeded, trying next key...
+2026-02-12 21:32:12 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #2 (10 total)
+2026-02-12 21:32:12 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #2
+2026-02-12 21:32:13 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #2: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 47.218527941s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 47
+}
+]
+2026-02-12 21:32:13 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #2 quota exceeded, trying next key...
+2026-02-12 21:32:13 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #3 (10 total)
+2026-02-12 21:32:13 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #3
+2026-02-12 21:32:13 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #3: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 46.752649583s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 46
+}
+]
+2026-02-12 21:32:13 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #3 quota exceeded, trying next key...
+2026-02-12 21:32:13 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #4 (10 total)
+2026-02-12 21:32:13 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #4
+2026-02-12 21:32:14 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #4: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 46.301171518s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 46
+}
+]
+2026-02-12 21:32:14 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #4 quota exceeded, trying next key...
+2026-02-12 21:32:14 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #5 (10 total)
+2026-02-12 21:32:14 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #5
+2026-02-12 21:32:23 | SUCCESS | "./app\services\llm.py:233": _generate_response - ✅ Success with API key #5 and model gemini-2.5-flash
+2026-02-12 21:32:23 | INFO | "./app\services\llm.py:542": generate_terms - LLM keyword response: Taking vitamin, Healthy lifestyle, Bright future
+2026-02-12 21:32:23 | INFO | "./app\services\llm.py:581": generate_terms - Script-matched valid terms: ['taking vitamin', 'healthy lifestyle', 'bright future']
+2026-02-12 21:32:23 | INFO | "./app\services\llm.py:586": generate_terms - Final script-content-matched keywords: ['taking vitamin', 'healthy lifestyle', 'bright future']
+2026-02-12 21:32:23 | INFO | "./app\services\script_segment_matcher.py:85": generate_segment_keywords - Generated keywords for segment: ['taking vitamin', 'healthy lifestyle', 'bright future']
+2026-02-12 21:32:23 | INFO | "./app\services\script_segment_matcher.py:193": match_segments_to_videos - Segment 9/10: keywords=['taking vitamin', 'healthy lifestyle', 'bright future'], duration=13.9s
+2026-02-12 21:32:23 | INFO | "./app\services\llm.py:502": generate_terms - Starting enhanced script-content matching keyword generation for subject: 
+2026-02-12 21:32:23 | INFO | "./app\services\llm.py:540": generate_terms - Generating script-content-matched keywords using advanced LLM analysis...
+2026-02-12 21:32:23 | INFO | "./app\config\config.py:23": load_config - load config from file: ./config.toml
+2026-02-12 21:32:23 | INFO | "./app\config\config.py:52": reload - Config reloaded
+2026-02-12 21:32:23 | INFO | "./app\services\llm.py:171": _generate_response - llm provider: gemini
+2026-02-12 21:32:23 | INFO | "./app\services\llm.py:208": _generate_response - Found 10 Gemini API keys for rotation
+2026-02-12 21:32:23 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #1 (10 total)
+2026-02-12 21:32:23 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #1
+2026-02-12 21:32:24 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #1: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 35.918949976s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 35
+}
+]
+2026-02-12 21:32:24 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #1 quota exceeded, trying next key...
+2026-02-12 21:32:24 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #2 (10 total)
+2026-02-12 21:32:24 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #2
+2026-02-12 21:32:24 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #2: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 35.433746319s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 35
+}
+]
+2026-02-12 21:32:24 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #2 quota exceeded, trying next key...
+2026-02-12 21:32:24 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #3 (10 total)
+2026-02-12 21:32:24 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #3
+2026-02-12 21:32:25 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #3: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 34.994420233s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 34
+}
+]
+2026-02-12 21:32:25 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #3 quota exceeded, trying next key...
+2026-02-12 21:32:25 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #4 (10 total)
+2026-02-12 21:32:25 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #4
+2026-02-12 21:32:25 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #4: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 34.515732082s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 34
+}
+]
+2026-02-12 21:32:25 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #4 quota exceeded, trying next key...
+2026-02-12 21:32:25 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #5 (10 total)
+2026-02-12 21:32:25 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #5
+2026-02-12 21:32:35 | SUCCESS | "./app\services\llm.py:233": _generate_response - ✅ Success with API key #5 and model gemini-2.5-flash
+2026-02-12 21:32:35 | INFO | "./app\services\llm.py:542": generate_terms - LLM keyword response: Vitamin supplement, Energetic lifestyle, Radiant glow
+2026-02-12 21:32:35 | INFO | "./app\services\llm.py:581": generate_terms - Script-matched valid terms: ['vitamin supplement', 'energetic lifestyle', 'radiant glow']
+2026-02-12 21:32:35 | INFO | "./app\services\llm.py:586": generate_terms - Final script-content-matched keywords: ['vitamin supplement', 'energetic lifestyle', 'radiant glow']
+2026-02-12 21:32:35 | INFO | "./app\services\script_segment_matcher.py:85": generate_segment_keywords - Generated keywords for segment: ['vitamin supplement', 'energetic lifestyle', 'radiant glow']
+2026-02-12 21:32:35 | INFO | "./app\services\script_segment_matcher.py:193": match_segments_to_videos - Segment 10/10: keywords=['vitamin supplement', 'energetic lifestyle', 'radiant glow'], duration=13.9s
+2026-02-12 21:32:35 | INFO | "./app\services\material.py:671": download_videos_by_segments - 
+
+## Downloading videos by segments: 10 segments
+2026-02-12 21:32:35 | INFO | "./app\services\material.py:687": download_videos_by_segments - 
+📍 Segment 1/10
+2026-02-12 21:32:35 | INFO | "./app\services\material.py:688": download_videos_by_segments -    Keywords: ['fatigue', 'sick person', 'stressed person']
+2026-02-12 21:32:35 | INFO | "./app\services\material.py:689": download_videos_by_segments -    Required duration: 13.9s
+2026-02-12 21:32:35 | INFO | "./app\services\material.py:696": download_videos_by_segments -    🔍 Searching for: 'fatigue'
+2026-02-12 21:32:35 | INFO | "./app\services\material.py:298": search_videos_pexels - searching videos: https://api.pexels.com/videos/search?query=fatigue&per_page=20&orientation=portrait, with proxies: {}
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:705": download_videos_by_segments -    ✅ Found 13 videos for 'fatigue'
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/7026684/7026684-hd_1080_1920_24fps.mp4
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-76f70e79a118d09f0a55b7037b4cad03.mp4
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-76f70e79a118d09f0a55b7037b4cad03.mp4 (3s)
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/6837717/6837717-hd_1080_1920_30fps.mp4
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-8aebee068a8e8fc1c8d52be0519244b0.mp4
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-8aebee068a8e8fc1c8d52be0519244b0.mp4 (3s)
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/6189270/6189270-hd_1080_1920_25fps.mp4
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-e095bbb5f1e70de030c01325790764c8.mp4
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-e095bbb5f1e70de030c01325790764c8.mp4 (3s)
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/6837715/6837715-hd_1080_1920_30fps.mp4
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-1ea85dbef499c17beb599752b84581c5.mp4
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-1ea85dbef499c17beb599752b84581c5.mp4 (3s)
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/6984750/6984750-hd_1080_1920_24fps.mp4
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-b398b942a785d6fa94fe9d5ba8b50736.mp4
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-b398b942a785d6fa94fe9d5ba8b50736.mp4 (3s)
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:774": download_videos_by_segments -    📊 Segment 1 complete: 5 videos, 15.0s/13.9s
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:687": download_videos_by_segments - 
+📍 Segment 2/10
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:688": download_videos_by_segments -    Keywords: ['fatigue', 'lack focus', 'unleash potential']
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:689": download_videos_by_segments -    Required duration: 13.9s
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:696": download_videos_by_segments -    🔍 Searching for: 'fatigue'
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:298": search_videos_pexels - searching videos: https://api.pexels.com/videos/search?query=fatigue&per_page=20&orientation=portrait, with proxies: {}
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:705": download_videos_by_segments -    ✅ Found 13 videos for 'fatigue'
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/7026684/7026684-hd_1080_1920_24fps.mp4
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-76f70e79a118d09f0a55b7037b4cad03.mp4
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-76f70e79a118d09f0a55b7037b4cad03.mp4 (3s)
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/4872938/4872938-hd_1080_1920_25fps.mp4
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-ef4abbfdc9f77552005a7cf72b5f98e6.mp4
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-ef4abbfdc9f77552005a7cf72b5f98e6.mp4 (3s)
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/6998560/6998560-hd_1080_1920_25fps.mp4
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-ce0c77c9f7a6ea5cda355a91e03260aa.mp4
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-ce0c77c9f7a6ea5cda355a91e03260aa.mp4 (3s)
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/6837715/6837715-hd_1080_1920_30fps.mp4
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-1ea85dbef499c17beb599752b84581c5.mp4
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-1ea85dbef499c17beb599752b84581c5.mp4 (3s)
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/7924515/7924515-hd_1080_1920_24fps.mp4
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-2266ebff2f921e2e7784a03a82ed21f2.mp4
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-2266ebff2f921e2e7784a03a82ed21f2.mp4 (3s)
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:774": download_videos_by_segments -    📊 Segment 2 complete: 5 videos, 15.0s/13.9s
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:687": download_videos_by_segments - 
+📍 Segment 3/10
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:688": download_videos_by_segments -    Keywords: ['daily energy', 'nerve health', 'immune system']
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:689": download_videos_by_segments -    Required duration: 13.9s
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:696": download_videos_by_segments -    🔍 Searching for: 'daily energy'
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:298": search_videos_pexels - searching videos: https://api.pexels.com/videos/search?query=daily+energy&per_page=20&orientation=portrait, with proxies: {}
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:705": download_videos_by_segments -    ✅ Found 17 videos for 'daily energy'
+2026-02-12 21:32:36 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/29173516/12597945_1080_1920_60fps.mp4
+2026-02-12 21:32:39 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-85fbc6227eac5dc01dbb1d06fbc87abe.mp4 (3s)
+2026-02-12 21:32:39 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/6525514/6525514-hd_1080_1920_30fps.mp4
+2026-02-12 21:32:40 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-297f7c20cf2fe3a59d103416e9f65e57.mp4 (3s)
+2026-02-12 21:32:40 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/35307478/14958804_1080_1920_30fps.mp4
+2026-02-12 21:32:44 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-3539e85698a5831957ac81f7471ef7fb.mp4 (3s)
+2026-02-12 21:32:44 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/11859700/11859700-hd_1080_1920_30fps.mp4
+2026-02-12 21:32:45 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-ec1195255e6fa5ab2cc202e8bdf8de06.mp4 (3s)
+2026-02-12 21:32:45 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/8581130/8581130-hd_1080_1920_30fps.mp4
+2026-02-12 21:32:46 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-d16045cc166efe2a5ee51be9def71658.mp4 (3s)
+2026-02-12 21:32:46 | INFO | "./app\services\material.py:774": download_videos_by_segments -    📊 Segment 3 complete: 5 videos, 15.0s/13.9s
+2026-02-12 21:32:46 | INFO | "./app\services\material.py:687": download_videos_by_segments - 
+📍 Segment 4/10
+2026-02-12 21:32:46 | INFO | "./app\services\material.py:688": download_videos_by_segments -    Keywords: ['vitamin d', 'bone health', 'mood boost']
+2026-02-12 21:32:46 | INFO | "./app\services\material.py:689": download_videos_by_segments -    Required duration: 13.9s
+2026-02-12 21:32:46 | INFO | "./app\services\material.py:696": download_videos_by_segments -    🔍 Searching for: 'vitamin d'
+2026-02-12 21:32:46 | INFO | "./app\services\material.py:298": search_videos_pexels - searching videos: https://api.pexels.com/videos/search?query=vitamin+d&per_page=20&orientation=portrait, with proxies: {}
+2026-02-12 21:32:47 | INFO | "./app\services\material.py:705": download_videos_by_segments -    ✅ Found 17 videos for 'vitamin d'
+2026-02-12 21:32:47 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/5189827/5189827-hd_1080_1920_30fps.mp4
+2026-02-12 21:32:48 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-7340f9ab1f7cd69fedbe99a66b8d5458.mp4 (3s)
+2026-02-12 21:32:48 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/7781827/7781827-hd_1080_1920_30fps.mp4
+2026-02-12 21:32:49 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-ef892c43d50dc43c67fe0b8e0d8933d6.mp4 (3s)
+2026-02-12 21:32:49 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/34309670/14534699_1080_1920_30fps.mp4
+2026-02-12 21:32:52 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-070b4e9bd0dd850ff177cebf5cd547d7.mp4 (3s)
+2026-02-12 21:32:52 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/28974865/12534363_1080_1920_30fps.mp4
+2026-02-12 21:32:56 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-29b5856141482220ae37451d7f8513fc.mp4 (3s)
+2026-02-12 21:32:56 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/7964568/7964568-hd_1080_1920_30fps.mp4
+2026-02-12 21:32:56 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-21562bd6db30d95a48bbf8d48ba63a9a.mp4
+2026-02-12 21:32:56 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-21562bd6db30d95a48bbf8d48ba63a9a.mp4 (3s)
+2026-02-12 21:32:56 | INFO | "./app\services\material.py:774": download_videos_by_segments -    📊 Segment 4 complete: 5 videos, 15.0s/13.9s
+2026-02-12 21:32:56 | INFO | "./app\services\material.py:687": download_videos_by_segments - 
+📍 Segment 5/10
+2026-02-12 21:32:56 | INFO | "./app\services\material.py:688": download_videos_by_segments -    Keywords: ['fresh produce', 'depleted soil', 'food processing']
+2026-02-12 21:32:56 | INFO | "./app\services\material.py:689": download_videos_by_segments -    Required duration: 13.9s
+2026-02-12 21:32:56 | INFO | "./app\services\material.py:696": download_videos_by_segments -    🔍 Searching for: 'fresh produce'
+2026-02-12 21:32:56 | INFO | "./app\services\material.py:298": search_videos_pexels - searching videos: https://api.pexels.com/videos/search?query=fresh+produce&per_page=20&orientation=portrait, with proxies: {}
+2026-02-12 21:32:58 | INFO | "./app\services\material.py:705": download_videos_by_segments -    ✅ Found 19 videos for 'fresh produce'
+2026-02-12 21:32:58 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/4430412/4430412-hd_1080_1920_30fps.mp4
+2026-02-12 21:32:58 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-c4ecfb2ca1787ce1982231b987897dd2.mp4
+2026-02-12 21:32:58 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-c4ecfb2ca1787ce1982231b987897dd2.mp4 (3s)
+2026-02-12 21:32:58 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/29546378/12718502_1080_1920_30fps.mp4
+2026-02-12 21:33:01 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-5f368c82cec61d704fe7964d44bbf548.mp4 (3s)
+2026-02-12 21:33:01 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/8801818/8801818-hd_1080_1920_24fps.mp4
+2026-02-12 21:33:01 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-cdd83beed2d134f9a1a93eebf8b45a91.mp4
+2026-02-12 21:33:01 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-cdd83beed2d134f9a1a93eebf8b45a91.mp4 (3s)
+2026-02-12 21:33:01 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/8446796/8446796-hd_1080_1920_24fps.mp4
+2026-02-12 21:33:02 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-51e77403d38aaa4acad3989c359f30f4.mp4 (3s)
+2026-02-12 21:33:02 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/8027657/8027657-hd_1080_1920_25fps.mp4
+2026-02-12 21:33:02 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-987eac97b5ce3b23214d4729a7a15e32.mp4
+2026-02-12 21:33:02 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-987eac97b5ce3b23214d4729a7a15e32.mp4 (3s)
+2026-02-12 21:33:02 | INFO | "./app\services\material.py:774": download_videos_by_segments -    📊 Segment 5 complete: 5 videos, 15.0s/13.9s
+2026-02-12 21:33:02 | INFO | "./app\services\material.py:687": download_videos_by_segments - 
+📍 Segment 6/10
+2026-02-12 21:33:02 | INFO | "./app\services\material.py:688": download_videos_by_segments -    Keywords: ['health consultation', 'taking vitamins', 'supplement choice']
+2026-02-12 21:33:02 | INFO | "./app\services\material.py:689": download_videos_by_segments -    Required duration: 13.9s
+2026-02-12 21:33:02 | INFO | "./app\services\material.py:696": download_videos_by_segments -    🔍 Searching for: 'health consultation'
+2026-02-12 21:33:02 | INFO | "./app\services\material.py:298": search_videos_pexels - searching videos: https://api.pexels.com/videos/search?query=health+consultation&per_page=20&orientation=portrait, with proxies: {}
+2026-02-12 21:33:03 | INFO | "./app\services\material.py:705": download_videos_by_segments -    ✅ Found 6 videos for 'health consultation'
+2026-02-12 21:33:03 | INFO | "./app\services\material.py:696": download_videos_by_segments -    🔍 Searching for: 'taking vitamins'
+2026-02-12 21:33:03 | INFO | "./app\services\material.py:298": search_videos_pexels - searching videos: https://api.pexels.com/videos/search?query=taking+vitamins&per_page=20&orientation=portrait, with proxies: {}
+2026-02-12 21:33:04 | INFO | "./app\services\material.py:705": download_videos_by_segments -    ✅ Found 13 videos for 'taking vitamins'
+2026-02-12 21:33:04 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/7863052/7863052-hd_1080_1920_30fps.mp4
+2026-02-12 21:33:06 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-d92f1fd6319cea725e028a1f4f9fe50f.mp4 (3s)
+2026-02-12 21:33:06 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/5330646/5330646-hd_1080_1920_25fps.mp4
+2026-02-12 21:33:07 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-bf3c0ff08896b07379b2c0b362e3b14c.mp4 (3s)
+2026-02-12 21:33:07 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/7199171/7199171-hd_1080_1920_25fps.mp4
+2026-02-12 21:33:07 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-9f47b612c2f8e4e680d6b23bf01fff7a.mp4 (3s)
+2026-02-12 21:33:07 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/5330217/5330217-hd_1080_1920_25fps.mp4
+2026-02-12 21:33:08 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-bad4287598d8fc62d6ec174c390e9ae9.mp4 (3s)
+2026-02-12 21:33:08 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/6998339/6998339-hd_1080_1920_25fps.mp4
+2026-02-12 21:33:08 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-d21e93f73f1ea73361bdda9e17853607.mp4
+2026-02-12 21:33:08 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-d21e93f73f1ea73361bdda9e17853607.mp4 (3s)
+2026-02-12 21:33:08 | INFO | "./app\services\material.py:774": download_videos_by_segments -    📊 Segment 6 complete: 5 videos, 15.0s/13.9s
+2026-02-12 21:33:08 | INFO | "./app\services\material.py:687": download_videos_by_segments - 
+📍 Segment 7/10
+2026-02-12 21:33:08 | INFO | "./app\services\material.py:688": download_videos_by_segments -    Keywords: ['taking vitamins', 'healthy lifestyle', 'personal investment']
+2026-02-12 21:33:08 | INFO | "./app\services\material.py:689": download_videos_by_segments -    Required duration: 13.9s
+2026-02-12 21:33:08 | INFO | "./app\services\material.py:696": download_videos_by_segments -    🔍 Searching for: 'taking vitamins'
+2026-02-12 21:33:08 | INFO | "./app\services\material.py:298": search_videos_pexels - searching videos: https://api.pexels.com/videos/search?query=taking+vitamins&per_page=20&orientation=portrait, with proxies: {}
+2026-02-12 21:33:09 | INFO | "./app\services\material.py:705": download_videos_by_segments -    ✅ Found 13 videos for 'taking vitamins'
+2026-02-12 21:33:09 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/7863052/7863052-hd_1080_1920_30fps.mp4
+2026-02-12 21:33:09 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-d92f1fd6319cea725e028a1f4f9fe50f.mp4
+2026-02-12 21:33:09 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-d92f1fd6319cea725e028a1f4f9fe50f.mp4 (3s)
+2026-02-12 21:33:09 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/1277466/1277466-hd_1080_1920_30fps.mp4
+2026-02-12 21:33:09 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-0a60a90485720e94300afc3d10a42e0d.mp4
+2026-02-12 21:33:09 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-0a60a90485720e94300afc3d10a42e0d.mp4 (3s)
+2026-02-12 21:33:09 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/7655851/7655851-hd_1080_1920_25fps.mp4
+2026-02-12 21:33:09 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-fa6869360963905b20100ee0d3f4230c.mp4
+2026-02-12 21:33:09 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-fa6869360963905b20100ee0d3f4230c.mp4 (3s)
+2026-02-12 21:33:09 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/7615545/7615545-hd_1080_1920_30fps.mp4
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-e2c94ac14b1ac5690b8fe1bc60a5f3ed.mp4 (3s)
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/35054295/14849508_1080_1920_60fps.mp4
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-d54e563af76efaace5d961b1b41af0e6.mp4
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-d54e563af76efaace5d961b1b41af0e6.mp4 (3s)
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:774": download_videos_by_segments -    📊 Segment 7 complete: 5 videos, 15.0s/13.9s
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:687": download_videos_by_segments - 
+📍 Segment 8/10
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:688": download_videos_by_segments -    Keywords: ['time', 'clock', 'family']
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:689": download_videos_by_segments -    Required duration: 13.9s
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:696": download_videos_by_segments -    🔍 Searching for: 'time'
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:298": search_videos_pexels - searching videos: https://api.pexels.com/videos/search?query=time&per_page=20&orientation=portrait, with proxies: {}
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:705": download_videos_by_segments -    ✅ Found 18 videos for 'time'
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/8084881/8084881-hd_1080_1920_24fps.mp4
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-d890d79bc33cdb783af23507ee35361c.mp4
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-d890d79bc33cdb783af23507ee35361c.mp4 (3s)
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/5197237/5197237-hd_1080_1920_25fps.mp4
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-cf3081b76b6e1da69066103af65521ca.mp4
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-cf3081b76b6e1da69066103af65521ca.mp4 (3s)
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/19383899/19383899-hd_1080_1920_48fps.mp4
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-32858ac69afaea13ab6a4c30b7cacc20.mp4
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-32858ac69afaea13ab6a4c30b7cacc20.mp4 (3s)
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/6782216/6782216-hd_1080_1920_30fps.mp4
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-60ab3c61be1783cca09214a7835ce61d.mp4
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-60ab3c61be1783cca09214a7835ce61d.mp4 (3s)
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/19933502/19933502-hd_1080_1920_60fps.mp4
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-7e59cd5c6b91f1bc2ac4b1dfbaa874c7.mp4
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-7e59cd5c6b91f1bc2ac4b1dfbaa874c7.mp4 (3s)
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:774": download_videos_by_segments -    📊 Segment 8 complete: 5 videos, 15.0s/13.9s
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:687": download_videos_by_segments - 
+📍 Segment 9/10
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:688": download_videos_by_segments -    Keywords: ['taking vitamin', 'healthy lifestyle', 'bright future']
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:689": download_videos_by_segments -    Required duration: 13.9s
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:696": download_videos_by_segments -    🔍 Searching for: 'taking vitamin'
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:298": search_videos_pexels - searching videos: https://api.pexels.com/videos/search?query=taking+vitamin&per_page=20&orientation=portrait, with proxies: {}
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:705": download_videos_by_segments -    ✅ Found 13 videos for 'taking vitamin'
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/1277466/1277466-hd_1080_1920_30fps.mp4
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-0a60a90485720e94300afc3d10a42e0d.mp4
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-0a60a90485720e94300afc3d10a42e0d.mp4 (3s)
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/7812348/7812348-hd_1080_1920_25fps.mp4
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-c38aafea1f0a74b2eb2d42fbda9cde52.mp4
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-c38aafea1f0a74b2eb2d42fbda9cde52.mp4 (3s)
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/6945210/6945210-hd_1080_1920_30fps.mp4
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-b7c2ee88e5a617094a188025e5e2710e.mp4
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-b7c2ee88e5a617094a188025e5e2710e.mp4 (3s)
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/35054295/14849508_1080_1920_60fps.mp4
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-d54e563af76efaace5d961b1b41af0e6.mp4
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-d54e563af76efaace5d961b1b41af0e6.mp4 (3s)
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/7199171/7199171-hd_1080_1920_25fps.mp4
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-9f47b612c2f8e4e680d6b23bf01fff7a.mp4
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-9f47b612c2f8e4e680d6b23bf01fff7a.mp4 (3s)
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:774": download_videos_by_segments -    📊 Segment 9 complete: 5 videos, 15.0s/13.9s
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:687": download_videos_by_segments - 
+📍 Segment 10/10
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:688": download_videos_by_segments -    Keywords: ['vitamin supplement', 'energetic lifestyle', 'radiant glow']
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:689": download_videos_by_segments -    Required duration: 13.9s
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:696": download_videos_by_segments -    🔍 Searching for: 'vitamin supplement'
+2026-02-12 21:33:11 | INFO | "./app\services\material.py:298": search_videos_pexels - searching videos: https://api.pexels.com/videos/search?query=vitamin+supplement&per_page=20&orientation=portrait, with proxies: {}
+2026-02-12 21:33:12 | INFO | "./app\services\material.py:705": download_videos_by_segments -    ✅ Found 14 videos for 'vitamin supplement'
+2026-02-12 21:33:12 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/7525922/7525922-hd_1080_1920_30fps.mp4
+2026-02-12 21:33:12 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-0723ab7b151358598d21cd6d1dcfb161.mp4
+2026-02-12 21:33:12 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-0723ab7b151358598d21cd6d1dcfb161.mp4 (3s)
+2026-02-12 21:33:12 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/7615430/7615430-hd_1080_1920_30fps.mp4
+2026-02-12 21:33:12 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-9b0b9985f7c889288cf0d48a88099d2f.mp4
+2026-02-12 21:33:12 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-9b0b9985f7c889288cf0d48a88099d2f.mp4 (3s)
+2026-02-12 21:33:12 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/7526202/7526202-hd_1080_1920_30fps.mp4
+2026-02-12 21:33:12 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-bcc577122fbd1c0a11ba166c3a583308.mp4
+2026-02-12 21:33:12 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-bcc577122fbd1c0a11ba166c3a583308.mp4 (3s)
+2026-02-12 21:33:12 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/7615545/7615545-hd_1080_1920_30fps.mp4
+2026-02-12 21:33:12 | INFO | "./app\services\material.py:419": save_video - video already exists: .\storage\cache_videos/vid-e2c94ac14b1ac5690b8fe1bc60a5f3ed.mp4
+2026-02-12 21:33:12 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-e2c94ac14b1ac5690b8fe1bc60a5f3ed.mp4 (3s)
+2026-02-12 21:33:12 | INFO | "./app\services\material.py:754": download_videos_by_segments -    📥 Downloading: https://videos.pexels.com/video-files/7033622/7033622-hd_1080_1920_25fps.mp4
+2026-02-12 21:33:13 | INFO | "./app\services\material.py:760": download_videos_by_segments -    ✅ Saved: .\storage\cache_videos/vid-bb19f06551e0da89feb60c01e92d7b56.mp4 (3s)
+2026-02-12 21:33:13 | INFO | "./app\services\material.py:774": download_videos_by_segments -    📊 Segment 10 complete: 5 videos, 15.0s/13.9s
+2026-02-12 21:33:13 | SUCCESS | "./app\services\material.py:776": download_videos_by_segments - 
+✅ All segments processed: 10 segments
+2026-02-12 21:33:13 | SUCCESS | "./app\services\task.py:388": get_video_materials - ✅ Segment-based matching complete: 50 videos
+2026-02-12 21:33:13 | DEBUG | "./app\services\task.py:390": get_video_materials - Segment results: 10 segments processed
+2026-02-12 21:33:13 | INFO | "./app\services\task.py:433": generate_final_videos - 
+
+## combining video: 1 => .\storage\tasks\c34819fc-1231-45d0-8bed-99ec5a972ab2\combined-1.mp4
+2026-02-12 21:33:13 | INFO | "./app\services\video.py:222": combine_videos - audio duration: 138.53 seconds
+2026-02-12 21:33:13 | INFO | "./app\services\video.py:246": combine_videos - maximum clip duration: 3 seconds
+2026-02-12 21:33:13 | INFO | "./app\services\video.py:247": combine_videos - video transition mode: VideoTransitionMode.shuffle
+2026-02-12 21:33:39 | DEBUG | "./app\services\video.py:273": combine_videos - total subclipped items: 50
+2026-02-12 21:33:39 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 1: 1080x1920, current duration: 0.00s, remaining: 138.53s
+2026-02-12 21:33:46 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 2: 1080x1920, current duration: 3.00s, remaining: 135.53s
+2026-02-12 21:33:53 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 3: 1080x1920, current duration: 6.00s, remaining: 132.53s
+2026-02-12 21:33:59 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 4: 1080x1920, current duration: 9.00s, remaining: 129.53s
+2026-02-12 21:34:05 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 5: 1080x1920, current duration: 12.00s, remaining: 126.53s
+2026-02-12 21:34:14 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 6: 1080x1920, current duration: 15.00s, remaining: 123.53s
+2026-02-12 21:34:20 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 7: 1080x1920, current duration: 18.00s, remaining: 120.53s
+2026-02-12 21:34:27 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 8: 1080x1920, current duration: 21.00s, remaining: 117.53s
+2026-02-12 21:34:34 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 9: 1080x1920, current duration: 24.00s, remaining: 114.53s
+2026-02-12 21:34:41 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 10: 1080x1920, current duration: 27.00s, remaining: 111.53s
+2026-02-12 21:34:48 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 11: 1080x1920, current duration: 30.00s, remaining: 108.53s
+2026-02-12 21:35:03 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 12: 1080x1920, current duration: 33.00s, remaining: 105.53s
+2026-02-12 21:35:09 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 13: 1080x1920, current duration: 36.00s, remaining: 102.53s
+2026-02-12 21:35:16 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 14: 1080x1920, current duration: 39.00s, remaining: 99.53s
+2026-02-12 21:35:24 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 15: 1080x1920, current duration: 42.00s, remaining: 96.53s
+2026-02-12 21:35:34 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 16: 1080x1920, current duration: 45.00s, remaining: 93.53s
+2026-02-12 21:35:42 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 17: 1080x1920, current duration: 48.00s, remaining: 90.53s
+2026-02-12 21:35:50 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 18: 1080x1920, current duration: 51.00s, remaining: 87.53s
+2026-02-12 21:35:57 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 19: 1080x1920, current duration: 54.00s, remaining: 84.53s
+2026-02-12 21:36:04 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 20: 1080x1920, current duration: 57.00s, remaining: 81.53s
+2026-02-12 21:36:10 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 21: 1080x1920, current duration: 60.00s, remaining: 78.53s
+2026-02-12 21:36:22 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 22: 1080x1920, current duration: 63.00s, remaining: 75.53s
+2026-02-12 21:36:34 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 23: 1080x1920, current duration: 66.00s, remaining: 72.53s
+2026-02-12 21:36:43 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 24: 1080x1920, current duration: 69.00s, remaining: 69.53s
+2026-02-12 21:36:53 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 25: 1080x1920, current duration: 72.00s, remaining: 66.53s
+2026-02-12 21:37:00 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 26: 1080x1920, current duration: 75.00s, remaining: 63.53s
+2026-02-12 21:37:11 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 27: 1080x1920, current duration: 78.00s, remaining: 60.53s
+2026-02-12 21:37:18 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 28: 720x1280, current duration: 81.00s, remaining: 57.53s
+2026-02-12 21:37:18 | DEBUG | "./app\services\video.py:300": combine_videos - resizing clip, source: 720x1280, ratio: 0.56, target: 1080x1920, ratio: 0.56
+2026-02-12 21:37:26 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 29: 1080x1920, current duration: 84.00s, remaining: 54.53s
+2026-02-12 21:37:32 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 30: 1080x1920, current duration: 87.00s, remaining: 51.53s
+2026-02-12 21:37:42 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 31: 1080x1920, current duration: 90.00s, remaining: 48.53s
+2026-02-12 21:37:50 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 32: 1080x1920, current duration: 93.00s, remaining: 45.53s
+2026-02-12 21:38:00 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 33: 1080x1920, current duration: 96.00s, remaining: 42.53s
+2026-02-12 21:38:06 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 34: 1080x1920, current duration: 99.00s, remaining: 39.53s
+2026-02-12 21:38:14 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 35: 1080x1920, current duration: 102.00s, remaining: 36.53s
+2026-02-12 21:38:24 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 36: 720x1280, current duration: 105.00s, remaining: 33.53s
+2026-02-12 21:38:24 | DEBUG | "./app\services\video.py:300": combine_videos - resizing clip, source: 720x1280, ratio: 0.56, target: 1080x1920, ratio: 0.56
+2026-02-12 21:38:35 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 37: 1080x1920, current duration: 108.00s, remaining: 30.53s
+2026-02-12 21:38:45 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 38: 1080x1920, current duration: 111.00s, remaining: 27.53s
+2026-02-12 21:38:53 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 39: 1080x1920, current duration: 114.00s, remaining: 24.53s
+2026-02-12 21:38:57 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 40: 720x1280, current duration: 117.00s, remaining: 21.53s
+2026-02-12 21:38:57 | DEBUG | "./app\services\video.py:300": combine_videos - resizing clip, source: 720x1280, ratio: 0.56, target: 1080x1920, ratio: 0.56
+2026-02-12 21:39:10 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 41: 1080x1920, current duration: 120.00s, remaining: 18.53s
+2026-02-12 21:39:20 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 42: 1080x1920, current duration: 123.00s, remaining: 15.53s
+2026-02-12 21:39:28 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 43: 1080x1920, current duration: 126.00s, remaining: 12.53s
+2026-02-12 21:39:34 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 44: 1080x1920, current duration: 129.00s, remaining: 9.53s
+2026-02-12 21:39:45 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 45: 720x1280, current duration: 132.00s, remaining: 6.53s
+2026-02-12 21:39:45 | DEBUG | "./app\services\video.py:300": combine_videos - resizing clip, source: 720x1280, ratio: 0.56, target: 1080x1920, ratio: 0.56
+2026-02-12 21:39:57 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 46: 1080x1920, current duration: 135.00s, remaining: 3.53s
+2026-02-12 21:40:03 | DEBUG | "./app\services\video.py:290": combine_videos - processing clip 47: 1080x1920, current duration: 138.00s, remaining: 0.53s
+2026-02-12 21:40:10 | INFO | "./app\services\video.py:407": combine_videos - starting clip merging process
+2026-02-12 21:40:10 | INFO | "./app\services\video.py:426": combine_videos - Transition mode VideoTransitionMode.shuffle active, but trying ffmpeg first for stability
+2026-02-12 21:40:10 | INFO | "./app\services\video.py:519": combine_videos - concatenating 47 clips using ffmpeg: .\storage\tasks\c34819fc-1231-45d0-8bed-99ec5a972ab2\concat_list.txt
+2026-02-12 21:40:10 | INFO | "./app\services\video.py:542": combine_videos - running ffmpeg command: C:\Python313\Lib\site-packages\imageio_ffmpeg\binaries\ffmpeg-win-x86_64-v7.1.exe -y -f concat -safe 0 -i .\storage\tasks\c34819fc-1231-45d0-8bed-99ec5a972ab2\concat_list.txt -c:v libx264 -preset medium -crf 23 -c:a aac -b:a 128k -r 30 -avoid_negative_ts make_zero -fflags +genpts -max_muxing_queue_size 1024 -vsync cfr -async 1 -pix_fmt yuv420p -movflags +faststart -profile:v main -level 4.0 -r 30 -g 30 -keyint_min 15 -sc_threshold 0 -vsync cfr -async 1 .\storage\tasks\c34819fc-1231-45d0-8bed-99ec5a972ab2\combined-1.mp4
+2026-02-12 21:40:51 | INFO | "./app\services\video.py:585": combine_videos - ffmpeg concatenation completed successfully
+2026-02-12 21:40:51 | INFO | "./app\services\task.py:462": generate_final_videos - 
+
+## generating video: 1 => .\storage\tasks\c34819fc-1231-45d0-8bed-99ec5a972ab2\final-1.mp4
+2026-02-12 21:40:51 | INFO | "./app\services\video.py:715": generate_video - generating video: 1080 x 1920
+2026-02-12 21:40:51 | INFO | "./app\services\video.py:716": generate_video -   ① video: .\storage\tasks\c34819fc-1231-45d0-8bed-99ec5a972ab2\combined-1.mp4
+2026-02-12 21:40:51 | INFO | "./app\services\video.py:717": generate_video -   ② audio: .\storage\tasks\c34819fc-1231-45d0-8bed-99ec5a972ab2\audio.mp3
+2026-02-12 21:40:51 | INFO | "./app\services\video.py:718": generate_video -   ③ subtitle: .\storage\tasks\c34819fc-1231-45d0-8bed-99ec5a972ab2\subtitle.srt
+2026-02-12 21:40:51 | INFO | "./app\services\video.py:719": generate_video -   ④ output: .\storage\tasks\c34819fc-1231-45d0-8bed-99ec5a972ab2\final-1.mp4
+2026-02-12 21:40:51 | INFO | "./app\services\video.py:742": generate_video - Forced Korean font: C:/Windows/Fonts/malgun.ttf
+2026-02-12 21:40:51 | INFO | "./app\services\video.py:760": generate_video -   ⑤ font: C:/Windows/Fonts/malgun.ttf
+2026-02-12 21:40:51 | INFO | "./app\services\video.py:885": generate_video - Title overlay image created: .\storage\tasks\c34819fc-1231-45d0-8bed-99ec5a972ab2\final-1_title.png
+2026-02-12 21:40:52 | INFO | "./app\services\video.py:906": generate_video - writing final video (audio track)...
+2026-02-12 21:40:52 | INFO | "./app\services\video.py:908": generate_video - Exporting audio to .\storage\tasks\c34819fc-1231-45d0-8bed-99ec5a972ab2\final-1_temp_audio.m4a
+2026-02-12 21:40:59 | INFO | "./app\services\video.py:911": generate_video - Audio export successful
+2026-02-12 21:40:59 | INFO | "./app\services\video.py:916": generate_video - merging video, audio, and subtitles...
+2026-02-12 21:40:59 | INFO | "./app\services\video.py:960": generate_video - Running merge command: C:\Python313\Lib\site-packages\imageio_ffmpeg\binaries\ffmpeg-win-x86_64-v7.1.exe -y -i .\storage\tasks\c34819fc-1231-45d0-8bed-99ec5a972ab2\combined-1.mp4 -i .\storage\tasks\c34819fc-1231-45d0-8bed-99ec5a972ab2\final-1_temp_audio.m4a -i .\storage\tasks\c34819fc-1231-45d0-8bed-99ec5a972ab2\final-1_title.png -filter_complex [0:v][2:v]overlay=(W-w)/2:160[v_titled];[v_titled]subtitles='C\:/Users/dev/youtube-auto/storage/tasks/c34819fc-1231-45d0-8bed-99ec5a972ab2/subtitle.srt':force_style='Fontname=Malgun Gothic,FontSize=16,PrimaryColour=&HFFFFFF,OutlineColour=&H000000,BorderStyle=1,Outline=1,Shadow=0,MarginV=120,Alignment=2'[v_out] -map [v_out] -c:v libx264 -preset ultrafast -crf 23 -map 1:a -c:a copy -shortest .\storage\tasks\c34819fc-1231-45d0-8bed-99ec5a972ab2\final-1.mp4
+2026-02-12 21:41:27 | ERROR | "./app\services\task.py:510": generate_final_videos - 쿠팡파트너스 오버레이 적용 중 오류: No module named 'moviepy.editor'
+2026-02-12 21:41:27 | SUCCESS | "./app\services\task.py:643": start - task c34819fc-1231-45d0-8bed-99ec5a972ab2 finished, generated 1 videos.
+2026-02-12 21:41:29 | INFO | "./webui\Main.py:5921": <module> - 🔍 DEBUG: Auto-upload checkbox state: True
+2026-02-12 21:41:29 | INFO | "./webui\Main.py:5922": <module> - 🔍 DEBUG: Session state yt_auto_upload: True
+2026-02-12 21:41:29 | INFO | "./webui\Main.py:5923": <module> - 🔍 DEBUG: All session keys with 'upload': ['longform_auto_upload_main', 'yt_auto_upload', 'batch_auto_upload', 'bgm_uploader', 'timer_auto_upload_main']
+2026-02-12 21:41:29 | INFO | "./webui\Main.py:5926": <module> - ✅ 자동 업로드가 활성화되어 있습니다.
+2026-02-12 21:41:29 | INFO | "./webui\Main.py:5931": <module> - 🔍 Token file exists: True
+2026-02-12 21:41:29 | INFO | "./webui\Main.py:5932": <module> - 🔍 Client secrets file exists: True
+2026-02-12 21:41:29 | INFO | "./webui\Main.py:5935": <module> - DEBUG: task_params keys: ['video_subject', 'video_script', 'video_terms', 'video_aspect', 'video_concat_mode', 'video_transition_mode', 'video_clip_duration', 'video_count', 'video_source', 'video_materials', 'use_segment_matching', 'target_segment_count', 'coupang_overlay_data', 'is_english_version', 'korean_task_id', 'custom_audio_file', 'video_language', 'voice_name', 'voice_volume', 'voice_rate', 'bgm_type', 'bgm_file', 'bgm_volume', 'subtitle_enabled', 'subtitle_position', 'custom_position', 'font_name', 'text_fore_color', 'text_background_color', 'font_size', 'stroke_color', 'stroke_width', 'n_threads', 'paragraph_number']
+2026-02-12 21:41:29 | INFO | "./webui\Main.py:5936": <module> - DEBUG: task_params type: <class 'app.models.schema.VideoParams'>
+2026-02-12 21:41:30 | INFO | "./webui\Main.py:5951": <module> - DEBUG: video_terms from task_params: unhealthy diet, taking vitamin, immune system, energetic family
+2026-02-12 21:41:30 | INFO | "./webui\Main.py:5952": <module> - DEBUG: video_language: ko-KR
+2026-02-12 21:41:30 | INFO | "./webui\Main.py:5969": <module> - 🇰🇷 Korean video detected with English terms, translating: ['unhealthy diet', 'taking vitamin', 'immune system', 'energetic family']
+2026-02-12 21:41:30 | INFO | "./app\config\config.py:23": load_config - load config from file: ./config.toml
+2026-02-12 21:41:30 | INFO | "./app\config\config.py:52": reload - Config reloaded
+2026-02-12 21:41:30 | INFO | "./app\services\llm.py:171": _generate_response - llm provider: gemini
+2026-02-12 21:41:30 | INFO | "./app\services\llm.py:208": _generate_response - Found 10 Gemini API keys for rotation
+2026-02-12 21:41:30 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #1 (10 total)
+2026-02-12 21:41:30 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #1
+2026-02-12 21:41:34 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #1: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 26.174977807s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 26
+}
+]
+2026-02-12 21:41:34 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #1 quota exceeded, trying next key...
+2026-02-12 21:41:34 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #2 (10 total)
+2026-02-12 21:41:34 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #2
+2026-02-12 21:41:34 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #2: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 25.501135527s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 25
+}
+]
+2026-02-12 21:41:34 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #2 quota exceeded, trying next key...
+2026-02-12 21:41:34 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #3 (10 total)
+2026-02-12 21:41:34 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #3
+2026-02-12 21:41:35 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #3: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 24.836284411s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 24
+}
+]
+2026-02-12 21:41:35 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #3 quota exceeded, trying next key...
+2026-02-12 21:41:35 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #4 (10 total)
+2026-02-12 21:41:35 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #4
+2026-02-12 21:41:36 | WARNING | "./app\services\llm.py:236": _generate_response - Gemini model gemini-2.5-flash failed with key #4: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash
+Please retry in 24.218523156s. [links {
+  description: "Learn more about Gemini API quotas"
+  url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+}
+, violations {
+  quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+  quota_id: "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+  quota_dimensions {
+    key: "model"
+    value: "gemini-2.5-flash"
+  }
+  quota_dimensions {
+    key: "location"
+    value: "global"
+  }
+  quota_value: 20
+}
+, retry_delay {
+  seconds: 24
+}
+]
+2026-02-12 21:41:36 | WARNING | "./app\services\llm.py:238": _generate_response - 🚫 API key #4 quota exceeded, trying next key...
+2026-02-12 21:41:36 | INFO | "./app\services\llm.py:213": _generate_response - Trying Gemini API key #5 (10 total)
+2026-02-12 21:41:36 | INFO | "./app\services\llm.py:229": _generate_response - Using Gemini model: gemini-2.5-flash with API key #5
+2026-02-12 21:41:41 | SUCCESS | "./app\services\llm.py:233": _generate_response - ✅ Success with API key #5 and model gemini-2.5-flash
+2026-02-12 21:41:41 | INFO | "./webui\Main.py:5978": <module> - 🇰🇷 Successfully translated tags: 건강에 좋지 않은 식단, 비타민 복용, 면역 체계, 활기찬 가족, 비타민을 먹어야되는 이유
+2026-02-12 21:41:44 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 0%
+2026-02-12 21:41:45 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 1%
+2026-02-12 21:41:46 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 1%
+2026-02-12 21:41:46 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 2%
+2026-02-12 21:41:47 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 3%
+2026-02-12 21:41:48 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 3%
+2026-02-12 21:41:49 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 4%
+2026-02-12 21:41:50 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 4%
+2026-02-12 21:41:51 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 5%
+2026-02-12 21:41:52 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 6%
+2026-02-12 21:41:52 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 6%
+2026-02-12 21:41:53 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 7%
+2026-02-12 21:41:54 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 7%
+2026-02-12 21:41:55 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 8%
+2026-02-12 21:41:56 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 9%
+2026-02-12 21:41:57 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 9%
+2026-02-12 21:41:58 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 10%
+2026-02-12 21:41:58 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 10%
+2026-02-12 21:41:59 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 11%
+2026-02-12 21:42:00 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 12%
+2026-02-12 21:42:01 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 12%
+2026-02-12 21:42:02 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 13%
+2026-02-12 21:42:03 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 14%
+2026-02-12 21:42:03 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 14%
+2026-02-12 21:42:04 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 15%
+2026-02-12 21:42:05 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 15%
+2026-02-12 21:42:06 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 16%
+2026-02-12 21:42:07 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 17%
+2026-02-12 21:42:08 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 17%
+2026-02-12 21:42:08 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 18%
+2026-02-12 21:42:09 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 18%
+2026-02-12 21:42:10 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 19%
+2026-02-12 21:42:11 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 20%
+2026-02-12 21:42:12 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 20%
+2026-02-12 21:42:13 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 21%
+2026-02-12 21:42:14 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 21%
+2026-02-12 21:42:14 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 22%
+2026-02-12 21:42:15 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 23%
+2026-02-12 21:42:16 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 23%
+2026-02-12 21:42:17 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 24%
+2026-02-12 21:42:18 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 25%
+2026-02-12 21:42:19 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 25%
+2026-02-12 21:42:20 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 26%
+2026-02-12 21:42:21 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 26%
+2026-02-12 21:42:22 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 27%
+2026-02-12 21:42:22 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 28%
+2026-02-12 21:42:23 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 28%
+2026-02-12 21:42:24 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 29%
+2026-02-12 21:42:25 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 29%
+2026-02-12 21:42:26 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 30%
+2026-02-12 21:42:27 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 31%
+2026-02-12 21:42:28 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 31%
+2026-02-12 21:42:28 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 32%
+2026-02-12 21:42:29 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 32%
+2026-02-12 21:42:30 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 33%
+2026-02-12 21:42:31 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 34%
+2026-02-12 21:42:32 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 34%
+2026-02-12 21:42:33 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 35%
+2026-02-12 21:42:34 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 35%
+2026-02-12 21:42:34 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 36%
+2026-02-12 21:42:35 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 37%
+2026-02-12 21:42:36 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 37%
+2026-02-12 21:42:37 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 38%
+2026-02-12 21:42:38 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 39%
+2026-02-12 21:42:39 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 39%
+2026-02-12 21:42:39 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 40%
+2026-02-12 21:42:40 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 40%
+2026-02-12 21:42:41 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 41%
+2026-02-12 21:42:42 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 42%
+2026-02-12 21:42:43 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 42%
+2026-02-12 21:42:44 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 43%
+2026-02-12 21:42:45 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 43%
+2026-02-12 21:42:45 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 44%
+2026-02-12 21:42:46 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 45%
+2026-02-12 21:42:47 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 45%
+2026-02-12 21:42:48 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 46%
+2026-02-12 21:42:49 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 46%
+2026-02-12 21:42:50 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 47%
+2026-02-12 21:42:51 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 48%
+2026-02-12 21:42:51 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 48%
+2026-02-12 21:42:52 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 49%
+2026-02-12 21:42:53 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 50%
+2026-02-12 21:42:54 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 50%
+2026-02-12 21:42:55 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 51%
+2026-02-12 21:42:56 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 51%
+2026-02-12 21:42:57 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 52%
+2026-02-12 21:42:58 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 53%
+2026-02-12 21:42:59 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 53%
+2026-02-12 21:43:00 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 54%
+2026-02-12 21:43:00 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 54%
+2026-02-12 21:43:01 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 55%
+2026-02-12 21:43:02 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 56%
+2026-02-12 21:43:03 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 56%
+2026-02-12 21:43:04 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 57%
+2026-02-12 21:43:05 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 57%
+2026-02-12 21:43:06 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 58%
+2026-02-12 21:43:07 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 59%
+2026-02-12 21:43:08 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 59%
+2026-02-12 21:43:08 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 60%
+2026-02-12 21:43:09 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 61%
+2026-02-12 21:43:10 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 61%
+2026-02-12 21:43:11 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 62%
+2026-02-12 21:43:12 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 62%
+2026-02-12 21:43:13 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 63%
+2026-02-12 21:43:14 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 64%
+2026-02-12 21:43:15 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 64%
+2026-02-12 21:43:16 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 65%
+2026-02-12 21:43:17 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 65%
+2026-02-12 21:43:18 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 66%
+2026-02-12 21:43:19 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 67%
+2026-02-12 21:43:19 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 67%
+2026-02-12 21:43:20 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 68%
+2026-02-12 21:43:21 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 68%
+2026-02-12 21:43:22 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 69%
+2026-02-12 21:43:23 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 70%
+2026-02-12 21:43:24 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 70%
+2026-02-12 21:43:25 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 71%
+2026-02-12 21:43:26 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 71%
+2026-02-12 21:43:27 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 72%
+2026-02-12 21:43:28 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 73%
+2026-02-12 21:43:28 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 73%
+2026-02-12 21:43:29 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 74%
+2026-02-12 21:43:30 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 75%
+2026-02-12 21:43:31 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 75%
+2026-02-12 21:43:32 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 76%
+2026-02-12 21:43:33 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 76%
+2026-02-12 21:43:34 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 77%
+2026-02-12 21:43:35 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 78%
+2026-02-12 21:43:36 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 78%
+2026-02-12 21:43:37 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 79%
+2026-02-12 21:43:38 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 79%
+2026-02-12 21:43:39 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 80%
+2026-02-12 21:43:40 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 81%
+2026-02-12 21:43:40 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 81%
+2026-02-12 21:43:41 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 82%
+2026-02-12 21:43:42 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 82%
+2026-02-12 21:43:43 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 83%
+2026-02-12 21:43:44 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 84%
+2026-02-12 21:43:45 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 84%
+2026-02-12 21:43:46 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 85%
+2026-02-12 21:43:47 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 86%
+2026-02-12 21:43:48 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 86%
+2026-02-12 21:43:49 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 87%
+2026-02-12 21:43:50 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 87%
+2026-02-12 21:43:51 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 88%
+2026-02-12 21:43:51 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 89%
+2026-02-12 21:43:52 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 89%
+2026-02-12 21:43:53 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 90%
+2026-02-12 21:43:54 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 90%
+2026-02-12 21:43:55 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 91%
+2026-02-12 21:43:56 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 92%
+2026-02-12 21:43:57 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 92%
+2026-02-12 21:43:58 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 93%
+2026-02-12 21:43:59 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 93%
+2026-02-12 21:44:00 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 94%
+2026-02-12 21:44:01 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 95%
+2026-02-12 21:44:02 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 95%
+2026-02-12 21:44:03 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 96%
+2026-02-12 21:44:03 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 97%
+2026-02-12 21:44:04 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 97%
+2026-02-12 21:44:05 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 98%
+2026-02-12 21:44:06 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 98%
+2026-02-12 21:44:07 | INFO | "./app\utils\youtube.py:84": upload_video - Uploaded 99%
+2026-02-12 21:44:09 | SUCCESS | "./app\utils\youtube.py:89": upload_video - Video uploaded successfully! Video ID: K7_aZfEqLOA
+2026-02-12 21:44:09 | INFO | "./app\utils\youtube.py:92": upload_video - 업로드 검증 중... (30초 대기)
+2026-02-12 21:44:39 | WARNING | "./app\utils\youtube.py:116": upload_video - ⚠️ 업로드 검증 실패 (하지만 업로드는 성공): <HttpError 403 when requesting https://youtube.googleapis.com/youtube/v3/videos?part=snippet%2Cstatus&id=K7_aZfEqLOA&alt=json returned "Request had insufficient authentication scopes.". Details: "[{'message': 'Insufficient Permission', 'domain': 'global', 'reason': 'insufficientPermissions'}]">
+2026-02-12 21:44:39 | INFO | "./webui\Main.py:6074": <module> - Updated video list with 1 new videos. Total: 2
+2026-02-12 22:38:51 | INFO | "./app\services\voice.py:1284": tts - TTS 텍스트 전처리: '안녕하세요, 목소리 테스트입니다. 이 음성이 마음에 드시나요?...' -> '안녕하세요, 목소리 테스트입니다. 이 음성이 마음에 드시나요?...'
+2026-02-12 22:38:51 | WARNING | "./app\services\voice.py:1324": try_primary_tts - Primary TTS failed: No module named 'pyaudioop'
+2026-02-12 22:38:51 | WARNING | "./app\services\voice.py:1359": tts - Primary TTS failed for voice 'gemini:Zephyr-Female', trying gTTS fallback...
+2026-02-12 22:38:51 | INFO | "./app\services\voice.py:1343": try_fallback_gtts - Falling back to gTTS: gtts:ko-한국어
+2026-02-12 22:38:51 | INFO | "./app\services\voice.py:2378": gtts_synthesize - gTTS synthesis started - Language: ko, Text length: 34
+2026-02-12 22:38:51 | INFO | "./app\services\voice.py:2382": gtts_synthesize - Target speed: 1.0x
+2026-02-12 22:38:51 | INFO | "./app\services\voice.py:2392": gtts_synthesize - Split into 3 sentences
+2026-02-12 22:38:51 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 1/3: 1.30s - 안녕하세요...
+2026-02-12 22:38:52 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 2/3: 2.04s - 목소리 테스트입니다...
+2026-02-12 22:38:52 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 3/3: 2.50s - 이 음성이 마음에 드시나요...
+2026-02-12 22:38:52 | INFO | "./app\services\voice.py:2417": gtts_synthesize - Total original duration: 5.84s
+2026-02-12 22:38:52 | INFO | "./app\services\voice.py:2436": gtts_synthesize - ✅ Subtitle created with accurate timing based on actual audio durations
+2026-02-12 22:38:53 | INFO | "./app\services\voice.py:2456": gtts_synthesize - Adjusting audio speed to 1.0x...
+2026-02-12 22:38:53 | INFO | "./app\services\voice.py:2470": gtts_synthesize - ✅ Audio speed adjusted to 1.0x
+2026-02-12 22:38:53 | INFO | "./app\services\voice.py:2181": adjust_speed - Adjusted 3 subtitle timings by 1.0x
+2026-02-12 22:38:53 | INFO | "./app\services\voice.py:2474": gtts_synthesize - ✅ Subtitle timing adjusted to 1.0x
+2026-02-12 22:38:53 | INFO | "./app\services\voice.py:2484": gtts_synthesize - gTTS synthesis completed - Final duration: 5.93s
+2026-02-12 22:39:53 | INFO | "./app\services\voice.py:1284": tts - TTS 텍스트 전처리: '안녕하세요, 목소리 테스트입니다. 이 음성이 마음에 드시나요?...' -> '안녕하세요, 목소리 테스트입니다. 이 음성이 마음에 드시나요?...'
+2026-02-12 22:39:53 | INFO | "./app\services\voice.py:2378": gtts_synthesize - gTTS synthesis started - Language: ko, Text length: 34
+2026-02-12 22:39:53 | INFO | "./app\services\voice.py:2382": gtts_synthesize - Target speed: 1.0x
+2026-02-12 22:39:53 | INFO | "./app\services\voice.py:2392": gtts_synthesize - Split into 3 sentences
+2026-02-12 22:39:54 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 1/3: 1.30s - 안녕하세요...
+2026-02-12 22:39:54 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 2/3: 2.04s - 목소리 테스트입니다...
+2026-02-12 22:39:55 | DEBUG | "./app\services\voice.py:2413": gtts_synthesize - Sentence 3/3: 2.50s - 이 음성이 마음에 드시나요...
+2026-02-12 22:39:55 | INFO | "./app\services\voice.py:2417": gtts_synthesize - Total original duration: 5.84s
+2026-02-12 22:39:55 | INFO | "./app\services\voice.py:2436": gtts_synthesize - ✅ Subtitle created with accurate timing based on actual audio durations
+2026-02-12 22:39:55 | INFO | "./app\services\voice.py:2456": gtts_synthesize - Adjusting audio speed to 1.0x...
+2026-02-12 22:39:56 | INFO | "./app\services\voice.py:2470": gtts_synthesize - ✅ Audio speed adjusted to 1.0x
+2026-02-12 22:39:56 | INFO | "./app\services\voice.py:2181": adjust_speed - Adjusted 3 subtitle timings by 1.0x
+2026-02-12 22:39:56 | INFO | "./app\services\voice.py:2474": gtts_synthesize - ✅ Subtitle timing adjusted to 1.0x
+2026-02-12 22:39:56 | INFO | "./app\services\voice.py:2484": gtts_synthesize - gTTS synthesis completed - Final duration: 5.93s
