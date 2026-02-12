@@ -5494,6 +5494,112 @@ with tab_settings:
                 st.success("🎉 YouTube 업로드 준비 완료!")
             else:
                 st.warning("⚠️ 업로드 기능을 사용하려면 인증을 완료해주세요")
+    
+    with st.expander("📱 **모바일 접속 설정**", expanded=False):
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); 
+                    padding: 1rem; border-radius: 12px; margin-bottom: 1rem;">
+            <p style="margin: 0; color: #a0a0a0;">
+                📱 <strong>모바일에서 접속하기:</strong> PC에서 서버를 실행하고 모바일에서 접속 주소로 연결하세요.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        col_mobile_info, col_mobile_guide = st.columns(2)
+        
+        with col_mobile_info:
+            st.markdown("#### 🌐 접속 방법")
+            
+            st.info("""
+            **3가지 접속 방법:**
+            
+            1️⃣ **로컬 접속** (같은 WiFi)
+            - 가장 빠르고 안정적
+            - PC와 모바일이 같은 WiFi 필요
+            - 주소: `http://[PC IP]:8501`
+            
+            2️⃣ **ngrok** (외부 접속)
+            - 어디서든 접속 가능
+            - 무료 계정 필요
+            - 고정 주소 가능 (유료)
+            
+            3️⃣ **Cloudflare Tunnel**
+            - 무료 외부 접속
+            - 설치 필요
+            """)
+            
+            # 현재 로컬 IP 표시
+            try:
+                import socket
+                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                s.connect(("8.8.8.8", 80))
+                local_ip = s.getsockname()[0]
+                s.close()
+                
+                st.success(f"🖥️ 현재 PC IP: `{local_ip}`")
+                st.code(f"http://{local_ip}:8501", language="text")
+                st.caption("↑ 같은 WiFi에서 이 주소로 접속하세요")
+            except:
+                st.warning("⚠️ IP 주소를 확인할 수 없습니다")
+        
+        with col_mobile_guide:
+            st.markdown("#### 📖 설정 가이드")
+            
+            st.markdown("**🔧 실행 파일:**")
+            st.code("""
+# 로컬 접속 (같은 WiFi)
+python 외부접속.py → 옵션 3 선택
+
+# ngrok 외부 접속
+python 외부접속.py → 옵션 1 선택
+
+# Cloudflare Tunnel
+python 외부접속.py → 옵션 2 선택
+            """, language="bash")
+            
+            st.markdown("**📱 모바일 서버 전용:**")
+            st.code("""
+# 모바일 최적화 서버 (포트 8000)
+python mobile_server_simple.py
+
+# 외부 접속 설정
+python 외부접속.bat
+            """, language="bash")
+            
+            st.warning("""
+            ⚠️ **주의사항:**
+            - PC가 켜져 있어야 모바일 접속 가능
+            - 방화벽에서 포트 허용 필요
+            - ngrok은 무료 계정 등록 필요
+            """)
+        
+        st.markdown("---")
+        st.markdown("#### 🚀 빠른 시작")
+        
+        col_quick1, col_quick2, col_quick3 = st.columns(3)
+        
+        with col_quick1:
+            st.markdown("**1️⃣ 로컬 접속**")
+            st.code("외부접속.bat", language="bash")
+            st.caption("같은 WiFi에서 접속")
+        
+        with col_quick2:
+            st.markdown("**2️⃣ ngrok 설정**")
+            st.code("ngrok_setup.py", language="bash")
+            st.caption("외부 접속 설정")
+        
+        with col_quick3:
+            st.markdown("**3️⃣ 모바일 서버**")
+            st.code("mobile_server_simple.py", language="bash")
+            st.caption("모바일 최적화")
+        
+        st.markdown("---")
+        st.success("""
+        💡 **추천 방법:**
+        - 집에서만 사용: 로컬 접속 (가장 빠름)
+        - 외부에서도 사용: ngrok (간편함)
+        - 완전 무료: Cloudflare Tunnel
+        """)
 
 
 
