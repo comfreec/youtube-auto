@@ -5547,26 +5547,26 @@ with tab_settings:
             
             st.markdown("**🔧 실행 파일:**")
             st.markdown("""
-            <div style="background-color: #f0f0f0; padding: 10px; border-radius: 5px; color: #000000; font-family: monospace;">
-# 로컬 접속 (같은 WiFi)<br>
-python 외부접속.py → 옵션 3 선택<br>
+            <div style="background-color: #f0f0f0 !important; padding: 15px; border-radius: 5px; font-family: monospace; line-height: 1.8; border: 1px solid #ccc;">
+<span style="color: #006400 !important; font-weight: bold;"># 로컬 접속 (같은 WiFi)</span><br>
+<span style="color: #000000 !important; font-weight: bold;">python 외부접속.py → 옵션 3 선택</span><br>
 <br>
-# ngrok 외부 접속<br>
-python 외부접속.py → 옵션 1 선택<br>
+<span style="color: #006400 !important; font-weight: bold;"># ngrok 외부 접속</span><br>
+<span style="color: #000000 !important; font-weight: bold;">python 외부접속.py → 옵션 1 선택</span><br>
 <br>
-# Cloudflare Tunnel<br>
-python 외부접속.py → 옵션 2 선택
+<span style="color: #006400 !important; font-weight: bold;"># Cloudflare Tunnel</span><br>
+<span style="color: #000000 !important; font-weight: bold;">python 외부접속.py → 옵션 2 선택</span>
             </div>
             """, unsafe_allow_html=True)
             
             st.markdown("**📱 모바일 서버 전용:**")
             st.markdown("""
-            <div style="background-color: #f0f0f0; padding: 10px; border-radius: 5px; color: #000000; font-family: monospace;">
-# 모바일 최적화 서버 (포트 8000)<br>
-python mobile_server_simple.py<br>
+            <div style="background-color: #f0f0f0 !important; padding: 15px; border-radius: 5px; font-family: monospace; line-height: 1.8; border: 1px solid #ccc;">
+<span style="color: #006400 !important; font-weight: bold;"># 모바일 최적화 서버 (포트 8000)</span><br>
+<span style="color: #000000 !important; font-weight: bold;">python mobile_server_simple.py</span><br>
 <br>
-# 외부 접속 설정<br>
-python 외부접속.bat
+<span style="color: #006400 !important; font-weight: bold;"># 외부 접속 설정</span><br>
+<span style="color: #000000 !important; font-weight: bold;">python 외부접속.bat</span>
             </div>
             """, unsafe_allow_html=True)
             
@@ -5584,17 +5584,17 @@ python 외부접속.bat
         
         with col_quick1:
             st.markdown("**1️⃣ 로컬 접속**")
-            st.markdown('<div style="background-color: #f0f0f0; padding: 8px; border-radius: 5px; color: #000000; font-family: monospace; text-align: center;">외부접속.bat</div>', unsafe_allow_html=True)
+            st.markdown('<div style="background-color: #f0f0f0 !important; padding: 8px; border-radius: 5px; color: #000000 !important; font-family: monospace; text-align: center; font-weight: bold; border: 1px solid #ccc;">외부접속.bat</div>', unsafe_allow_html=True)
             st.caption("같은 WiFi에서 접속")
         
         with col_quick2:
             st.markdown("**2️⃣ ngrok 설정**")
-            st.markdown('<div style="background-color: #f0f0f0; padding: 8px; border-radius: 5px; color: #000000; font-family: monospace; text-align: center;">ngrok_setup.py</div>', unsafe_allow_html=True)
+            st.markdown('<div style="background-color: #f0f0f0 !important; padding: 8px; border-radius: 5px; color: #000000 !important; font-family: monospace; text-align: center; font-weight: bold; border: 1px solid #ccc;">ngrok_setup.py</div>', unsafe_allow_html=True)
             st.caption("외부 접속 설정")
         
         with col_quick3:
             st.markdown("**3️⃣ 모바일 서버**")
-            st.markdown('<div style="background-color: #f0f0f0; padding: 8px; border-radius: 5px; color: #000000; font-family: monospace; text-align: center;">mobile_server_simple.py</div>', unsafe_allow_html=True)
+            st.markdown('<div style="background-color: #f0f0f0 !important; padding: 8px; border-radius: 5px; color: #000000 !important; font-family: monospace; text-align: center; font-weight: bold; border: 1px solid #ccc;">mobile_server_simple.py</div>', unsafe_allow_html=True)
             st.caption("모바일 최적화")
         
         st.markdown("---")
