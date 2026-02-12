@@ -5547,28 +5547,28 @@ with tab_settings:
             
             st.markdown("**🔧 실행 파일:**")
             st.markdown("""
-            ```bash
-# 로컬 접속 (같은 WiFi)
-python 외부접속.py → 옵션 3 선택
-
-# ngrok 외부 접속
-python 외부접속.py → 옵션 1 선택
-
-# Cloudflare Tunnel
+            <div style="background-color: #f0f0f0; padding: 10px; border-radius: 5px; color: #000000; font-family: monospace;">
+# 로컬 접속 (같은 WiFi)<br>
+python 외부접속.py → 옵션 3 선택<br>
+<br>
+# ngrok 외부 접속<br>
+python 외부접속.py → 옵션 1 선택<br>
+<br>
+# Cloudflare Tunnel<br>
 python 외부접속.py → 옵션 2 선택
-            ```
-            """)
+            </div>
+            """, unsafe_allow_html=True)
             
             st.markdown("**📱 모바일 서버 전용:**")
             st.markdown("""
-            ```bash
-# 모바일 최적화 서버 (포트 8000)
-python mobile_server_simple.py
-
-# 외부 접속 설정
+            <div style="background-color: #f0f0f0; padding: 10px; border-radius: 5px; color: #000000; font-family: monospace;">
+# 모바일 최적화 서버 (포트 8000)<br>
+python mobile_server_simple.py<br>
+<br>
+# 외부 접속 설정<br>
 python 외부접속.bat
-            ```
-            """)
+            </div>
+            """, unsafe_allow_html=True)
             
             st.warning("""
             ⚠️ **주의사항:**
@@ -5584,17 +5584,17 @@ python 외부접속.bat
         
         with col_quick1:
             st.markdown("**1️⃣ 로컬 접속**")
-            st.markdown("```bash\n외부접속.bat\n```")
+            st.markdown('<div style="background-color: #f0f0f0; padding: 8px; border-radius: 5px; color: #000000; font-family: monospace; text-align: center;">외부접속.bat</div>', unsafe_allow_html=True)
             st.caption("같은 WiFi에서 접속")
         
         with col_quick2:
             st.markdown("**2️⃣ ngrok 설정**")
-            st.markdown("```bash\nngrok_setup.py\n```")
+            st.markdown('<div style="background-color: #f0f0f0; padding: 8px; border-radius: 5px; color: #000000; font-family: monospace; text-align: center;">ngrok_setup.py</div>', unsafe_allow_html=True)
             st.caption("외부 접속 설정")
         
         with col_quick3:
             st.markdown("**3️⃣ 모바일 서버**")
-            st.markdown("```bash\nmobile_server_simple.py\n```")
+            st.markdown('<div style="background-color: #f0f0f0; padding: 8px; border-radius: 5px; color: #000000; font-family: monospace; text-align: center;">mobile_server_simple.py</div>', unsafe_allow_html=True)
             st.caption("모바일 최적화")
         
         st.markdown("---")
