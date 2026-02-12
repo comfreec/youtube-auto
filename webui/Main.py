@@ -5495,114 +5495,128 @@ with tab_settings:
             else:
                 st.warning("⚠️ 업로드 기능을 사용하려면 인증을 완료해주세요")
     
-    with st.expander("📱 **모바일 접속 설정**", expanded=False):
+    with st.expander("📱 **모바일 접속 설정 (ngrok)**", expanded=False):
         st.markdown("""
         <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); 
                     padding: 1rem; border-radius: 12px; margin-bottom: 1rem;">
             <p style="margin: 0; color: #a0a0a0;">
-                📱 <strong>모바일에서 접속하기:</strong> PC에서 서버를 실행하고 모바일에서 접속 주소로 연결하세요.
+                📱 <strong>모바일에서 접속하기:</strong> ngrok을 사용하면 외부에서도 PC 프로그램에 접속할 수 있습니다.
             </p>
         </div>
         """, unsafe_allow_html=True)
         
-        col_mobile_info, col_mobile_guide = st.columns(2)
+        st.markdown("### 🚀 3단계로 모바일 접속 설정하기")
         
-        with col_mobile_info:
-            st.markdown("#### 🌐 접속 방법")
-            
-            st.info("""
-            **3가지 접속 방법:**
-            
-            1️⃣ **로컬 접속** (같은 WiFi)
-            - 가장 빠르고 안정적
-            - PC와 모바일이 같은 WiFi 필요
-            - 주소: `http://[PC IP]:8501`
-            
-            2️⃣ **ngrok** (외부 접속)
-            - 어디서든 접속 가능
-            - 무료 계정 필요
-            - 고정 주소 가능 (유료)
-            
-            3️⃣ **Cloudflare Tunnel**
-            - 무료 외부 접속
-            - 설치 필요
-            """)
-            
-            # 현재 로컬 IP 표시
-            try:
-                import socket
-                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                s.connect(("8.8.8.8", 80))
-                local_ip = s.getsockname()[0]
-                s.close()
-                
-                st.success(f"🖥️ 현재 PC IP: `{local_ip}`")
-                st.code(f"http://{local_ip}:8501", language="text")
-                st.caption("↑ 같은 WiFi에서 이 주소로 접속하세요")
-            except:
-                st.warning("⚠️ IP 주소를 확인할 수 없습니다")
-        
-        with col_mobile_guide:
-            st.markdown("#### 📖 설정 가이드")
-            
-            st.markdown("**🔧 실행 파일:**")
-            st.markdown("""
-            <div style="background-color: #f0f0f0 !important; padding: 15px; border-radius: 5px; font-family: monospace; line-height: 1.8; border: 1px solid #ccc;">
-<span style="color: #006400 !important; font-weight: bold;"># 로컬 접속 (같은 WiFi)</span><br>
-<span style="color: #000000 !important; font-weight: bold;">python 외부접속.py → 옵션 3 선택</span><br>
-<br>
-<span style="color: #006400 !important; font-weight: bold;"># ngrok 외부 접속</span><br>
-<span style="color: #000000 !important; font-weight: bold;">python 외부접속.py → 옵션 1 선택</span><br>
-<br>
-<span style="color: #006400 !important; font-weight: bold;"># Cloudflare Tunnel</span><br>
-<span style="color: #000000 !important; font-weight: bold;">python 외부접속.py → 옵션 2 선택</span>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            st.markdown("**📱 모바일 서버 전용:**")
-            st.markdown("""
-            <div style="background-color: #f0f0f0 !important; padding: 15px; border-radius: 5px; font-family: monospace; line-height: 1.8; border: 1px solid #ccc;">
-<span style="color: #006400 !important; font-weight: bold;"># 모바일 최적화 서버 (포트 8000)</span><br>
-<span style="color: #000000 !important; font-weight: bold;">python mobile_server_simple.py</span><br>
-<br>
-<span style="color: #006400 !important; font-weight: bold;"># 외부 접속 설정</span><br>
-<span style="color: #000000 !important; font-weight: bold;">python 외부접속.bat</span>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            st.warning("""
-            ⚠️ **주의사항:**
-            - PC가 켜져 있어야 모바일 접속 가능
-            - 방화벽에서 포트 허용 필요
-            - ngrok은 무료 계정 등록 필요
-            """)
-        
+        # Step 1
         st.markdown("---")
-        st.markdown("#### 🚀 빠른 시작")
+        st.markdown("#### 1️⃣ ngrok 회원가입 및 설치")
         
-        col_quick1, col_quick2, col_quick3 = st.columns(3)
+        col_step1_1, col_step1_2 = st.columns([1, 1])
         
-        with col_quick1:
-            st.markdown("**1️⃣ 로컬 접속**")
-            st.markdown('<div style="background-color: #f0f0f0 !important; padding: 8px; border-radius: 5px; color: #000000 !important; font-family: monospace; text-align: center; font-weight: bold; border: 1px solid #ccc;">외부접속.bat</div>', unsafe_allow_html=True)
-            st.caption("같은 WiFi에서 접속")
+        with col_step1_1:
+            st.markdown("""
+            **📝 회원가입:**
+            1. [ngrok.com](https://ngrok.com) 접속
+            2. 우측 상단 "Sign up" 클릭
+            3. Google 계정으로 간편 가입
+            4. 무료 계정으로 충분합니다
+            """)
+            
+            st.info("💡 무료 계정으로 충분히 사용 가능합니다!")
         
-        with col_quick2:
-            st.markdown("**2️⃣ ngrok 설정**")
-            st.markdown('<div style="background-color: #f0f0f0 !important; padding: 8px; border-radius: 5px; color: #000000 !important; font-family: monospace; text-align: center; font-weight: bold; border: 1px solid #ccc;">ngrok_setup.py</div>', unsafe_allow_html=True)
-            st.caption("외부 접속 설정")
+        with col_step1_2:
+            st.markdown("""
+            **💾 다운로드 및 설치:**
+            1. 로그인 후 [다운로드 페이지](https://dashboard.ngrok.com/get-started/setup) 이동
+            2. Windows용 ngrok 다운로드
+            3. 압축 해제 후 `ngrok.exe`를 프로그램 폴더에 복사
+            """)
+            
+            st.success("✅ 이미 ngrok.exe가 프로그램 폴더에 있습니다!")
         
-        with col_quick3:
-            st.markdown("**3️⃣ 모바일 서버**")
-            st.markdown('<div style="background-color: #f0f0f0 !important; padding: 8px; border-radius: 5px; color: #000000 !important; font-family: monospace; text-align: center; font-weight: bold; border: 1px solid #ccc;">mobile_server_simple.py</div>', unsafe_allow_html=True)
-            st.caption("모바일 최적화")
+        # Step 2
+        st.markdown("---")
+        st.markdown("#### 2️⃣ ngrok 인증 토큰 설정")
+        
+        st.markdown("""
+        **🔑 인증 토큰 가져오기:**
+        1. [ngrok 대시보드](https://dashboard.ngrok.com/get-started/your-authtoken) 접속
+        2. "Your Authtoken" 섹션에서 토큰 복사
+        3. 아래 명령어 실행 (토큰 붙여넣기)
+        """)
+        
+        st.markdown("""
+        <div style="background-color: #f0f0f0 !important; padding: 15px; border-radius: 5px; font-family: monospace; line-height: 1.8; border: 1px solid #ccc; margin: 10px 0;">
+<span style="color: #006400 !important; font-weight: bold;"># 명령 프롬프트(CMD)에서 실행:</span><br>
+<span style="color: #000000 !important; font-weight: bold;">ngrok config add-authtoken [여기에_토큰_붙여넣기]</span>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.warning("⚠️ 이 작업은 최초 1회만 하면 됩니다!")
+        
+        # Step 3
+        st.markdown("---")
+        st.markdown("#### 3️⃣ 모바일 서버 실행")
+        
+        col_step3_1, col_step3_2 = st.columns([1, 1])
+        
+        with col_step3_1:
+            st.markdown("**🖥️ PC에서 실행:**")
+            st.markdown("""
+            <div style="background-color: #f0f0f0 !important; padding: 15px; border-radius: 5px; font-family: monospace; line-height: 1.8; border: 1px solid #ccc;">
+<span style="color: #006400 !important; font-weight: bold;"># 방법 1: 배치 파일 실행</span><br>
+<span style="color: #000000 !important; font-weight: bold;">외부접속.bat 더블클릭</span><br>
+<span style="color: #000000 !important; font-weight: bold;">→ 옵션 1 선택 (ngrok)</span><br>
+<br>
+<span style="color: #006400 !important; font-weight: bold;"># 방법 2: Python 실행</span><br>
+<span style="color: #000000 !important; font-weight: bold;">python 외부접속.py</span><br>
+<span style="color: #000000 !important; font-weight: bold;">→ 옵션 1 선택 (ngrok)</span>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.success("✅ 실행하면 외부 접속 주소가 표시됩니다!")
+        
+        with col_step3_2:
+            st.markdown("**📱 모바일에서 접속:**")
+            st.markdown("""
+            1. PC 화면에 표시된 주소 확인
+               - 예: `https://xxxx-xxx-xxx-xxx.ngrok-free.app`
+            
+            2. 모바일 브라우저에서 해당 주소 입력
+            
+            3. "Visit Site" 버튼 클릭
+            
+            4. 영상 생성 화면 표시!
+            """)
+            
+            st.info("💡 PC가 켜져 있어야 모바일 접속이 가능합니다")
+        
+        # 추가 팁
+        st.markdown("---")
+        st.markdown("#### 💡 유용한 팁")
+        
+        col_tip1, col_tip2, col_tip3 = st.columns(3)
+        
+        with col_tip1:
+            st.markdown("**🔄 주소 변경**")
+            st.caption("무료 계정은 프로그램 재시작 시 주소가 변경됩니다. 유료 계정($8/월)으로 고정 주소 사용 가능")
+        
+        with col_tip2:
+            st.markdown("**⚡ 속도**")
+            st.caption("ngrok은 약간의 지연이 있을 수 있습니다. 같은 WiFi에서는 로컬 접속이 더 빠릅니다")
+        
+        with col_tip3:
+            st.markdown("**🔒 보안**")
+            st.caption("ngrok 주소는 공유하지 마세요. 누구나 접속할 수 있습니다")
         
         st.markdown("---")
         st.success("""
-        💡 **추천 방법:**
-        - 집에서만 사용: 로컬 접속 (가장 빠름)
-        - 외부에서도 사용: ngrok (간편함)
-        - 완전 무료: Cloudflare Tunnel
+        🎉 **설정 완료!**
+        
+        이제 어디서든 모바일로 영상을 생성할 수 있습니다!
+        - PC에서 `외부접속.bat` 실행
+        - 표시된 주소를 모바일 브라우저에 입력
+        - 영상 생성 시작!
         """)
 
 
