@@ -1211,6 +1211,42 @@ def tts(
         
         if is_korean:
             # 한국어 전처리
+            
+            # 숫자를 한글로 변환 (100 → 백, 50 → 오십)
+            def number_to_korean(match):
+                num = int(match.group(0))
+                if num == 0:
+                    return "영"
+                elif num == 100:
+                    return "백"
+                elif num == 1000:
+                    return "천"
+                elif num == 10000:
+                    return "만"
+                elif num < 100:
+                    # 10~99
+                    tens = num // 10
+                    ones = num % 10
+                    tens_map = {1: "십", 2: "이십", 3: "삼십", 4: "사십", 5: "오십", 
+                               6: "육십", 7: "칠십", 8: "팔십", 9: "구십"}
+                    ones_map = {1: "일", 2: "이", 3: "삼", 4: "사", 5: "오", 
+                               6: "육", 7: "칠", 8: "팔", 9: "구"}
+                    result = tens_map.get(tens, "")
+                    if ones > 0:
+                        result += ones_map.get(ones, "")
+                    return result
+                else:
+                    # 그 외는 그대로 (복잡한 숫자는 gTTS가 처리)
+                    return str(num)
+            
+            # 퍼센트 앞의 숫자를 한글로 변환 (100% → 백 퍼센트)
+            def replace_percent(match):
+                num_match = re.match(r'\d+', match.group(0))
+                if num_match:
+                    return number_to_korean(num_match) + ' 퍼센트'
+                return match.group(0)
+            text = re.sub(r'\b(\d+)\s*%', replace_percent, text)
+            
             # 범위 표현 처리 (20~30분 → 20에서 30분)
             text = re.sub(r'(\d+)\s*~\s*(\d+)', r'\1에서 \2', text)
             # 일반 물결표는 "에서"로 변환
@@ -1221,7 +1257,6 @@ def tts(
             text = re.sub(r'#', ' 샵 ', text)      # #을 "샵"으로
             text = re.sub(r'\+', ' 플러스 ', text) # +를 "플러스"로
             text = re.sub(r'=', ' 같다 ', text)    # =를 "같다"로
-            text = re.sub(r'%', ' 퍼센트 ', text)  # %를 "퍼센트"로
         else:
             # 영어 전처리
             # 범위 표현 처리 (20~30 → 20 to 30)
