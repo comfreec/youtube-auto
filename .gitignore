@@ -52,3 +52,12 @@ dist/
 # License files
 license.dat
 license_database.json
+
+# Google Drive upload
+drive_token.pickle
+
+# Large distribution files (too big for GitHub)
+*.zip
+AI쇼츠생성기_v*.zip
+ai쇼츠생성기_배포판.zip
+유튜브쇼츠생성기_배포판.zip
