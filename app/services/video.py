@@ -925,20 +925,48 @@ def generate_video(
         # Add Title Overlay
         if title_image_path and os.path.exists(title_image_path):
             inputs.extend(["-i", title_image_path])
+            
+            # 이중 자막 체크: 한글 자막 파일이 있는지 확인 (영어 영상용)
+            korean_subtitle_path = subtitle_path.replace("_en.srt", ".srt")
+            has_korean_subtitle = os.path.exists(korean_subtitle_path) and korean_subtitle_path != subtitle_path
+            
+            # 영어 영상은 이중 자막 공간 확보를 위해 제목을 80px 위치로
+            # 한글 영상은 160px 위치 유지
+            title_y_position = 80 if has_korean_subtitle else 160
+            
             # Overlay title image on video
-            # (W-w)/2:160 centers horizontally and puts it 160px from top (moved down by 40px)
-            filter_complex.append(f"[{current_v}][2:v]overlay=(W-w)/2:160[v_titled]")
+            filter_complex.append(f"[{current_v}][2:v]overlay=(W-w)/2:{title_y_position}[v_titled]")
             current_v = "v_titled"
             
         # Add Subtitles
         has_subtitles = params.subtitle_enabled and os.path.exists(subtitle_path)
         if has_subtitles:
             sub_path_escaped = subtitle_path.replace("\\", "/").replace(":", "\\:")
-            margin_v = 40 if aspect != VideoAspect.portrait else 120
-            style = f"Fontname=Malgun Gothic,FontSize=16,PrimaryColour=&HFFFFFF,OutlineColour=&H000000,BorderStyle=1,Outline=1,Shadow=0,MarginV={margin_v},Alignment=2"
-            # Use current_v as input for subtitles
-            filter_complex.append(f"[{current_v}]subtitles='{sub_path_escaped}':force_style='{style}'[v_out]")
-            current_v = "v_out"
+            
+            # 이중 자막 체크: 한글 자막 파일이 있는지 확인 (영어 영상용)
+            korean_subtitle_path = subtitle_path.replace("_en.srt", ".srt")
+            has_korean_subtitle = os.path.exists(korean_subtitle_path) and korean_subtitle_path != subtitle_path
+            
+            if has_korean_subtitle:
+                # 영어 영상 - 이중 자막 (영어 + 한글)
+                logger.info(f"이중 자막 모드: 영어 자막 + 한글 자막")
+                
+                # 영어 자막 (흰색, 18pt, 140px from bottom - 제목과 겹치지 않게)
+                style_en = f"Fontname=Malgun Gothic,FontSize=18,PrimaryColour=&HFFFFFF,OutlineColour=&H000000,BorderStyle=1,Outline=2,Shadow=0,MarginV=140,Alignment=2"
+                filter_complex.append(f"[{current_v}]subtitles='{sub_path_escaped}':force_style='{style_en}'[v_en_sub]")
+                
+                # 한글 자막 (노란색, 13pt, 100px from bottom - 간격 40px)
+                korean_sub_escaped = korean_subtitle_path.replace("\\", "/").replace(":", "\\:")
+                style_ko = f"Fontname=Malgun Gothic,FontSize=13,PrimaryColour=&H00FFFF,OutlineColour=&H000000,BorderStyle=1,Outline=2,Shadow=0,MarginV=100,Alignment=2"
+                filter_complex.append(f"[v_en_sub]subtitles='{korean_sub_escaped}':force_style='{style_ko}'[v_out]")
+                
+                current_v = "v_out"
+            else:
+                # 단일 자막 (한글 영상)
+                margin_v = 40 if aspect != VideoAspect.portrait else 120
+                style = f"Fontname=Malgun Gothic,FontSize=16,PrimaryColour=&HFFFFFF,OutlineColour=&H000000,BorderStyle=1,Outline=1,Shadow=0,MarginV={margin_v},Alignment=2"
+                filter_complex.append(f"[{current_v}]subtitles='{sub_path_escaped}':force_style='{style}'[v_out]")
+                current_v = "v_out"
             
         cmd.extend(inputs)
         

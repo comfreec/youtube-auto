@@ -503,11 +503,13 @@ def run_video_generation(task_id: str, params: VideoParams, auto_upload: bool = 
                 
                 # 영어 버전 플래그 설정 (중요!)
                 eng_params.is_english_version = True
+                eng_params.korean_task_id = task_id  # 한글 task_id 전달 (이중 자막용)
                 
                 logger.info(f"🌍 English VideoParams created:")
                 logger.info(f"   - language: {eng_params.video_language}")
                 logger.info(f"   - voice: {eng_params.voice_name}")
                 logger.info(f"   - is_english_version: {eng_params.is_english_version}")
+                logger.info(f"   - korean_task_id: {eng_params.korean_task_id}")
                 logger.info(f"   - script is English: {not any(ord(c) > 127 and ord(c) < 0x4e00 or 0xac00 <= ord(c) <= 0xd7a3 for c in eng_params.video_script[:100])}")
                 logger.info(f"   - subtitle_provider will be: whisper (for accurate English subtitles)")
                 

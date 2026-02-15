@@ -194,7 +194,24 @@ def generate_subtitle(task_id, params, video_script, sub_maker, audio_file):
     if not params.subtitle_enabled:
         return ""
 
-    subtitle_path = path.join(utils.task_dir(task_id), "subtitle.srt")
+    # 영어 버전은 subtitle_en.srt로 저장
+    is_english_version = getattr(params, 'is_english_version', False)
+    if is_english_version:
+        subtitle_path = path.join(utils.task_dir(task_id), "subtitle_en.srt")
+        
+        # 한글 자막 복사 (이중 자막용)
+        korean_task_id = getattr(params, 'korean_task_id', None)
+        if korean_task_id:
+            korean_subtitle_path = path.join(utils.task_dir(korean_task_id), "subtitle.srt")
+            target_korean_subtitle_path = path.join(utils.task_dir(task_id), "subtitle.srt")
+            if os.path.exists(korean_subtitle_path):
+                import shutil
+                shutil.copy2(korean_subtitle_path, target_korean_subtitle_path)
+                logger.info(f"✅ Copied Korean subtitle for dual subtitle: {korean_subtitle_path} -> {target_korean_subtitle_path}")
+            else:
+                logger.warning(f"⚠️ Korean subtitle not found: {korean_subtitle_path}")
+    else:
+        subtitle_path = path.join(utils.task_dir(task_id), "subtitle.srt")
     
     # 영어 버전은 항상 영어 음성에 맞는 새로운 자막을 생성 (동기화 보장)
     if getattr(params, 'is_english_version', False):
@@ -298,7 +315,59 @@ def generate_subtitle(task_id, params, video_script, sub_maker, audio_file):
              return subtitle_path
         return ""
 
+    # 영어 버전인 경우, 한글 자막 타이밍과 동기화
+    if is_english_version:
+        korean_subtitle_path = path.join(utils.task_dir(task_id), "subtitle.srt")
+        if os.path.exists(korean_subtitle_path):
+            logger.info(f"🔄 Synchronizing English subtitle timing with Korean subtitle...")
+            try:
+                _sync_subtitle_timing(subtitle_path, korean_subtitle_path)
+                logger.info(f"✅ English subtitle synchronized with Korean subtitle timing")
+            except Exception as e:
+                logger.warning(f"⚠️ Failed to sync subtitle timing: {str(e)}")
+
     return subtitle_path
+
+
+def _sync_subtitle_timing(english_srt_path, korean_srt_path):
+    """
+    영어 자막의 타이밍을 한글 자막과 동기화
+    """
+    # 한글 자막 파싱
+    korean_subtitles = []
+    with open(korean_srt_path, 'r', encoding='utf-8') as f:
+        content = f.read().strip().split('\n\n')
+        for block in content:
+            lines = block.strip().split('\n')
+            if len(lines) >= 3:
+                timing = lines[1]
+                korean_subtitles.append(timing)
+    
+    # 영어 자막 파싱
+    english_subtitles = []
+    with open(english_srt_path, 'r', encoding='utf-8') as f:
+        content = f.read().strip().split('\n\n')
+        for block in content:
+            lines = block.strip().split('\n')
+            if len(lines) >= 3:
+                index = lines[0]
+                text = '\n'.join(lines[2:])
+                english_subtitles.append((index, text))
+    
+    # 타이밍 동기화 (한글 자막 타이밍 사용)
+    synced_content = []
+    for i, (index, text) in enumerate(english_subtitles):
+        if i < len(korean_subtitles):
+            timing = korean_subtitles[i]
+        else:
+            # 한글 자막보다 영어 자막이 많으면 마지막 타이밍 사용
+            timing = korean_subtitles[-1] if korean_subtitles else "00:00:00,000 --> 00:00:01,000"
+        
+        synced_content.append(f"{index}\n{timing}\n{text}")
+    
+    # 동기화된 자막 저장
+    with open(english_srt_path, 'w', encoding='utf-8') as f:
+        f.write('\n\n'.join(synced_content) + '\n')
 
 
 def get_video_materials(task_id, params, video_terms, audio_duration, video_script=None):
@@ -469,15 +538,27 @@ def generate_final_videos(
         )
 
         # 쿠팡파트너스 오버레이 적용 (데이터가 있고 비어있지 않은 경우에만)
+        logger.info(f"🔍 쿠팡 오버레이 체크 시작")
+        logger.info(f"  - hasattr(params, 'coupang_overlay_data'): {hasattr(params, 'coupang_overlay_data')}")
+        if hasattr(params, 'coupang_overlay_data'):
+            logger.info(f"  - params.coupang_overlay_data is not None: {params.coupang_overlay_data is not None}")
+            logger.info(f"  - isinstance list: {isinstance(params.coupang_overlay_data, list) if params.coupang_overlay_data else False}")
+            logger.info(f"  - 길이: {len(params.coupang_overlay_data) if params.coupang_overlay_data else 0}")
+        
         if (hasattr(params, 'coupang_overlay_data') and 
             params.coupang_overlay_data is not None and 
             isinstance(params.coupang_overlay_data, list) and 
             len(params.coupang_overlay_data) > 0):
             try:
+                logger.info(f"✅ 쿠팡 오버레이 조건 충족 - 적용 시작")
                 from app.services.product_overlay import get_overlay_manager
-                from moviepy.editor import VideoFileClip
+                from moviepy import VideoFileClip
                 
-                logger.info(f"쿠팡파트너스 오버레이 적용 시작: {len(params.coupang_overlay_data)}개 제품")
+                logger.info(f"🛒 쿠팡파트너스 오버레이 적용 시작: {len(params.coupang_overlay_data)}개 제품")
+                for i, product in enumerate(params.coupang_overlay_data, 1):
+                    logger.info(f"  제품 {i}: {product.get('name', 'Unknown')} - {product.get('price', 'N/A')}")
+                    logger.info(f"    이미지: {product.get('image_path', 'None')}")
+                
                 sm.state.update_task(task_id, progress=_progress + 5, message=f"제품 오버레이 적용 중 ({index}/{params.video_count})...")
                 
                 overlay_manager = get_overlay_manager()
@@ -797,7 +878,7 @@ def merge_longform_segments(task_id, segment_videos, params):
     logger.info(f"Merging {len(segment_videos)} segments into long-form video")
     
     try:
-        from moviepy.editor import VideoFileClip, concatenate_videoclips
+        from moviepy import VideoFileClip, concatenate_videoclips
         
         # 세그먼트 영상들 로드
         clips = []
