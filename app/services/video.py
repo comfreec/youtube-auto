@@ -889,6 +889,9 @@ def generate_video(
 
         # Audio setup
         final_audio = AudioFileClip(audio_path)
+        # 음성 볼륨 증폭 (1.5배)
+        final_audio = final_audio.with_volume_scaled(1.5)
+        
         bgm_clip = None
         
         if bgm_file:
@@ -951,13 +954,13 @@ def generate_video(
                 # 영어 영상 - 이중 자막 (영어 + 한글)
                 logger.info(f"이중 자막 모드: 영어 자막 + 한글 자막")
                 
-                # 영어 자막 (흰색, 18pt, 140px from bottom - 제목과 겹치지 않게)
-                style_en = f"Fontname=Malgun Gothic,FontSize=18,PrimaryColour=&HFFFFFF,OutlineColour=&H000000,BorderStyle=1,Outline=2,Shadow=0,MarginV=140,Alignment=2"
+                # 영어 자막 (흰색, 16pt, 110px from bottom, 테두리 1px)
+                style_en = f"Fontname=Malgun Gothic,FontSize=16,PrimaryColour=&HFFFFFF,OutlineColour=&H000000,BorderStyle=1,Outline=1,Shadow=0,MarginV=110,Alignment=2"
                 filter_complex.append(f"[{current_v}]subtitles='{sub_path_escaped}':force_style='{style_en}'[v_en_sub]")
                 
-                # 한글 자막 (노란색, 13pt, 100px from bottom - 간격 40px)
+                # 한글 자막 (노란색, 13pt, 60px from bottom, 테두리 1px)
                 korean_sub_escaped = korean_subtitle_path.replace("\\", "/").replace(":", "\\:")
-                style_ko = f"Fontname=Malgun Gothic,FontSize=13,PrimaryColour=&H00FFFF,OutlineColour=&H000000,BorderStyle=1,Outline=2,Shadow=0,MarginV=100,Alignment=2"
+                style_ko = f"Fontname=Malgun Gothic,FontSize=13,PrimaryColour=&H00FFFF,OutlineColour=&H000000,BorderStyle=1,Outline=1,Shadow=0,MarginV=60,Alignment=2"
                 filter_complex.append(f"[v_en_sub]subtitles='{korean_sub_escaped}':force_style='{style_ko}'[v_out]")
                 
                 current_v = "v_out"
