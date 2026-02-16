@@ -7,7 +7,10 @@ from googleapiclient.http import MediaFileUpload
 from loguru import logger
 
 # If modifying these scopes, delete the file token.pickle.
-SCOPES = ['https://www.googleapis.com/auth/youtube.upload']
+SCOPES = [
+    'https://www.googleapis.com/auth/youtube.upload',
+    'https://www.googleapis.com/auth/youtube.force-ssl'  # 댓글 작성을 위한 권한
+]
 
 def get_authenticated_service(client_secrets_file, token_file='token.pickle'):
     creds = None
@@ -121,3 +124,46 @@ def upload_video(youtube, file_path, title, description, category="22", keywords
     except Exception as e:
         logger.error(f"An error occurred during video upload: {e}")
         return None
+
+
+def add_pinned_comment(youtube, video_id, comment_text):
+    """
+    영상에 고정 댓글 추가
+    
+    Args:
+        youtube: The authenticated YouTube service object
+        video_id: YouTube video ID
+        comment_text: 댓글 내용
+    
+    Returns:
+        True if successful, False otherwise
+    """
+    try:
+        # 댓글 추가
+        comment_insert_response = youtube.commentThreads().insert(
+            part="snippet",
+            body={
+                "snippet": {
+                    "videoId": video_id,
+                    "topLevelComment": {
+                        "snippet": {
+                            "textOriginal": comment_text
+                        }
+                    }
+                }
+            }
+        ).execute()
+        
+        comment_id = comment_insert_response['id']
+        logger.info(f"✅ 댓글 추가 성공: {comment_id}")
+        
+        # 댓글 고정 (moderationStatus를 published로 설정)
+        # 참고: 댓글 고정은 YouTube Studio에서만 가능하며 API로는 직접 고정 불가
+        # 대신 채널 소유자가 첫 댓글로 작성하면 자동으로 상단에 표시됨
+        
+        logger.info(f"💡 댓글이 추가되었습니다. YouTube Studio에서 수동으로 고정해주세요.")
+        return True
+        
+    except Exception as e:
+        logger.error(f"댓글 추가 실패: {e}")
+        return False

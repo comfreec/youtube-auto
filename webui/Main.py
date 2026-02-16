@@ -260,111 +260,36 @@ def check_license():
 # 라이선스 검증 실행
 check_license()
 
-# IMMEDIATE MENU HIDING - 페이지 로딩 즉시 적용
-immediate_hide_css = """
+# 메뉴 완전히 제거 - 최소한의 코드로 처리
+hide_menu_style = """
 <style>
-    /* IMMEDIATE HIDE - 로딩 시 깜빡임 방지 */
-    header[data-testid="stHeader"] {
+    /* 모든 메뉴 요소 완전히 제거 */
+    #MainMenu, header, footer, .stDeployButton,
+    [data-testid="stHeader"], [data-testid="stToolbar"],
+    [data-testid="stDecoration"], [data-testid="stStatusWidget"],
+    button[kind="header"], button[kind="primary"][data-testid="baseButton-header"],
+    .viewerBadge_container__1QSob, .viewerBadge_link__1S137,
+    .stToolbar, .stStatusWidget, .stFloatingContainer,
+    [class*="viewerBadge"], [class*="MainMenu"], [class*="stToolbar"],
+    [class*="stHeader"], [class*="stDecoration"], [class*="stStatusWidget"],
+    [class*="DeployButton"] {
         display: none !important;
-        visibility: hidden !important;
-        height: 0 !important;
-        position: absolute !important;
-        top: -9999px !important;
-        opacity: 0 !important;
     }
     
-    #MainMenu {
-        display: none !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-    }
-    
-    .stDeployButton {
-        display: none !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-    }
-    
-    footer {
-        display: none !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-    }
-    
-    /* Hide hamburger menu immediately */
-    button[title="View fullscreen"] {
-        display: none !important;
-        opacity: 0 !important;
-    }
-    
-    /* Hide settings menu immediately */
-    button[aria-label="Settings"] {
-        display: none !important;
-        opacity: 0 !important;
-    }
-    
-    /* Hide "Made with Streamlit" immediately */
-    .viewerBadge_container__1QSob,
-    .viewerBadge_link__1S137 {
-        display: none !important;
-        opacity: 0 !important;
-    }
-    
-    /* Hide toolbar immediately */
-    .stToolbar,
-    [data-testid="stToolbar"] {
-        display: none !important;
-        opacity: 0 !important;
-    }
-    
-    /* Hide status widget immediately */
-    .stStatusWidget,
-    [data-testid="stStatusWidget"] {
-        display: none !important;
-        opacity: 0 !important;
-    }
-    
-    /* Hide decoration immediately */
-    [data-testid="stDecoration"] {
-        display: none !important;
-        opacity: 0 !important;
-    }
-    
-    /* Hide floating container immediately */
-    .stFloatingContainer {
-        display: none !important;
-        opacity: 0 !important;
-    }
-    
-    /* Force hide any menu-related elements immediately */
-    .css-1d391kg, .css-1v0mbdj, .css-18e3th9, .css-1dp5vir {
-        display: none !important;
-        opacity: 0 !important;
-    }
-    
-    /* Remove top padding immediately */
     .main .block-container {
         padding-top: 1rem !important;
     }
-    
-    /* Hide any remaining top elements immediately */
-    .element-container:first-child {
-        margin-top: 0 !important;
-    }
-    
-    /* Additional immediate hiding */
-    .stApp > header,
-    .stApp > div[data-testid="stHeader"] {
-        display: none !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-        height: 0 !important;
-        position: absolute !important;
-        top: -9999px !important;
-    }
 </style>
+<script>
+// DOM에서 메뉴 요소 제거
+setTimeout(() => {
+    const selectors = ['#MainMenu', 'header', 'footer', '.stDeployButton', '[data-testid="stHeader"]', 
+                      '[data-testid="stToolbar"]', 'button[kind="header"]'];
+    selectors.forEach(s => document.querySelectorAll(s).forEach(e => e.remove()));
+}, 0);
+</script>
 """
-st.markdown(immediate_hide_css, unsafe_allow_html=True)
+st.markdown(hide_menu_style, unsafe_allow_html=True)
 
 # Apply mobile optimizations
 if MOBILE_OPTIMIZATION_AVAILABLE:
@@ -1642,71 +1567,8 @@ with col_title:
 
 with col_status:
     st.markdown("### 🚀 시스템 상태")
-    
-    # 할당량 체크 상태 관리
-    if "quota_check_expanded" not in st.session_state:
-        st.session_state["quota_check_expanded"] = False
-    
-    # 할당량 체크 버튼
-    col_check_btn, col_close_btn = st.columns([0.7, 0.3])
-    
-    with col_check_btn:
-        if st.button("🔍 API 할당량 체크", use_container_width=True, key="quota_check_btn"):
-            st.session_state["quota_check_expanded"] = True
-    
-    with col_close_btn:
-        if st.session_state["quota_check_expanded"]:
-            if st.button("❌ 닫기", use_container_width=True, key="quota_close_btn"):
-                st.session_state["quota_check_expanded"] = False
-                st.rerun()
-    
-    # 할당량 정보 표시 (펼쳐진 상태일 때만)
-    if st.session_state["quota_check_expanded"]:
-        with st.spinner("API 할당량 확인 중..."):
-            try:
-                from app.services import llm
-                quota_status = llm.check_api_quota_status()
-                
-                st.markdown("#### 📊 API 할당량 상태")
-                
-                # Gemini API 키들 상태
-                st.markdown("**🤖 Gemini API 키 상태:**")
-                available_gemini = 0
-                for key_info in quota_status["gemini_keys"]:
-                    if key_info["available"]:
-                        available_gemini += 1
-                        st.success(f"키 #{key_info['key_num']}: {key_info['status']} ({key_info['key_preview']})")
-                    elif "미설정" in key_info["status"]:
-                        st.info(f"키 #{key_info['key_num']}: {key_info['status']}")
-                    else:
-                        st.error(f"키 #{key_info['key_num']}: {key_info['status']} ({key_info['key_preview']})")
-                
-                # DeepSeek API 키 상태
-                st.markdown("**🔧 DeepSeek API 키 상태:**")
-                deepseek_info = quota_status["deepseek_status"]
-                if deepseek_info["available"]:
-                    st.success(f"DeepSeek: {deepseek_info['status']} ({deepseek_info['key_preview']})")
-                elif "미설정" in deepseek_info["status"]:
-                    st.info(f"DeepSeek: {deepseek_info['status']}")
-                else:
-                    st.error(f"DeepSeek: {deepseek_info['status']} ({deepseek_info['key_preview']})")
-                
-                # 전체 요약
-                total_available = quota_status["total_available"]
-                if total_available > 0:
-                    st.success(f"✅ 총 {total_available}개 API 키 사용 가능")
-                    if available_gemini > 0:
-                        st.info(f"🤖 Gemini: {available_gemini}/10개 키 활성화")
-                else:
-                    st.error("❌ 사용 가능한 API 키가 없습니다!")
-                    st.warning("💡 config.toml에서 API 키를 설정하거나 할당량을 확인하세요")
-                
-            except Exception as e:
-                st.error(f"❌ 할당량 체크 실패: {str(e)}")
-    else:
-        # 기본 상태 표시 (접혀진 상태일 때)
-        st.success("✅ Gemini 2.5 Flash 활성화")
-        st.info("🔥 고속 생성 모드 준비완료")
+    st.success("✅ Gemini 2.5 Flash 활성화")
+    st.info("🔥 고속 생성 모드 준비완료")
 
 support_locales = [
     "ko-KR",
@@ -1911,50 +1773,14 @@ with tab_main:
             help="구체적이고 흥미로운 주제를 입력하세요. AI가 더 좋은 콘텐츠를 생성합니다."
         ).strip()
         
-        # Quick Action Buttons
-        col_quick1, col_quick2, col_quick3 = st.columns(3)
-        with col_quick1:
-            if st.button("💡 영감 얻기", use_container_width=True):
-                inspiration_topics = [
-                    "성공하는 사람들의 아침 루틴",
-                    "돈을 부르는 5가지 습관",
-                    "스트레스 해소하는 간단한 방법",
-                    "인생을 바꾸는 독서법",
-                    "건강한 다이어트 비법",
-                    "시간 관리의 황금 법칙",
-                    "자신감을 높이는 방법",
-                    "행복한 인간관계 만들기"
-                ]
-                import random
-                random_topic = random.choice(inspiration_topics)
-                st.session_state["video_subject"] = random_topic
-                st.rerun()
-        
-        with col_quick2:
-            if st.button("🔥 트렌드 주제", use_container_width=True):
-                trend_topics = [
-                    "2025년 꼭 해야 할 것들",
-                    "AI 시대 생존법",
-                    "MZ세대가 열광하는 것들",
-                    "부자들만 아는 투자 비밀",
-                    "미니멀 라이프의 진실",
-                    "디지털 디톡스 방법",
-                    "새해 목표 달성법",
-                    "감정 조절의 기술"
-                ]
-                import random
-                random_topic = random.choice(trend_topics)
-                st.session_state["video_subject"] = random_topic
-                st.rerun()
-        
-        with col_quick3:
-            if st.button("📝 대본&키워드생성", use_container_width=True, type="primary"):
-                if not params.video_subject:
-                    st.error("먼저 영상 주제를 입력해주세요!")
-                    st.stop()
-                # Trigger auto generation (existing logic)
-                st.session_state["trigger_auto_generate"] = True
-                st.rerun()
+        # Quick Action Button
+        if st.button("📝 대본&키워드생성", use_container_width=True, type="primary"):
+            if not params.video_subject:
+                st.error("먼저 영상 주제를 입력해주세요!")
+                st.stop()
+            # Trigger auto generation (existing logic)
+            st.session_state["trigger_auto_generate"] = True
+            st.rerun()
 
         # Auto-generation trigger check
         if st.session_state.get("trigger_auto_generate"):
@@ -2176,61 +2002,42 @@ with tab_main:
             
             with col_coupang_links:
                 if enable_coupang:
-                    coupang_links = st.text_area(
-                        "쿠팡 제품 링크 (한 줄에 하나씩)",
-                        placeholder="https://coupa.ng/xxxxx\nhttps://www.coupang.com/vp/products/xxxxx\n\n최대 3개까지 추가 가능합니다",
-                        height=100,
-                        key="coupang_links_input",
-                        help="쿠팡 제품 링크를 한 줄에 하나씩 입력하세요. 단축링크(coupa.ng)와 일반링크 모두 지원합니다."
-                    )
+                    st.warning("⚠️ 쿠팡 파트너스 필수 고지: 영상 설명란에 '이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.' 문구가 자동으로 추가됩니다.")
+                    st.info("💡 쿠팡 제품 페이지에서 정보를 복사하여 입력하세요")
                     
-                    # 링크 검증 및 미리보기
-                    if coupang_links.strip():
-                        links_list = [link.strip() for link in coupang_links.split('\n') if link.strip()]
+                    # 제품 1
+                    with st.expander("🛍️ 제품 1", expanded=True):
+                        product1_link = st.text_input("쿠팡 링크", key="product1_link", placeholder="https://coupa.ng/xxxxx 또는 https://www.coupang.com/...")
+                        if product1_link:
+                            st.markdown(f"[🔗 쿠팡 페이지 열기]({product1_link})")
                         
-                        if len(links_list) > 3:
-                            st.warning("⚠️ 최대 3개까지만 처리됩니다. 처음 3개 링크만 사용됩니다.")
-                            links_list = links_list[:3]
-                        
-                        # 링크 형식 검증
-                        valid_links = []
-                        for link in links_list:
-                            if 'coupang.com' in link or 'coupa.ng' in link:
-                                valid_links.append(link)
-                            else:
-                                st.error(f"❌ 유효하지 않은 쿠팡 링크: {link}")
-                        
-                        if valid_links:
-                            st.success(f"✅ {len(valid_links)}개의 유효한 쿠팡 링크가 설정되었습니다")
+                        product1_name = st.text_input("제품명", key="product1_name", placeholder="쿠팡 페이지에서 제품명 복사")
+                        product1_price = st.text_input("가격", key="product1_price", placeholder="예: 29,900원")
+                        product1_image = st.file_uploader("제품 이미지", type=['jpg', 'jpeg', 'png'], key="product1_image", help="쿠팡 제품 이미지를 우클릭 → 다른 이름으로 저장 → 업로드")
+                    
+                    # 제품 2 (선택)
+                    add_product2 = st.checkbox("➕ 제품 2 추가", key="add_product2")
+                    if add_product2:
+                        with st.expander("🛍️ 제품 2"):
+                            product2_link = st.text_input("쿠팡 링크", key="product2_link", placeholder="https://coupa.ng/xxxxx")
+                            if product2_link:
+                                st.markdown(f"[🔗 쿠팡 페이지 열기]({product2_link})")
                             
-                            # 제품 정보 미리보기 (선택사항)
-                            if st.button("🔍 제품 정보 미리보기", key="preview_products"):
-                                with st.spinner("제품 정보를 가져오는 중..."):
-                                    try:
-                                        from app.services.coupang_partners import get_coupang_manager
-                                        coupang_manager = get_coupang_manager()
-                                        
-                                        for i, link in enumerate(valid_links[:2]):  # 최대 2개만 미리보기
-                                            product_info = coupang_manager.extract_product_info_from_coupang_url(link)
-                                            
-                                            col_preview_img, col_preview_info = st.columns([0.3, 0.7])
-                                            
-                                            with col_preview_img:
-                                                if product_info.get('image_url'):
-                                                    st.image(product_info['image_url'], width=100)
-                                                else:
-                                                    st.write("🖼️ 이미지 없음")
-                                            
-                                            with col_preview_info:
-                                                st.write(f"**{product_info.get('name', '제품명 없음')}**")
-                                                st.write(f"💰 {product_info.get('price', '가격 정보 없음')}")
-                                                st.write(f"⭐ {product_info.get('rating', '평점 정보 없음')}")
-                                            
-                                            if i < len(valid_links) - 1:
-                                                st.markdown("---")
-                                    
-                                    except Exception as e:
-                                        st.error(f"❌ 제품 정보 가져오기 실패: {str(e)}")
+                            product2_name = st.text_input("제품명", key="product2_name", placeholder="제품명 입력")
+                            product2_price = st.text_input("가격", key="product2_price", placeholder="예: 49,900원")
+                            product2_image = st.file_uploader("제품 이미지", type=['jpg', 'jpeg', 'png'], key="product2_image")
+                    
+                    # 제품 3 (선택)
+                    add_product3 = st.checkbox("➕ 제품 3 추가", key="add_product3")
+                    if add_product3:
+                        with st.expander("🛍️ 제품 3"):
+                            product3_link = st.text_input("쿠팡 링크", key="product3_link", placeholder="https://coupa.ng/xxxxx")
+                            if product3_link:
+                                st.markdown(f"[🔗 쿠팡 페이지 열기]({product3_link})")
+                            
+                            product3_name = st.text_input("제품명", key="product3_name", placeholder="제품명 입력")
+                            product3_price = st.text_input("가격", key="product3_price", placeholder="예: 39,900원")
+                            product3_image = st.file_uploader("제품 이미지", type=['jpg', 'jpeg', 'png'], key="product3_image")
                 else:
                     st.info("💡 제품 오버레이를 활성화하면 쿠팡 제품 링크를 추가할 수 있습니다")
             
@@ -4168,11 +3975,15 @@ def generate_single_video(title: str, video_type: str, language: str, duration: 
             raise Exception("대본 생성 실패")
         
         # 2. VideoParams 설정
+        # 언어별 음성 속도 설정
+        voice_rate = 1.3 if language == "ko-KR" else 1.0  # 한국어 1.3배속, 영어 1.0배속
+        
         params_dict = {
             'video_subject': title,
             'video_script': script,
             'video_language': language,
             'voice_name': 'casual' if video_type == 'shorts' else 'professional',
+            'voice_rate': voice_rate,  # 언어별 속도 적용
             'bgm_type': 'random',
             'bgm_volume': 0.2,
             'subtitle_enabled': True,
@@ -4984,12 +4795,13 @@ with tab_settings:
         with col_audio_settings:
             st.markdown("#### 🎚️ 오디오 조정")
             
-            # 고정값 설정 (변경 불가)
-            params.voice_rate = 1.0  # 기본 속도
-            params.voice_volume = 1.0  # 기본 볼륨
+            # 언어별 음성 속도 자동 설정
+            if params.video_language == "ko-KR":
+                params.voice_rate = 1.3  # 한국어 1.3배속
+            else:
+                params.voice_rate = 1.0  # 영어 1.0배속
             
-            # 언어별 속도는 코드에서 자동 적용
-            # 한국어: 1.3배속, 영어: 1.0배속
+            params.voice_volume = 1.0  # 기본 볼륨
             
             st.info("""
             **🎯 최적화된 음성 설정 (자동 적용)**
@@ -5001,8 +4813,8 @@ with tab_settings:
 
             st.markdown("#### 🎵 배경음악 설정")
             
-            # BGM 볼륨 고정
-            params.bgm_volume = 0.03
+            # BGM 볼륨 설정
+            params.bgm_volume = 0.1
             
             bgm_options = [
                 ("🚫 배경음악 없음", ""),
@@ -5834,29 +5646,106 @@ if not st.session_state.get("generation_in_progress", False) and 'start_button' 
     # 쿠팡파트너스 오버레이 데이터 준비
     coupang_overlay_data = None
     if st.session_state.get("enable_coupang_overlay", False):
-        coupang_links_input = st.session_state.get("coupang_links_input", "")
-        if coupang_links_input.strip():
-            try:
-                from app.services.coupang_partners import get_coupang_manager
+        try:
+            from loguru import logger
+            import tempfile
+            from PIL import Image
+            
+            products = []
+            
+            # 제품 1
+            product1_image = st.session_state.get("product1_image")
+            product1_name = st.session_state.get("product1_name", "").strip()
+            product1_price = st.session_state.get("product1_price", "").strip()
+            product1_link = st.session_state.get("product1_link", "").strip()
+            
+            if product1_image is not None:
+                # 업로드된 이미지를 임시 파일로 저장
+                with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as tmp_file:
+                    Image.open(product1_image).save(tmp_file.name)
+                    image_path = tmp_file.name
                 
-                # 링크 파싱
-                links_list = [link.strip() for link in coupang_links_input.split('\n') if link.strip()]
-                valid_links = [link for link in links_list if 'coupang.com' in link or 'coupa.ng' in link][:3]
+                products.append({
+                    'name': product1_name if product1_name else '쿠팡 제품',
+                    'price': product1_price if product1_price else '',
+                    'rating': '',
+                    'image_path': image_path,
+                    'image_url': None,
+                    'coupang_url': product1_link if product1_link else '#',
+                    'display_text': ''
+                })
+                logger.info(f"제품 1 추가: {product1_name} - {product1_price}")
+            
+            # 제품 2 (선택)
+            if st.session_state.get("add_product2", False):
+                product2_image = st.session_state.get("product2_image")
+                product2_name = st.session_state.get("product2_name", "").strip()
+                product2_price = st.session_state.get("product2_price", "").strip()
+                product2_link = st.session_state.get("product2_link", "").strip()
                 
-                if valid_links:
-                    st.info(f"🛒 {len(valid_links)}개 쿠팡 제품 정보 수집 중...")
-                    coupang_manager = get_coupang_manager()
-                    coupang_overlay_data = coupang_manager.create_product_overlay_data(valid_links)
-                    st.success(f"✅ 쿠팡 제품 오버레이 준비 완료!")
+                if product2_image is not None:
+                    with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as tmp_file:
+                        Image.open(product2_image).save(tmp_file.name)
+                        image_path = tmp_file.name
                     
-            except Exception as e:
-                st.warning(f"⚠️ 쿠팡 제품 정보 수집 실패: {str(e)}")
-                st.info("💡 제품 오버레이 없이 영상을 생성합니다")
-                coupang_overlay_data = None
+                    products.append({
+                        'name': product2_name if product2_name else '쿠팡 제품',
+                        'price': product2_price if product2_price else '',
+                        'rating': '',
+                        'image_path': image_path,
+                        'image_url': None,
+                        'coupang_url': product2_link if product2_link else '#',
+                        'display_text': ''
+                    })
+                    logger.info(f"제품 2 추가: {product2_name} - {product2_price}")
+            
+            # 제품 3 (선택)
+            if st.session_state.get("add_product3", False):
+                product3_image = st.session_state.get("product3_image")
+                product3_name = st.session_state.get("product3_name", "").strip()
+                product3_price = st.session_state.get("product3_price", "").strip()
+                product3_link = st.session_state.get("product3_link", "").strip()
+                
+                if product3_image is not None:
+                    with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as tmp_file:
+                        Image.open(product3_image).save(tmp_file.name)
+                        image_path = tmp_file.name
+                    
+                    products.append({
+                        'name': product3_name if product3_name else '쿠팡 제품',
+                        'price': product3_price if product3_price else '',
+                        'rating': '',
+                        'image_path': image_path,
+                        'image_url': None,
+                        'coupang_url': product3_link if product3_link else '#',
+                        'display_text': ''
+                    })
+                    logger.info(f"제품 3 추가: {product3_name} - {product3_price}")
+            
+            if products:
+                coupang_overlay_data = products
+                logger.info(f"✅ 쿠팡 오버레이 데이터 생성 완료: {len(coupang_overlay_data)}개")
+                # UI 메시지 제거 - 진행률 표시 방해 방지
+            else:
+                logger.warning("⚠️ 제품 이미지가 업로드되지 않음")
+                # UI 메시지 제거 - 진행률 표시 방해 방지
+                    
+        except Exception as e:
+            logger.error(f"❌ 쿠팡 제품 정보 처리 실패: {str(e)}")
+            # UI 메시지 제거 - 진행률 표시 방해 방지
+            coupang_overlay_data = None
     
     # Task 1: Korean (Original)
     korean_params = params.copy()
     korean_params.coupang_overlay_data = coupang_overlay_data  # 쿠팡 오버레이 데이터 추가
+    
+    # 디버그 로그
+    from loguru import logger
+    logger.info(f"🔍 korean_params.coupang_overlay_data 설정:")
+    logger.info(f"  - hasattr: {hasattr(korean_params, 'coupang_overlay_data')}")
+    logger.info(f"  - is not None: {korean_params.coupang_overlay_data is not None if hasattr(korean_params, 'coupang_overlay_data') else False}")
+    logger.info(f"  - 길이: {len(korean_params.coupang_overlay_data) if hasattr(korean_params, 'coupang_overlay_data') and korean_params.coupang_overlay_data else 0}")
+    
     tasks_to_run.append({
         "label": "🇰🇷 한국어 버전",
         "params": korean_params,
@@ -6114,7 +6003,29 @@ if not st.session_state.get("generation_in_progress", False) and 'start_button' 
                                                 youtube = get_authenticated_service(client_secrets_file, token_file)
                                                 title_subject = task_params.video_subject
                                                 title = f"{st.session_state.get('yt_title_prefix', '#Shorts')} {title_subject}"
+                                                
+                                                # 기본 설명 생성
                                                 description = f"Generated youtube-auto AI\n\nSubject: {title_subject}"
+                                                
+                                                # 쿠팡 링크 추가 (있는 경우)
+                                                if hasattr(task_params, 'coupang_overlay_data') and task_params.coupang_overlay_data:
+                                                    description += "\n\n━━━━━━━━━━━━━━━━━━━━━━"
+                                                    description += "\n🛒 영상 속 제품 정보\n"
+                                                    for i, product in enumerate(task_params.coupang_overlay_data, 1):
+                                                        product_name = product.get('name', '제품')
+                                                        product_price = product.get('price', '')
+                                                        product_url = product.get('coupang_url', '')
+                                                        
+                                                        description += f"\n📦 제품 {i}: {product_name}"
+                                                        if product_price:
+                                                            description += f"\n💰 가격: {product_price}"
+                                                        if product_url:
+                                                            description += f"\n🔗 구매링크: {product_url}"
+                                                        description += "\n"
+                                                    
+                                                    description += "\n━━━━━━━━━━━━━━━━━━━━━━"
+                                                    description += "\n⚠️ 이 포스팅은 쿠팡 파트너스 활동의 일환으로,"
+                                                    description += "\n이에 따른 일정액의 수수료를 제공받습니다."
                                                 
                                                 # Use existing video_terms (search keywords) as YouTube tags
                                                 video_terms_value = getattr(task_params, 'video_terms', None)
@@ -6213,6 +6124,26 @@ if not st.session_state.get("generation_in_progress", False) and 'start_button' 
                                                 if vid_id:
                                                     video_url = f"https://youtube.com/watch?v={vid_id}"
                                                     status_text.success(f"🎉 업로드 성공! [영상 보기]({video_url})")
+                                                    
+                                                    # 쿠팡 링크가 있으면 댓글 추가
+                                                    if hasattr(task_params, 'coupang_overlay_data') and task_params.coupang_overlay_data:
+                                                        try:
+                                                            from app.utils.youtube import add_pinned_comment
+                                                            
+                                                            comment_text = "🛒 영상 관련 제품 링크:\n\n"
+                                                            for i, product in enumerate(task_params.coupang_overlay_data, 1):
+                                                                product_name = product.get('name', '제품')
+                                                                product_url = product.get('coupang_url', '')
+                                                                if product_url:
+                                                                    comment_text += f"✅ {product_name}\n👉 {product_url}\n\n"
+                                                            
+                                                            comment_text += "⚠️ 이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."
+                                                            
+                                                            if add_pinned_comment(youtube, vid_id, comment_text):
+                                                                logger.info("✅ 쿠팡 링크 댓글 추가 완료")
+                                                                st.info("💬 제품 링크가 댓글로 추가되었습니다. YouTube Studio에서 고정해주세요.")
+                                                        except Exception as comment_error:
+                                                            logger.warning(f"댓글 추가 실패 (영상 업로드는 성공): {comment_error}")
                                                 else:
                                                     status_text.error("❌ 업로드 실패")
                                             except Exception as e:

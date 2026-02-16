@@ -169,25 +169,22 @@ def run_video_generation(task_id: str, params: VideoParams, auto_upload: bool = 
                 # 태그 생성
                 script = params.video_script or ""
                 try:
-                    english_terms = llm.generate_terms(title_subject, script, 10) or []
+                    # 한글 영상은 처음부터 한글 태그 생성
+                    korean_terms = llm.generate_korean_terms(title_subject, script, 10) or []
                     
-                    if english_terms:
-                        try:
-                            korean_terms = llm.translate_terms_to_korean(english_terms)
-                            keywords = ", ".join(korean_terms + [str(title_subject).strip()])
-                            logger.info(f"🇰🇷 Successfully translated tags: {keywords}")
-                        except Exception as e:
-                            logger.error(f"Translation failed: {e}, using fallback Korean tags")
-                            fallback_terms = ["정보", "팁", "노하우", "가이드", "도움"]
-                            keywords = ", ".join(fallback_terms + [str(title_subject).strip()])
+                    if korean_terms:
+                        keywords = ", ".join(korean_terms + [str(title_subject).strip()])
+                        logger.info(f"🇰🇷 Generated Korean tags: {keywords}")
                     else:
                         fallback_terms = ["정보", "팁", "노하우", "가이드", "도움"]
                         keywords = ", ".join(fallback_terms + [str(title_subject).strip()])
+                        logger.info(f"🇰🇷 Using fallback Korean tags: {keywords}")
                         
                     logger.info(f"🏷️ Final Korean tags: {keywords}")
                 except Exception as e:
                     logger.warning(f"Tag generation failed: {e}")
-                    keywords = str(title_subject).strip()
+                    fallback_terms = ["정보", "팁", "노하우", "가이드", "도움"]
+                    keywords = ", ".join(fallback_terms + [str(title_subject).strip()])
                     logger.info(f"🏷️ Using fallback keywords: {keywords}")
                 
                 tasks[task_id]["message"] = "유튜브 업로드 중 (한국어)..."
@@ -485,7 +482,7 @@ def run_video_generation(task_id: str, params: VideoParams, auto_upload: bool = 
                     voice_volume=1.0,
                     bgm_type="random",
                     bgm_file="",
-                    bgm_volume=0.03,  # 배경 음악 볼륨 (음성이 잘 들리도록)
+                    bgm_volume=0.1,  # 배경 음악 볼륨
                     subtitle_enabled=True,
                     subtitle_position="custom",
                     custom_position=75.0,
@@ -682,7 +679,7 @@ async def generate_video(request: VideoRequest, background_tasks: BackgroundTask
             voice_volume=1.0,
             bgm_type="random",
             bgm_file="",
-            bgm_volume=0.03,  # 배경 음악 볼륨 (음성이 잘 들리도록)
+            bgm_volume=0.1,  # 배경 음악 볼륨
             subtitle_enabled=True,
             subtitle_position="custom",
             custom_position=75.0,

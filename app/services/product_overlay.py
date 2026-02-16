@@ -3,8 +3,7 @@
 """
 import os
 from typing import List, Dict, Optional, Tuple
-from moviepy.editor import VideoFileClip, ImageClip, CompositeVideoClip, TextClip
-from moviepy.video.fx.resize import resize
+from moviepy import VideoFileClip, ImageClip, CompositeVideoClip, TextClip
 from loguru import logger
 from PIL import Image, ImageDraw, ImageFont
 import tempfile
@@ -14,9 +13,9 @@ class ProductOverlayManager:
     """제품 오버레이 관리자"""
     
     def __init__(self):
-        self.overlay_size = (120, 120)  # 오버레이 크기 (픽셀)
-        self.overlay_position = ('right', 'bottom')  # 위치
-        self.overlay_margin = (20, 100)  # 여백 (x, y)
+        self.overlay_size = (180, 180)  # 오버레이 크기 증가 (더 눈에 띄게)
+        self.overlay_position = ('center', 'bottom')  # 하단 중앙으로 변경
+        self.overlay_margin = (0, 150)  # 여백 (x는 중앙이므로 0, y는 자막 위)
         self.display_duration = 5.0  # 표시 시간 (초)
         
     def create_product_overlay_image(
@@ -27,12 +26,12 @@ class ProductOverlayManager:
         overlay_size: Tuple[int, int] = None
     ) -> str:
         """
-        제품 이미지와 정보를 합쳐서 오버레이용 이미지 생성
+        제품 이미지를 오버레이용으로 간단하게 처리 (이미지만 표시)
         
         Args:
             product_image_path: 제품 이미지 파일 경로
-            product_name: 제품명
-            product_price: 가격
+            product_name: 제품명 (사용 안 함)
+            product_price: 가격 (사용 안 함)
             overlay_size: 오버레이 크기 (width, height)
             
         Returns:
@@ -42,7 +41,7 @@ class ProductOverlayManager:
             overlay_size = self.overlay_size
             
         try:
-            logger.info(f"제품 오버레이 이미지 생성 중: {product_name}")
+            logger.info(f"제품 오버레이 이미지 생성 중 (이미지만): {product_name}")
             
             # 제품 이미지 로드 및 리사이즈
             product_img = Image.open(product_image_path)
@@ -55,70 +54,30 @@ class ProductOverlayManager:
             top = (height - size) // 2
             product_img = product_img.crop((left, top, left + size, top + size))
             
-            # 오버레이 크기로 리사이즈 (상품 이미지는 전체의 70% 크기)
-            product_size = int(overlay_size[0] * 0.7)
-            product_img = product_img.resize((product_size, product_size), Image.Resampling.LANCZOS)
+            # 오버레이 크기로 리사이즈
+            product_img = product_img.resize(overlay_size, Image.Resampling.LANCZOS)
             
-            # 오버레이 배경 생성 (둥근 모서리)
+            # 완전한 원형 마스크 생성
             overlay_img = Image.new('RGBA', overlay_size, (0, 0, 0, 0))
+            
+            # 원형 마스크 생성
+            mask = Image.new('L', overlay_size, 0)
+            draw = ImageDraw.Draw(mask)
+            # 완전한 원 그리기
+            draw.ellipse([0, 0, overlay_size[0], overlay_size[1]], fill=255)
+            
+            # 제품 이미지에 마스크 적용
+            overlay_img.paste(product_img, (0, 0), mask)
+            
+            # 흰색 테두리 추가 (더 두껍게)
             draw = ImageDraw.Draw(overlay_img)
-            
-            # 반투명 배경 (둥근 사각형)
-            corner_radius = 15
-            draw.rounded_rectangle(
-                [0, 0, overlay_size[0], overlay_size[1]], 
-                radius=corner_radius,
-                fill=(255, 255, 255, 200)  # 반투명 흰색
+            draw.ellipse(
+                [2, 2, overlay_size[0]-3, overlay_size[1]-3], 
+                outline=(255, 255, 255, 255),
+                width=4
             )
             
-            # 테두리 추가
-            draw.rounded_rectangle(
-                [0, 0, overlay_size[0], overlay_size[1]], 
-                radius=corner_radius,
-                outline=(200, 200, 200, 255),
-                width=2
-            )
-            
-            # 제품 이미지 붙이기 (중앙 상단)
-            product_x = (overlay_size[0] - product_size) // 2
-            product_y = 10
-            overlay_img.paste(product_img, (product_x, product_y), product_img)
-            
-            # 텍스트 추가 (제품명과 가격)
-            try:
-                # 시스템 폰트 사용 시도
-                font_small = ImageFont.truetype("arial.ttf", 10)
-                font_price = ImageFont.truetype("arial.ttf", 12)
-            except:
-                # 기본 폰트 사용
-                font_small = ImageFont.load_default()
-                font_price = ImageFont.load_default()
-            
-            # 제품명 (줄임표 처리)
-            name_text = product_name[:15] + "..." if len(product_name) > 15 else product_name
-            text_y = product_y + product_size + 5
-            
-            # 텍스트 배경 (가독성 향상)
-            text_bbox = draw.textbbox((0, 0), name_text, font=font_small)
-            text_width = text_bbox[2] - text_bbox[0]
-            text_x = (overlay_size[0] - text_width) // 2
-            
-            draw.text((text_x, text_y), name_text, fill=(50, 50, 50, 255), font=font_small)
-            
-            # 가격 (강조)
-            price_text = product_price
-            price_bbox = draw.textbbox((0, 0), price_text, font=font_price)
-            price_width = price_bbox[2] - price_bbox[0]
-            price_x = (overlay_size[0] - price_width) // 2
-            price_y = text_y + 15
-            
-            draw.text((price_x, price_y), price_text, fill=(255, 100, 100, 255), font=font_price)
-            
-            # 클릭 유도 아이콘 (🛒)
-            cart_text = "🛒"
-            cart_x = overlay_size[0] - 25
-            cart_y = 5
-            draw.text((cart_x, cart_y), cart_text, fill=(50, 150, 50, 255))
+            # 쇼핑백 아이콘 제거 (깔끔하게)
             
             # 임시 파일로 저장
             with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as temp_file:
@@ -151,15 +110,26 @@ class ProductOverlayManager:
         Returns:
             오버레이가 추가된 영상 파일 경로
         """
+        logger.info(f"🎬 add_product_overlays_to_video 호출됨")
+        logger.info(f"  - video_path: {video_path}")
+        logger.info(f"  - output_path: {output_path}")
+        logger.info(f"  - product_overlays 개수: {len(product_overlays) if product_overlays else 0}")
+        logger.info(f"  - video_duration: {video_duration}")
+        
         if not product_overlays:
             logger.info("제품 오버레이가 없어 원본 영상 반환")
             return video_path
         
         try:
-            logger.info(f"영상에 제품 오버레이 추가 중: {len(product_overlays)}개 제품")
+            logger.info(f"🎨 영상에 제품 오버레이 추가 중: {len(product_overlays)}개 제품")
+            logger.info(f"제품 목록:")
+            for i, p in enumerate(product_overlays, 1):
+                logger.info(f"  {i}. {p.get('name', 'Unknown')} - {p.get('price', 'N/A')}")
             
             # 원본 영상 로드
+            logger.info(f"원본 영상 로드 중: {video_path}")
             main_video = VideoFileClip(video_path)
+            logger.info(f"원본 영상 로드 완료 - 크기: {main_video.size}, 길이: {main_video.duration}초")
             
             # 오버레이 클립들 생성
             overlay_clips = []
@@ -251,12 +221,12 @@ class ProductOverlayManager:
             return video_path
     
     def _calculate_overlay_position(self, video_size: Tuple[int, int]) -> Tuple[int, int]:
-        """오버레이 위치 계산"""
+        """오버레이 위치 계산 - 하단 중앙"""
         video_width, video_height = video_size
         
-        # 우하단 배치
-        x = video_width - self.overlay_size[0] - self.overlay_margin[0]
-        y = video_height - self.overlay_size[1] - self.overlay_margin[1]
+        # 하단 중앙 배치
+        x = (video_width - self.overlay_size[0]) // 2  # 중앙 정렬
+        y = video_height - self.overlay_size[1] - self.overlay_margin[1]  # 하단에서 여백
         
         return (x, y)
 
