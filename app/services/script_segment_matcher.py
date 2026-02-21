@@ -64,7 +64,7 @@ class ScriptSegmentMatcher:
     
     def generate_segment_keywords(self, segment: str, amount: int = 3) -> List[str]:
         """
-        세그먼트에서 배경영상 검색용 키워드 생성
+        세그먼트에서 배경영상 검색용 키워드 생성 (시각적 요소 중심)
         
         Args:
             segment: 대본 세그먼트
@@ -74,27 +74,65 @@ class ScriptSegmentMatcher:
             키워드 리스트
         """
         try:
-            # LLM을 사용하여 세그먼트별 키워드 생성
-            keywords = llm.generate_terms(
-                video_subject="",  # 세그먼트 자체가 주제
-                video_script=segment,
-                amount=amount
-            )
+            # 시각적 배경영상에 적합한 키워드 생성을 위한 특별 프롬프트
+            prompt = f"""
+다음 대본 내용에 가장 잘 어울리는 배경영상을 찾기 위한 검색 키워드를 생성하세요.
+
+대본: {segment}
+
+요구사항:
+1. 시각적으로 표현 가능한 구체적인 명사나 장면을 선택하세요
+2. 추상적인 개념보다는 실제 촬영 가능한 장면을 우선하세요
+3. 영어 키워드로 생성하세요 (Pexels 검색용)
+4. {amount}개의 키워드만 생성하세요
+
+좋은 예시:
+- "건강한 식습관" → "healthy food", "fresh vegetables", "cooking"
+- "아침 루틴" → "morning routine", "sunrise", "coffee"
+- "스트레스 해소" → "meditation", "nature walk", "relaxation"
+- "운동의 중요성" → "fitness", "gym workout", "running"
+
+{amount}개의 영어 키워드를 쉼표로 구분하여 나열하세요:
+"""
             
-            if keywords and len(keywords) > 0:
-                logger.info(f"Generated keywords for segment: {keywords}")
-                return keywords
-            else:
-                logger.warning(f"No keywords generated for segment, using fallback")
-                return self._fallback_keywords(segment, amount)
+            response = llm._generate_response(prompt)
+            
+            if response:
+                # 응답 정리
+                cleaned = response.strip().lower()
+                
+                # 불필요한 접두사 제거
+                prefixes = ["keywords:", "tags:", "검색어:", "키워드:"]
+                for p in prefixes:
+                    if cleaned.startswith(p):
+                        cleaned = cleaned[len(p):].strip()
+                
+                # 키워드 추출
+                keywords = [k.strip() for k in cleaned.split(",") if k.strip()]
+                
+                # 유효성 검사 (영어 키워드, 적절한 길이)
+                valid_keywords = []
+                for kw in keywords:
+                    # 영어 단어만, 1-4단어 길이
+                    if (re.match(r'^[a-z\s]+$', kw) and 
+                        1 <= len(kw.split()) <= 4 and 
+                        len(kw) >= 3):
+                        valid_keywords.append(kw)
+                
+                if len(valid_keywords) >= amount:
+                    logger.info(f"Generated visual keywords for segment: {valid_keywords[:amount]}")
+                    return valid_keywords[:amount]
+            
+            logger.warning(f"LLM keywords insufficient, using enhanced fallback")
+            return self._enhanced_fallback_keywords(segment, amount)
                 
         except Exception as e:
             logger.error(f"Failed to generate keywords for segment: {e}")
-            return self._fallback_keywords(segment, amount)
+            return self._enhanced_fallback_keywords(segment, amount)
     
-    def _fallback_keywords(self, segment: str, amount: int = 3) -> List[str]:
+    def _enhanced_fallback_keywords(self, segment: str, amount: int = 3) -> List[str]:
         """
-        키워드 생성 실패 시 폴백 키워드 생성
+        개선된 폴백 키워드 생성 (시각적 요소 중심)
         
         Args:
             segment: 대본 세그먼트
@@ -103,47 +141,106 @@ class ScriptSegmentMatcher:
         Returns:
             폴백 키워드 리스트
         """
-        # 간단한 키워드 추출 (명사 위주)
-        common_keywords = {
+        # 시각적으로 표현 가능한 키워드 매핑 (한글 → 영어)
+        visual_keywords = {
             # 사람/행동
-            '사람': 'people', '남자': 'man', '여자': 'woman', '아이': 'child',
-            '운동': 'exercise', '걷기': 'walking', '달리기': 'running',
-            '공부': 'studying', '일': 'working', '요리': 'cooking',
+            '사람': ['people', 'person', 'human'],
+            '남자': ['man', 'male', 'businessman'],
+            '여자': ['woman', 'female', 'businesswoman'],
+            '아이': ['child', 'kid', 'children'],
+            '가족': ['family', 'parents', 'together'],
+            '친구': ['friends', 'friendship', 'social'],
+            
+            # 운동/건강
+            '운동': ['exercise', 'fitness', 'workout'],
+            '걷기': ['walking', 'walk', 'pedestrian'],
+            '달리기': ['running', 'jogging', 'runner'],
+            '요가': ['yoga', 'stretching', 'meditation'],
+            '헬스': ['gym', 'fitness', 'training'],
+            '건강': ['health', 'wellness', 'healthy'],
+            
+            # 일상/활동
+            '공부': ['studying', 'learning', 'education'],
+            '일': ['working', 'office', 'business'],
+            '요리': ['cooking', 'kitchen', 'food preparation'],
+            '독서': ['reading', 'book', 'library'],
+            '회의': ['meeting', 'conference', 'discussion'],
+            '쇼핑': ['shopping', 'store', 'retail'],
             
             # 장소
-            '집': 'home', '사무실': 'office', '학교': 'school', '도서관': 'library',
-            '공원': 'park', '거리': 'street', '카페': 'cafe', '식당': 'restaurant',
+            '집': ['home', 'house', 'interior'],
+            '사무실': ['office', 'workplace', 'desk'],
+            '카페': ['cafe', 'coffee shop', 'coffee'],
+            '공원': ['park', 'outdoor', 'green space'],
+            '거리': ['street', 'city', 'urban'],
+            '해변': ['beach', 'ocean', 'seaside'],
             
             # 자연
-            '하늘': 'sky', '바다': 'ocean', '산': 'mountain', '숲': 'forest',
-            '나무': 'tree', '꽃': 'flower', '햇빛': 'sunlight', '구름': 'cloud',
+            '하늘': ['sky', 'clouds', 'blue sky'],
+            '바다': ['ocean', 'sea', 'water'],
+            '산': ['mountain', 'hiking', 'nature'],
+            '숲': ['forest', 'trees', 'woods'],
+            '나무': ['tree', 'nature', 'green'],
+            '꽃': ['flower', 'blossom', 'garden'],
+            '햇빛': ['sunlight', 'sunshine', 'bright'],
+            '일몰': ['sunset', 'dusk', 'evening'],
+            '일출': ['sunrise', 'dawn', 'morning'],
             
             # 음식
-            '음식': 'food', '과일': 'fruit', '야채': 'vegetable', '식사': 'meal',
+            '음식': ['food', 'meal', 'dish'],
+            '과일': ['fruit', 'fresh fruit', 'healthy'],
+            '야채': ['vegetable', 'fresh vegetables', 'salad'],
+            '커피': ['coffee', 'espresso', 'cafe'],
+            '식사': ['meal', 'dining', 'eating'],
             
-            # 기술/비즈니스
-            '컴퓨터': 'computer', '노트북': 'laptop', '스마트폰': 'smartphone',
-            '회의': 'meeting', '프레젠테이션': 'presentation',
+            # 기술/현대
+            '컴퓨터': ['computer', 'laptop', 'technology'],
+            '스마트폰': ['smartphone', 'mobile', 'phone'],
+            '노트북': ['laptop', 'computer', 'working'],
+            '태블릿': ['tablet', 'digital', 'device'],
             
-            # 감정/상태
-            '행복': 'happiness', '성공': 'success', '건강': 'health',
-            '스트레스': 'stress', '휴식': 'relaxation'
+            # 감정/분위기
+            '행복': ['happiness', 'joy', 'smiling'],
+            '평온': ['peaceful', 'calm', 'relaxation'],
+            '집중': ['focus', 'concentration', 'working'],
+            '휴식': ['rest', 'relaxation', 'leisure'],
+            '명상': ['meditation', 'mindfulness', 'zen'],
+            
+            # 시간대
+            '아침': ['morning', 'sunrise', 'breakfast'],
+            '저녁': ['evening', 'sunset', 'night'],
+            '밤': ['night', 'dark', 'nighttime'],
+            
+            # 계절/날씨
+            '봄': ['spring', 'blossom', 'flowers'],
+            '여름': ['summer', 'sunny', 'beach'],
+            '가을': ['autumn', 'fall', 'leaves'],
+            '겨울': ['winter', 'snow', 'cold'],
+            '비': ['rain', 'rainy', 'weather'],
+            '눈': ['snow', 'winter', 'snowy']
         }
         
         keywords = []
         segment_lower = segment.lower()
         
-        for korean, english in common_keywords.items():
+        # 세그먼트에서 키워드 찾기
+        for korean, english_list in visual_keywords.items():
             if korean in segment:
-                keywords.append(english)
+                # 각 한글 키워드에 대해 가장 적합한 영어 키워드 선택
+                keywords.append(english_list[0])
                 if len(keywords) >= amount:
                     break
         
-        # 키워드가 부족하면 일반적인 키워드 추가
+        # 키워드가 부족하면 일반적인 시각적 키워드 추가
         if len(keywords) < amount:
-            default_keywords = ['lifestyle', 'people', 'nature', 'city', 'work']
-            keywords.extend(default_keywords[:amount - len(keywords)])
+            default_visual = ['lifestyle', 'people', 'nature', 'modern', 'daily life', 'city', 'work', 'home']
+            for kw in default_visual:
+                if kw not in keywords:
+                    keywords.append(kw)
+                    if len(keywords) >= amount:
+                        break
         
+        logger.info(f"Enhanced fallback keywords: {keywords[:amount]}")
         return keywords[:amount]
     
     def match_segments_to_videos(

@@ -967,7 +967,7 @@ def generate_video(
             else:
                 # 단일 자막 (한글 영상)
                 margin_v = 35 if aspect != VideoAspect.portrait else 100  # 조금만 아래로 (120 → 100)
-                style = f"Fontname=Malgun Gothic,FontSize=16,PrimaryColour=&HFFFFFF,OutlineColour=&H000000,BorderStyle=1,Outline=1,Shadow=0,MarginV={margin_v},Alignment=2"
+                style = f"Fontname=Malgun Gothic,FontSize=14,PrimaryColour=&HFFFFFF,OutlineColour=&H000000,BorderStyle=1,Outline=1,Shadow=0,MarginV={margin_v},Alignment=2"  # 16 → 14
                 filter_complex.append(f"[{current_v}]subtitles='{sub_path_escaped}':force_style='{style}'[v_out]")
                 current_v = "v_out"
             

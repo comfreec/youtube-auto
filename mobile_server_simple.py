@@ -482,7 +482,7 @@ def run_video_generation(task_id: str, params: VideoParams, auto_upload: bool = 
                     voice_volume=1.0,
                     bgm_type="random",
                     bgm_file="",
-                    bgm_volume=0.1,  # 배경 음악 볼륨
+                    bgm_volume=0.05,  # 배경 음악 볼륨 (0.1 → 0.05)
                     subtitle_enabled=True,
                     subtitle_position="custom",
                     custom_position=75.0,
@@ -679,7 +679,7 @@ async def generate_video(request: VideoRequest, background_tasks: BackgroundTask
             voice_volume=1.0,
             bgm_type="random",
             bgm_file="",
-            bgm_volume=0.1,  # 배경 음악 볼륨
+            bgm_volume=0.05,  # 배경 음악 볼륨 (0.1 → 0.05)
             subtitle_enabled=True,
             subtitle_position="custom",
             custom_position=75.0,

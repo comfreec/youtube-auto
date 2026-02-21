@@ -324,7 +324,9 @@ def generate_subtitle(task_id, params, video_script, sub_maker, audio_file):
                 _sync_korean_to_english_timing(subtitle_path, korean_subtitle_path)
                 logger.info(f"✅ Korean subtitle timing adjusted to English subtitle")
             except Exception as e:
-                logger.warning(f"⚠️ Failed to sync subtitle timing: {str(e)}")
+                logger.error(f"❌ Failed to sync subtitle timing: {str(e)}")
+                # AI 매칭 실패 시 영어 영상 생성 중단
+                raise Exception(f"이중 자막 동기화 실패 (API 할당량 소진 가능성): {str(e)}")
 
     return subtitle_path
 
@@ -333,6 +335,8 @@ def _sync_korean_to_english_timing(english_srt_path, korean_srt_path):
     """
     한글 자막의 타이밍을 영어 자막에 맞춰 조정 (AI 기반 의미 매칭)
     영어 자막과 한글 자막을 의미 단위로 매칭하여 더 자연스러운 이중 자막 생성
+    
+    AI 매칭 실패 시 예외 발생 (폴백 없음)
     """
     # 영어 자막 파싱 (타이밍 기준)
     english_subtitles = []
@@ -356,17 +360,16 @@ def _sync_korean_to_english_timing(english_srt_path, korean_srt_path):
                 korean_subtitles.append(text)
     
     # AI를 사용하여 영어-한글 자막 매칭
-    try:
-        logger.info(f"🤖 AI 기반 자막 매칭 시작: 영어 {len(english_subtitles)}개, 한글 {len(korean_subtitles)}개")
-        
-        # 영어 전체 텍스트와 한글 전체 텍스트
-        english_full = '\n'.join([text for _, text in english_subtitles])
-        korean_full = '\n'.join(korean_subtitles)
-        
-        # AI에게 매칭 요청
-        from app.services import llm
-        
-        prompt = f"""You are a subtitle synchronization expert. Match Korean subtitles to English subtitles based on meaning.
+    logger.info(f"🤖 AI 기반 자막 매칭 시작: 영어 {len(english_subtitles)}개, 한글 {len(korean_subtitles)}개")
+    
+    # 영어 전체 텍스트와 한글 전체 텍스트
+    english_full = '\n'.join([text for _, text in english_subtitles])
+    korean_full = '\n'.join(korean_subtitles)
+    
+    # AI에게 매칭 요청
+    from app.services import llm
+    
+    prompt = f"""You are a subtitle synchronization expert. Match Korean subtitles to English subtitles based on meaning.
 
 English subtitles ({len(english_subtitles)} segments):
 {english_full}
@@ -378,63 +381,33 @@ Task: Split the Korean text into exactly {len(english_subtitles)} segments that 
 Return ONLY the Korean text segments, one per line, in order. No numbering, no explanations.
 Each line should correspond to one English subtitle segment."""
 
-        response = llm._generate_response(prompt)
-        
-        if response and not response.startswith("Error"):
-            # AI 응답을 줄 단위로 분할
-            matched_korean = [line.strip() for line in response.strip().split('\n') if line.strip()]
-            
-            # 개수가 맞는지 확인
-            if len(matched_korean) == len(english_subtitles):
-                logger.info(f"✅ AI 매칭 성공: {len(matched_korean)}개 세그먼트")
-                
-                # 매칭된 한글 자막으로 동기화
-                synced_content = []
-                for i, (timing, _) in enumerate(english_subtitles):
-                    if i < len(matched_korean):
-                        synced_content.append(f"{i+1}\n{timing}\n{matched_korean[i]}")
-                
-                # 동기화된 한글 자막 저장
-                with open(korean_srt_path, 'w', encoding='utf-8') as f:
-                    f.write('\n\n'.join(synced_content) + '\n')
-                
-                logger.info(f"✅ 의미 기반 자막 동기화 완료")
-                return
-            else:
-                logger.warning(f"⚠️ AI 매칭 개수 불일치: 예상 {len(english_subtitles)}, 실제 {len(matched_korean)}")
-        else:
-            logger.warning(f"⚠️ AI 매칭 실패, 폴백 방식 사용")
+    response = llm._generate_response(prompt)
     
-    except Exception as e:
-        logger.warning(f"⚠️ AI 매칭 오류: {e}, 폴백 방식 사용")
+    if not response or response.startswith("Error"):
+        logger.error(f"❌ AI 매칭 실패: API 응답 없음 또는 오류")
+        raise Exception("AI 자막 매칭 실패: API 할당량 소진 가능성")
     
-    # 폴백: 기존 방식 (균등 분할)
-    logger.info(f"📊 폴백: 균등 분할 방식 사용")
-    full_korean = ' '.join(korean_subtitles)
-    korean_words = full_korean.split()
-    words_per_subtitle = max(1, len(korean_words) // len(english_subtitles))
+    # AI 응답을 줄 단위로 분할
+    matched_korean = [line.strip() for line in response.strip().split('\n') if line.strip()]
     
+    # 개수가 맞는지 확인
+    if len(matched_korean) != len(english_subtitles):
+        logger.error(f"❌ AI 매칭 개수 불일치: 예상 {len(english_subtitles)}, 실제 {len(matched_korean)}")
+        raise Exception(f"AI 자막 매칭 실패: 세그먼트 개수 불일치 (API 할당량 소진 가능성)")
+    
+    logger.info(f"✅ AI 매칭 성공: {len(matched_korean)}개 세그먼트")
+    
+    # 매칭된 한글 자막으로 동기화
     synced_content = []
-    word_index = 0
-    
     for i, (timing, _) in enumerate(english_subtitles):
-        # 각 영어 자막 타이밍에 맞춰 한글 단어 할당
-        start_idx = word_index
-        end_idx = min(word_index + words_per_subtitle, len(korean_words))
-        
-        # 마지막 자막은 남은 모든 단어 포함
-        if i == len(english_subtitles) - 1:
-            end_idx = len(korean_words)
-        
-        korean_text = ' '.join(korean_words[start_idx:end_idx])
-        word_index = end_idx
-        
-        if korean_text:  # 텍스트가 있을 때만 추가
-            synced_content.append(f"{i+1}\n{timing}\n{korean_text}")
+        if i < len(matched_korean):
+            synced_content.append(f"{i+1}\n{timing}\n{matched_korean[i]}")
     
     # 동기화된 한글 자막 저장
     with open(korean_srt_path, 'w', encoding='utf-8') as f:
         f.write('\n\n'.join(synced_content) + '\n')
+    
+    logger.info(f"✅ 의미 기반 자막 동기화 완료")
 
 
 

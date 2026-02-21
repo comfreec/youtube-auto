@@ -87,7 +87,7 @@ class VideoParams(BaseModel):
     target_segment_count: Optional[int] = None  # 목표 세그먼트 개수 (None이면 자동 계산)
     
     # 쿠팡 오버레이 데이터
-    coupang_overlay_data: Optional[dict] = None  # 쿠팡 제품 오버레이 정보
+    coupang_overlay_data: Optional[List[dict]] = None  # 쿠팡 제품 오버레이 정보 리스트
     
     # 영어 버전 관련 필드
     is_english_version: Optional[bool] = False  # 영어 버전 여부

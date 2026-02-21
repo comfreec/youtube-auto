@@ -134,61 +134,57 @@ class ProductOverlayManager:
             # 오버레이 클립들 생성
             overlay_clips = []
             
-            for i, product_data in enumerate(product_overlays):
-                if not product_data.get('image_path'):
-                    continue
-                
-                # 제품 오버레이 이미지 생성
-                overlay_image_path = self.create_product_overlay_image(
-                    product_data['image_path'],
-                    product_data['name'],
-                    product_data['price']
-                )
-                
-                if not overlay_image_path:
-                    continue
-                
-                # 오버레이 표시 시간 계산
-                start_time = (video_duration / len(product_overlays)) * i
-                end_time = min(start_time + self.display_duration, video_duration)
-                
-                # 이미지 클립 생성
-                overlay_clip = (ImageClip(overlay_image_path)
-                              .set_duration(end_time - start_time)
-                              .set_start(start_time)
-                              .set_position(self._calculate_overlay_position(main_video.size)))
-                
-                overlay_clips.append(overlay_clip)
-                
-                logger.info(f"오버레이 {i+1} 추가: {start_time:.1f}s - {end_time:.1f}s")
+            # 제품이 1개인 경우: 영상 전체에 표시
+            if len(product_overlays) == 1:
+                product_data = product_overlays[0]
+                if product_data.get('image_path'):
+                    # 제품 오버레이 이미지 생성
+                    overlay_image_path = self.create_product_overlay_image(
+                        product_data['image_path'],
+                        product_data['name'],
+                        product_data['price']
+                    )
+                    
+                    if overlay_image_path:
+                        # 영상 전체 길이 동안 표시
+                        overlay_clip = (ImageClip(overlay_image_path)
+                                      .with_duration(video_duration)
+                                      .with_start(0)
+                                      .with_position(self._calculate_overlay_position(main_video.size)))
+                        
+                        overlay_clips.append(overlay_clip)
+                        logger.info(f"오버레이 추가: 0.0s - {video_duration:.1f}s (영상 전체)")
             
-            # 마지막 10초간 모든 제품 표시 (작게)
-            if len(product_overlays) > 1 and video_duration > 10:
-                final_start = video_duration - 10
-                
+            # 제품이 여러 개인 경우: 순차적으로 표시하되 더 길게
+            else:
                 for i, product_data in enumerate(product_overlays):
                     if not product_data.get('image_path'):
                         continue
                     
-                    # 작은 크기로 오버레이 생성
-                    small_overlay_path = self.create_product_overlay_image(
+                    # 제품 오버레이 이미지 생성
+                    overlay_image_path = self.create_product_overlay_image(
                         product_data['image_path'],
                         product_data['name'],
-                        product_data['price'],
-                        overlay_size=(80, 80)
+                        product_data['price']
                     )
                     
-                    if small_overlay_path:
-                        # 여러 제품을 세로로 배치
-                        position = ('right', 'bottom')
-                        y_offset = i * 90 + 20
-                        
-                        small_clip = (ImageClip(small_overlay_path)
-                                    .set_duration(10)
-                                    .set_start(final_start)
-                                    .set_position((main_video.w - 100, main_video.h - 100 - y_offset)))
-                        
-                        overlay_clips.append(small_clip)
+                    if not overlay_image_path:
+                        continue
+                    
+                    # 오버레이 표시 시간 계산 (각 제품당 최소 10초)
+                    display_time = max(10.0, video_duration / len(product_overlays))
+                    start_time = (video_duration / len(product_overlays)) * i
+                    end_time = min(start_time + display_time, video_duration)
+                    
+                    # 이미지 클립 생성 (MoviePy v2 API)
+                    overlay_clip = (ImageClip(overlay_image_path)
+                                  .with_duration(end_time - start_time)
+                                  .with_start(start_time)
+                                  .with_position(self._calculate_overlay_position(main_video.size)))
+                    
+                    overlay_clips.append(overlay_clip)
+                    
+                    logger.info(f"오버레이 {i+1} 추가: {start_time:.1f}s - {end_time:.1f}s")
             
             # 최종 영상 합성
             if overlay_clips:
