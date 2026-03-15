@@ -495,15 +495,13 @@ def get_video_materials(task_id, params, video_terms, audio_duration, video_scri
             
             if not downloaded_videos:
                 logger.warning("⚠️ Segment-based matching failed, falling back to traditional method")
-                use_segment_matching = False
             else:
                 logger.success(f"✅ Segment-based matching complete: {len(downloaded_videos)} videos")
-                # 세그먼트 정보는 로그로만 기록 (저장 기능은 선택적)
                 logger.debug(f"Segment results: {len(segment_results)} segments processed")
                 return downloaded_videos
         
-        # 기존 방식 (폴백 또는 세그먼트 매칭 비활성화 시)
-        if not use_segment_matching:
+        # 기존 방식 (폴백 또는 세그먼트 매칭 비활성화/실패 시)
+        if True:
             logger.info(f"\n\n## downloading videos from {params.video_source} (traditional method)")
             downloaded_videos = material.download_videos(
                 task_id=task_id,
