@@ -858,6 +858,7 @@ async def license_admin_page():
 
   <div class="card" id="historyCard" style="display:none">
     <b style="color:#a78bfa">생성 기록</b>
+    <input type="text" id="searchInput" placeholder="이름, 키, 메모 검색..." oninput="loadHistory()" style="margin-top:10px">
     <div class="history" id="historyList"></div>
   </div>
 </div>
@@ -912,13 +913,61 @@ async function loadHistory() {
   const res = await fetch('/admin/license/history?password=' + token);
   const data = await res.json();
   const list = document.getElementById('historyList');
-  list.innerHTML = data.licenses.slice().reverse().map(l =>
+  const search = document.getElementById('searchInput') ? document.getElementById('searchInput').value.toLowerCase() : '';
+  const filtered = data.licenses.slice().reverse().filter(l =>
+    !search ||
+    (l.customer_name || '').toLowerCase().includes(search) ||
+    (l.license_key || '').toLowerCase().includes(search) ||
+    (l.memo || '').toLowerCase().includes(search)
+  );
+  list.innerHTML = filtered.map(l =>
     `<div class="history-item">
-      <span class="history-key">${l.license_key}</span><br>
+      <span class="history-key">${l.license_key}</span>
+      ${l.hardware_id ? '<span style="color:#f59e0b;font-size:11px"> [PC등록됨]</span>' : '<span style="color:#64748b;font-size:11px"> [미등록]</span>'}<br>
       ${l.customer_name || '(이름없음)'} · ${l.days}일 · 만료: ${l.expiry_date}<br>
-      <span style="color:#64748b">${l.created_at}${l.memo ? ' · ' + l.memo : ''}</span>
+      <span style="color:#64748b">${l.created_at}${l.memo ? ' · ' + l.memo : ''}</span><br>
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <button onclick="copyKeyFromHistory('${l.license_key}')" style="flex:1;padding:5px;font-size:12px;background:#059669;border:none;border-radius:6px;color:white;cursor:pointer">📋 복사</button>
+        <button onclick="resetHardware('${l.license_key}')" style="flex:1;padding:5px;font-size:12px;background:#d97706;border:none;border-radius:6px;color:white;cursor:pointer">🔄 PC초기화</button>
+        <button onclick="deleteKey('${l.license_key}')" style="flex:1;padding:5px;font-size:12px;background:#dc2626;border:none;border-radius:6px;color:white;cursor:pointer">🗑️ 삭제</button>
+      </div>
     </div>`
   ).join('');
+}
+
+function copyKeyFromHistory(key) {
+  navigator.clipboard.writeText(key).then(() => alert('복사됨: ' + key));
+}
+
+async function resetHardware(key) {
+  if (!confirm('이 키의 PC 등록을 초기화하시겠습니까?\n고객이 다른 PC에서 다시 활성화할 수 있게 됩니다.')) return;
+  const res = await fetch('/api/license/reset_hardware', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({password: token, license_key: key})
+  });
+  const data = await res.json();
+  if (data.ok) {
+    alert('PC 초기화 완료');
+    loadHistory();
+  } else {
+    alert('초기화 실패');
+  }
+}
+
+async function deleteKey(key) {
+  if (!confirm('이 라이선스 키를 삭제하시겠습니까?')) return;
+  const res = await fetch('/admin/license/delete', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({password: token, license_key: key})
+  });
+  const data = await res.json();
+  if (data.ok) {
+    loadHistory();
+  } else {
+    alert('삭제 실패');
+  }
 }
 </script>
 </body>

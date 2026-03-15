@@ -61,3 +61,7 @@ drive_token.pickle
 AI쇼츠생성기_v*.zip
 ai쇼츠생성기_배포판.zip
 유튜브쇼츠생성기_배포판.zip
+
+# 배포 패키지 폴더
+AI쇼츠생성기_배포판/
+AI쇼츠생성기_*.zip
