@@ -324,9 +324,8 @@ def generate_subtitle(task_id, params, video_script, sub_maker, audio_file):
                 _sync_korean_to_english_timing(subtitle_path, korean_subtitle_path)
                 logger.info(f"✅ Korean subtitle timing adjusted to English subtitle")
             except Exception as e:
-                logger.error(f"❌ Failed to sync subtitle timing: {str(e)}")
-                # AI 매칭 실패 시 영어 영상 생성 중단
-                raise Exception(f"이중 자막 동기화 실패 (API 할당량 소진 가능성): {str(e)}")
+                logger.warning(f"⚠️ Failed to sync subtitle timing (skipping dual subtitle): {str(e)}")
+                # AI 매칭 실패 시 한글 자막 없이 영어 자막만으로 계속 진행
 
     return subtitle_path
 
@@ -384,16 +383,16 @@ Each line should correspond to one English subtitle segment."""
     response = llm._generate_response(prompt)
     
     if not response or response.startswith("Error"):
-        logger.error(f"❌ AI 매칭 실패: API 응답 없음 또는 오류")
-        raise Exception("AI 자막 매칭 실패: API 할당량 소진 가능성")
+        logger.warning(f"⚠️ AI 매칭 실패: API 응답 없음 또는 오류 - 이중 자막 건너뜀")
+        return
     
     # AI 응답을 줄 단위로 분할
     matched_korean = [line.strip() for line in response.strip().split('\n') if line.strip()]
     
     # 개수가 맞는지 확인
     if len(matched_korean) != len(english_subtitles):
-        logger.error(f"❌ AI 매칭 개수 불일치: 예상 {len(english_subtitles)}, 실제 {len(matched_korean)}")
-        raise Exception(f"AI 자막 매칭 실패: 세그먼트 개수 불일치 (API 할당량 소진 가능성)")
+        logger.warning(f"⚠️ AI 매칭 개수 불일치: 예상 {len(english_subtitles)}, 실제 {len(matched_korean)} - 이중 자막 건너뜀")
+        return
     
     logger.info(f"✅ AI 매칭 성공: {len(matched_korean)}개 세그먼트")
     
