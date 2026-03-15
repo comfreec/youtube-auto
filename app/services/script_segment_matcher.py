@@ -110,16 +110,17 @@ class ScriptSegmentMatcher:
                 # 키워드 추출
                 keywords = [k.strip() for k in cleaned.split(",") if k.strip()]
                 
-                # 유효성 검사 (영어 키워드, 적절한 길이)
+                # 유효성 검사 (영어 키워드, 적절한 길이) - 완화된 조건
                 valid_keywords = []
                 for kw in keywords:
-                    # 영어 단어만, 1-4단어 길이
-                    if (re.match(r'^[a-z\s]+$', kw) and 
-                        1 <= len(kw.split()) <= 4 and 
-                        len(kw) >= 3):
-                        valid_keywords.append(kw)
+                    # 영어 단어 포함, 1-4단어 길이 (숫자/하이픈 허용)
+                    kw_clean = re.sub(r'[^a-z\s\-]', '', kw).strip()
+                    if (kw_clean and
+                        1 <= len(kw_clean.split()) <= 4 and 
+                        len(kw_clean) >= 3):
+                        valid_keywords.append(kw_clean)
                 
-                if len(valid_keywords) >= amount:
+                if valid_keywords:
                     logger.info(f"Generated visual keywords for segment: {valid_keywords[:amount]}")
                     return valid_keywords[:amount]
             
@@ -133,14 +134,31 @@ class ScriptSegmentMatcher:
     def _enhanced_fallback_keywords(self, segment: str, amount: int = 3) -> List[str]:
         """
         개선된 폴백 키워드 생성 (시각적 요소 중심)
-        
-        Args:
-            segment: 대본 세그먼트
-            amount: 생성할 키워드 개수
-            
-        Returns:
-            폴백 키워드 리스트
         """
+        # 영어 대본인지 확인
+        is_english = bool(re.search(r'[a-zA-Z]', segment)) and not re.search(r'[가-힣]', segment)
+        
+        if is_english:
+            # 영어 대본: 명사/형용사 직접 추출
+            stop_words = {'the','a','an','and','or','but','in','on','at','to','for','of',
+                         'with','by','from','is','are','was','were','be','been','being',
+                         'have','has','had','do','does','did','will','would','should',
+                         'could','may','might','can','this','that','these','those','it',
+                         'its','you','your','we','our','they','their','not','no','so',
+                         'if','as','up','out','about','into','than','then','when','where',
+                         'which','who','what','how','all','each','both','more','most'}
+            words = re.findall(r'\b[a-zA-Z]{4,}\b', segment.lower())
+            word_freq = {}
+            for w in words:
+                if w not in stop_words:
+                    word_freq[w] = word_freq.get(w, 0) + 1
+            if word_freq:
+                top_words = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)
+                keywords = [w for w, _ in top_words[:amount]]
+                logger.info(f"English fallback keywords extracted: {keywords}")
+                return keywords
+        
+        # 한글 대본: 시각적 키워드 매핑
         # 시각적으로 표현 가능한 키워드 매핑 (한글 → 영어)
         visual_keywords = {
             # 사람/행동

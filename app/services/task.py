@@ -420,28 +420,35 @@ def get_video_materials(task_id, params, video_terms, audio_duration, video_scri
         logger.info(f"\n\n## 🔄 Reusing Korean video materials from task: {korean_task_id}")
         
         try:
-            # 한국어 태스크의 배경영상 정보 가져오기
+            valid_materials = []
+
+            # 1순위: state에서 가져오기 (같은 프로세스 내 실행 시)
             korean_task_info = sm.state.get_task(korean_task_id)
             if korean_task_info and korean_task_info.get("materials"):
-                korean_materials = korean_task_info["materials"]
-                logger.info(f"✅ Found {len(korean_materials)} Korean video materials to reuse")
-                
-                # 한국어 배경영상 파일들이 존재하는지 확인
-                valid_materials = []
-                for material_path in korean_materials:
+                for material_path in korean_task_info["materials"]:
                     if os.path.exists(material_path):
                         valid_materials.append(material_path)
-                        logger.info(f"✅ Reusing Korean material: {os.path.basename(material_path)}")
-                    else:
-                        logger.warning(f"⚠️ Korean material not found: {material_path}")
-                
-                if valid_materials:
-                    logger.info(f"🎬 Successfully reusing {len(valid_materials)} Korean video materials for English version")
-                    return valid_materials
-                else:
-                    logger.warning("❌ No valid Korean materials found, falling back to new material search")
+
+            # 2순위: state가 없으면 파일시스템에서 직접 읽기 (서버 재시작 후에도 동작)
+            if not valid_materials:
+                logger.info("⚠️ State not available, reading Korean materials from filesystem...")
+                korean_task_dir = utils.task_dir(korean_task_id)
+                if os.path.exists(korean_task_dir):
+                    # vid-*.mp4 파일들 (다운로드된 원본 배경영상)
+                    vid_files = sorted([
+                        os.path.join(korean_task_dir, f)
+                        for f in os.listdir(korean_task_dir)
+                        if f.startswith("vid-") and f.endswith(".mp4")
+                    ])
+                    if vid_files:
+                        valid_materials = vid_files
+                        logger.info(f"✅ Found {len(valid_materials)} Korean materials from filesystem")
+
+            if valid_materials:
+                logger.info(f"🎬 Successfully reusing {len(valid_materials)} Korean video materials for English version")
+                return valid_materials
             else:
-                logger.warning("❌ Korean task materials not found, falling back to new material search")
+                logger.warning("❌ No valid Korean materials found, falling back to new material search")
         except Exception as e:
             logger.error(f"❌ Failed to reuse Korean materials: {e}, falling back to new material search")
     
