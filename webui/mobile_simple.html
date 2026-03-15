@@ -294,5 +294,178 @@
             }
         }
     </script>
+
+    <!-- 라이선스 생성 (비밀번호 보호) -->
+    <div class="container" style="margin-top: 20px;" id="licenseSection">
+        <h1 style="font-size:20px;">🔑 라이선스 생성</h1>
+        <div id="licenseLogin">
+            <div class="input-group">
+                <label>관리자 비밀번호</label>
+                <input type="password" id="adminPw" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter') licenseLogin()"/>
+            </div>
+            <button onclick="licenseLogin()">로그인</button>
+            <div id="loginErr" style="color:#dc3545;margin-top:10px;display:none;">비밀번호가 틀렸습니다</div>
+        </div>
+
+        <div id="licenseMain" style="display:none;">
+            <div class="input-group">
+                <label>고객명</label>
+                <input type="text" id="lcName" placeholder="홍길동"/>
+            </div>
+            <div class="input-group">
+                <label>유효 기간</label>
+                <select id="lcDays" style="width:100%;padding:15px;border:2px solid #e0e0e0;border-radius:10px;font-size:16px;">
+                    <option value="30">30일 (1개월)</option>
+                    <option value="90">90일 (3개월)</option>
+                    <option value="180">180일 (6개월)</option>
+                    <option value="365" selected>365일 (1년)</option>
+                    <option value="730">730일 (2년)</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>메모 (선택)</label>
+                <input type="text" id="lcMemo" placeholder="결제 채널, 금액 등"/>
+            </div>
+            <button onclick="generateLicense()">🔑 라이선스 키 생성</button>
+
+            <div id="lcResult" style="display:none;margin-top:20px;padding:20px;background:#f0f4ff;border-radius:12px;text-align:center;">
+                <div style="font-size:13px;color:#666;" id="lcInfo"></div>
+                <div id="lcKey" style="font-size:22px;font-weight:bold;color:#667eea;letter-spacing:2px;margin:12px 0;"></div>
+                <button onclick="copyLcKey()" style="background:#28a745;">📋 키 복사</button>
+            </div>
+
+            <div style="margin-top:24px;">
+                <b style="color:#667eea;">생성 기록</b>
+                <input type="text" id="lcSearch" placeholder="이름 또는 키 검색..." style="margin-top:8px;" oninput="filterHistory()"/>
+                <div id="lcHistory" style="margin-top:10px;max-height:300px;overflow-y:auto;font-size:13px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    let lcToken = '';
+    let lcAllHistory = [];
+
+    async function licenseLogin() {
+        const pw = document.getElementById('adminPw').value;
+        const res = await fetch('/admin/license/login', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({password: pw})
+        });
+        const data = await res.json();
+        if (data.ok) {
+            lcToken = pw;
+            document.getElementById('licenseLogin').style.display = 'none';
+            document.getElementById('licenseMain').style.display = 'block';
+            loadLcHistory();
+        } else {
+            document.getElementById('loginErr').style.display = 'block';
+        }
+    }
+
+    async function generateLicense() {
+        const res = await fetch('/admin/license/generate', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({
+                password: lcToken,
+                customer_name: document.getElementById('lcName').value.trim(),
+                days: parseInt(document.getElementById('lcDays').value),
+                memo: document.getElementById('lcMemo').value.trim()
+            })
+        });
+        const data = await res.json();
+        if (data.license_key) {
+            document.getElementById('lcKey').textContent = data.license_key;
+            document.getElementById('lcInfo').textContent =
+                (document.getElementById('lcName').value || '(이름없음)') +
+                ' · ' + document.getElementById('lcDays').value + '일 · 만료: ' + data.expiry_date;
+            document.getElementById('lcResult').style.display = 'block';
+            loadLcHistory();
+        }
+    }
+
+    function copyLcKey() {
+        const key = document.getElementById('lcKey').textContent;
+        navigator.clipboard.writeText(key).then(() => alert('복사됨: ' + key));
+    }
+
+    async function loadLcHistory() {
+        const res = await fetch('/admin/license/history?password=' + lcToken);
+        const data = await res.json();
+        lcAllHistory = data.licenses.slice().reverse();
+        renderHistory(lcAllHistory);
+    }
+
+    function filterHistory() {
+        const q = document.getElementById('lcSearch').value.toLowerCase();
+        const filtered = lcAllHistory.filter(l =>
+            (l.customer_name||'').toLowerCase().includes(q) ||
+            (l.license_key||'').toLowerCase().includes(q) ||
+            (l.memo||'').toLowerCase().includes(q)
+        );
+        renderHistory(filtered);
+    }
+
+    function renderHistory(list) {
+        const el = document.getElementById('lcHistory');
+        if (list.length === 0) {
+            el.innerHTML = '<div style="color:#999;padding:10px 0;">기록 없음</div>';
+            return;
+        }
+        el.innerHTML = list.map(l =>
+            `<div style="border-bottom:1px solid #eee;padding:10px 0;display:flex;justify-content:space-between;align-items:flex-start;">
+                <div style="flex:1;min-width:0;">
+                    <div style="font-weight:bold;color:#333;">${l.customer_name||'(이름없음)'}</div>
+                    <div style="color:#667eea;font-weight:bold;letter-spacing:1px;">${l.license_key}</div>
+                    <div style="color:#555;">${l.days}일 · 만료: ${l.expiry_date}</div>
+                    <div style="color:#999;font-size:12px;">${l.created_at}${l.memo?' · '+l.memo:''}</div>
+                    <div style="color:${l.hardware_id?'#28a745':'#aaa'};font-size:11px;">${l.hardware_id?'🔒 PC 등록됨':'🔓 미등록'}</div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px;margin-left:8px;flex-shrink:0;">
+                    <button onclick="copyHistoryKey('${l.license_key}')"
+                        style="width:auto;padding:6px 12px;background:#667eea;font-size:12px;border-radius:6px;">
+                        복사
+                    </button>
+                    <button onclick="resetHardware('${l.license_key}')"
+                        style="width:auto;padding:6px 12px;background:#fd7e14;font-size:12px;border-radius:6px;">
+                        PC초기화
+                    </button>
+                    <button onclick="deleteLicense('${l.license_key}')"
+                        style="width:auto;padding:6px 12px;background:#dc3545;font-size:12px;border-radius:6px;">
+                        삭제
+                    </button>
+                </div>
+            </div>`
+        ).join('');
+    }
+
+    function copyHistoryKey(key) {
+        navigator.clipboard.writeText(key).then(() => alert('복사됨: ' + key));
+    }
+
+    async function resetHardware(key) {
+        if (!confirm('PC 등록을 초기화하시겠습니까?\n(고객이 다른 PC에서 재등록 가능해집니다)\n' + key)) return;
+        const res = await fetch('/api/license/reset_hardware', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({password: lcToken, license_key: key})
+        });
+        const data = await res.json();
+        alert(data.message || '초기화 완료');
+        loadLcHistory();
+    }
+
+    async function deleteLicense(key) {
+        if (!confirm('삭제하시겠습니까?\n' + key)) return;
+        await fetch('/admin/license/delete', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({password: lcToken, license_key: key})
+        });
+        loadLcHistory();
+    }
+    </script>
 </body>
 </html>

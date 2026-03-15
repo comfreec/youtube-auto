@@ -151,7 +151,9 @@ subtitle_provider = "edge"
 # If you need to provide the service externally using a domain name (usually done with nginx as a proxy), you can set it to your domain name.
 # For example, https://xxxx.com/tasks/6357f542-a4e1-46a1-b4c9-bf3bd0df5285/final-1.mp4
 # endpoint="https://xxxx.com"
-endpoint = ""
+# 라이선스 서버 URL (본인 서버 주소 - ngrok 주소 또는 고정 도메인)
+# 예: license_server_url = "https://xxxx.ngrok-free.app"
+license_server_url = ""
 
 
 # Video material storage location

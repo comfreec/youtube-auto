@@ -7,7 +7,10 @@ from tkinter import ttk, messagebox, scrolledtext
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
-import hashlib
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from app.services.license import generate_license_key
 
 class LicenseGeneratorGUI:
     def __init__(self, root):
@@ -186,7 +189,7 @@ class LicenseGeneratorGUI:
         """라이선스 키 생성"""
         customer_name = self.customer_name_entry.get().strip()
         memo = self.memo_entry.get().strip()
-        
+
         try:
             days = int(self.days_var.get())
             if days <= 0:
@@ -195,21 +198,10 @@ class LicenseGeneratorGUI:
         except ValueError:
             messagebox.showerror("오류", "유효 기간은 숫자로 입력해주세요.")
             return
-        
-        # 라이선스 키 생성
+
+        # 새 방식: 키 자체에 만료일 + 서명 포함
+        license_key = generate_license_key(days, customer_name)
         expiry_date = (datetime.now() + timedelta(days=days)).strftime("%Y-%m-%d")
-        
-        license_data = {
-            "customer": customer_name,
-            "expiry": expiry_date,
-            "created": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "memo": memo
-        }
-        
-        data_string = json.dumps(license_data, sort_keys=True)
-        license_hash = hashlib.sha256(data_string.encode()).hexdigest()
-        
-        license_key = f"{license_hash[:4]}-{license_hash[4:8]}-{license_hash[8:12]}-{license_hash[12:16]}".upper()
         
         # 결과 표시
         result = f"라이선스 키: {license_key}\n"

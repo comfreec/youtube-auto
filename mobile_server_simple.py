@@ -789,12 +789,313 @@ async def get_task_status(task_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# ─────────────────────────────────────────────
+# 판매자 전용: 라이선스 생성 페이지
+# ─────────────────────────────────────────────
+ADMIN_PASSWORD = "0070"
+
+@app.get("/admin/license", response_class=HTMLResponse)
+async def license_admin_page():
+    """라이선스 생성 관리 페이지"""
+    html = """<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>라이선스 생성기</title>
+<style>
+  body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #eee; margin: 0; padding: 20px; }
+  .container { max-width: 500px; margin: 0 auto; }
+  h2 { color: #a78bfa; text-align: center; margin-bottom: 30px; }
+  .card { background: #16213e; border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+  label { display: block; margin-bottom: 6px; color: #a78bfa; font-size: 14px; }
+  input, select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #334; background: #0f3460; color: #fff; font-size: 15px; box-sizing: border-box; margin-bottom: 16px; }
+  button { width: 100%; padding: 12px; background: #7c3aed; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
+  button:hover { background: #6d28d9; }
+  .result { background: #0f3460; border-radius: 8px; padding: 16px; margin-top: 16px; display: none; }
+  .key { font-size: 22px; font-weight: bold; color: #34d399; letter-spacing: 2px; text-align: center; margin: 10px 0; }
+  .info { font-size: 13px; color: #94a3b8; text-align: center; }
+  .copy-btn { background: #059669; margin-top: 10px; }
+  .copy-btn:hover { background: #047857; }
+  .history { max-height: 300px; overflow-y: auto; }
+  .history-item { border-bottom: 1px solid #334; padding: 10px 0; font-size: 13px; }
+  .history-key { color: #34d399; font-weight: bold; }
+  .error { color: #f87171; text-align: center; margin-top: 10px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>🔑 라이선스 생성기</h2>
+
+  <div class="card" id="loginCard">
+    <label>관리자 비밀번호</label>
+    <input type="password" id="password" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter') login()">
+    <button onclick="login()">로그인</button>
+    <div class="error" id="loginError"></div>
+  </div>
+
+  <div class="card" id="mainCard" style="display:none">
+    <label>고객명</label>
+    <input type="text" id="customerName" placeholder="홍길동">
+    <label>유효 기간</label>
+    <select id="days">
+      <option value="30">30일 (1개월)</option>
+      <option value="90">90일 (3개월)</option>
+      <option value="180">180일 (6개월)</option>
+      <option value="365" selected>365일 (1년)</option>
+      <option value="730">730일 (2년)</option>
+    </select>
+    <label>메모 (선택)</label>
+    <input type="text" id="memo" placeholder="결제 채널, 금액 등">
+    <button onclick="generateKey()">🔑 라이선스 키 생성</button>
+
+    <div class="result" id="result">
+      <div class="info" id="resultInfo"></div>
+      <div class="key" id="resultKey"></div>
+      <button class="copy-btn" onclick="copyKey()">📋 키 복사</button>
+    </div>
+  </div>
+
+  <div class="card" id="historyCard" style="display:none">
+    <b style="color:#a78bfa">생성 기록</b>
+    <div class="history" id="historyList"></div>
+  </div>
+</div>
+
+<script>
+let token = '';
+
+async function login() {
+  const pw = document.getElementById('password').value;
+  const res = await fetch('/admin/license/login', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({password: pw})
+  });
+  const data = await res.json();
+  if (data.ok) {
+    token = pw;
+    document.getElementById('loginCard').style.display = 'none';
+    document.getElementById('mainCard').style.display = 'block';
+    document.getElementById('historyCard').style.display = 'block';
+    loadHistory();
+  } else {
+    document.getElementById('loginError').textContent = '비밀번호가 틀렸습니다';
+  }
+}
+
+async function generateKey() {
+  const customerName = document.getElementById('customerName').value.trim();
+  const days = parseInt(document.getElementById('days').value);
+  const memo = document.getElementById('memo').value.trim();
+
+  const res = await fetch('/admin/license/generate', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({password: token, customer_name: customerName, days: days, memo: memo})
+  });
+  const data = await res.json();
+  if (data.license_key) {
+    document.getElementById('resultKey').textContent = data.license_key;
+    document.getElementById('resultInfo').textContent = `${customerName || '(이름없음)'} · ${days}일 · 만료: ${data.expiry_date}`;
+    document.getElementById('result').style.display = 'block';
+    loadHistory();
+  }
+}
+
+function copyKey() {
+  const key = document.getElementById('resultKey').textContent;
+  navigator.clipboard.writeText(key).then(() => alert('복사됨: ' + key));
+}
+
+async function loadHistory() {
+  const res = await fetch('/admin/license/history?password=' + token);
+  const data = await res.json();
+  const list = document.getElementById('historyList');
+  list.innerHTML = data.licenses.slice().reverse().map(l =>
+    `<div class="history-item">
+      <span class="history-key">${l.license_key}</span><br>
+      ${l.customer_name || '(이름없음)'} · ${l.days}일 · 만료: ${l.expiry_date}<br>
+      <span style="color:#64748b">${l.created_at}${l.memo ? ' · ' + l.memo : ''}</span>
+    </div>`
+  ).join('');
+}
+</script>
+</body>
+</html>"""
+    return html
+
+
+@app.post("/admin/license/login")
+async def license_login(data: dict):
+    if data.get("password") != ADMIN_PASSWORD:
+        return {"ok": False}
+    return {"ok": True}
+
+
+@app.post("/admin/license/generate")
+async def license_generate(data: dict):
+    if data.get("password") != ADMIN_PASSWORD:
+        raise HTTPException(status_code=403, detail="인증 실패")
+
+    from app.services.license import generate_license_key
+    from datetime import datetime, timedelta
+    import json
+    from pathlib import Path
+
+    days = int(data.get("days", 365))
+    customer_name = data.get("customer_name", "")
+    memo = data.get("memo", "")
+
+    license_key = generate_license_key(days, customer_name)
+    expiry_date = (datetime.now() + timedelta(days=days)).strftime("%Y-%m-%d")
+
+    # 기록 저장
+    db_path = Path("license_database.json")
+    licenses = []
+    if db_path.exists():
+        try:
+            licenses = json.loads(db_path.read_text(encoding="utf-8"))
+        except:
+            pass
+    licenses.append({
+        "license_key": license_key,
+        "customer_name": customer_name,
+        "days": days,
+        "expiry_date": expiry_date,
+        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "memo": memo
+    })
+    db_path.write_text(json.dumps(licenses, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    return {"license_key": license_key, "expiry_date": expiry_date}
+
+
+@app.get("/admin/license/history")
+async def license_history(password: str = ""):
+    if password != ADMIN_PASSWORD:
+        raise HTTPException(status_code=403, detail="인증 실패")
+
+    from pathlib import Path
+    import json
+
+    db_path = Path("license_database.json")
+    licenses = []
+    if db_path.exists():
+        try:
+            licenses = json.loads(db_path.read_text(encoding="utf-8"))
+        except:
+            pass
+    return {"licenses": licenses}
+
+
+@app.post("/api/license/activate")
+async def api_license_activate(data: dict):
+    """고객 PC에서 라이선스 활성화 시 호출 - 하드웨어 ID 등록/검증"""
+    from pathlib import Path
+    import json
+
+    license_key = data.get("license_key", "").strip().upper()
+    hardware_id = data.get("hardware_id", "").strip()
+
+    if not license_key or not hardware_id:
+        raise HTTPException(status_code=400, detail="잘못된 요청")
+
+    # 개발자 키는 항상 허용
+    if license_key == "DEV-PERM-ANENT-LICN":
+        return {"ok": True, "message": "개발자 라이선스"}
+
+    db_path = Path("license_database.json")
+    licenses = []
+    if db_path.exists():
+        try:
+            licenses = json.loads(db_path.read_text(encoding="utf-8"))
+        except:
+            pass
+
+    # 해당 키 찾기
+    found = None
+    for lic in licenses:
+        if lic.get("license_key") == license_key:
+            found = lic
+            break
+
+    if not found:
+        raise HTTPException(status_code=404, detail="등록되지 않은 라이선스 키입니다")
+
+    registered_hw = found.get("hardware_id", "")
+
+    if not registered_hw:
+        # 처음 활성화 - 하드웨어 ID 등록
+        found["hardware_id"] = hardware_id
+        found["activated_at"] = __import__('datetime').datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        db_path.write_text(json.dumps(licenses, ensure_ascii=False, indent=2), encoding="utf-8")
+        return {"ok": True, "message": "활성화 완료"}
+    elif registered_hw == hardware_id:
+        # 같은 PC - 허용
+        return {"ok": True, "message": "인증 확인"}
+    else:
+        # 다른 PC - 거부
+        raise HTTPException(status_code=403, detail="이미 다른 컴퓨터에서 활성화된 라이선스입니다. 판매자에게 문의하세요.")
+
+
+@app.post("/api/license/reset_hardware")
+async def api_license_reset_hardware(data: dict):
+    """판매자가 하드웨어 ID 초기화 (PC 교체 시)"""
+    from pathlib import Path
+    import json
+
+    if data.get("password") != ADMIN_PASSWORD:
+        raise HTTPException(status_code=403, detail="인증 실패")
+
+    license_key = data.get("license_key", "").strip().upper()
+    db_path = Path("license_database.json")
+    licenses = []
+    if db_path.exists():
+        try:
+            licenses = json.loads(db_path.read_text(encoding="utf-8"))
+        except:
+            pass
+
+    for lic in licenses:
+        if lic.get("license_key") == license_key:
+            lic["hardware_id"] = ""
+            lic["activated_at"] = ""
+            db_path.write_text(json.dumps(licenses, ensure_ascii=False, indent=2), encoding="utf-8")
+            return {"ok": True, "message": "하드웨어 ID 초기화 완료"}
+
+    raise HTTPException(status_code=404, detail="키를 찾을 수 없습니다")
+
+
+@app.post("/admin/license/delete")
+async def license_delete(data: dict):
+    if data.get("password") != ADMIN_PASSWORD:
+        raise HTTPException(status_code=403, detail="인증 실패")
+
+    from pathlib import Path
+    import json
+
+    license_key = data.get("license_key", "")
+    db_path = Path("license_database.json")
+    licenses = []
+    if db_path.exists():
+        try:
+            licenses = json.loads(db_path.read_text(encoding="utf-8"))
+        except:
+            pass
+
+    licenses = [l for l in licenses if l.get("license_key") != license_key]
+    db_path.write_text(json.dumps(licenses, ensure_ascii=False, indent=2), encoding="utf-8")
+    return {"ok": True}
+
+
 if __name__ == "__main__":
     print("=" * 60)
     print("🎬 AI 영상 생성 모바일 서버 시작")
     print("=" * 60)
     print(f"📱 로컬 접속: http://localhost:8000")
+    print(f"🔑 라이선스 생성: http://localhost:8000/admin/license")
     print(f"🌐 외부 접속: ngrok http 8000 실행 후 URL 사용")
     print("=" * 60)
-    
+
     uvicorn.run(app, host="0.0.0.0", port=8000)
