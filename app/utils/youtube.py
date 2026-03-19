@@ -39,7 +39,7 @@ def get_authenticated_service(client_secrets_file, token_file='token.pickle'):
 
     return build('youtube', 'v3', credentials=creds)
 
-def upload_video(youtube, file_path, title, description, category="22", keywords="", privacy_status="private", progress_callback=None):
+def upload_video(youtube, file_path, title, description, category="22", keywords="", privacy_status="private", progress_callback=None, default_language=None, default_audio_language=None):
     """
     Uploads a video to YouTube.
     
@@ -59,13 +59,20 @@ def upload_video(youtube, file_path, title, description, category="22", keywords
     try:
         tags = [tag.strip() for tag in keywords.split(',')] if keywords else []
         
+        snippet = {
+            'title': title,
+            'description': description,
+            'tags': tags,
+            'categoryId': category
+        }
+        if default_language:
+            snippet['defaultLanguage'] = default_language
+        if default_audio_language:
+            snippet['defaultAudioLanguage'] = default_audio_language
+            logger.info(f"🌐 Setting defaultAudioLanguage: {default_audio_language}")
+
         body = {
-            'snippet': {
-                'title': title,
-                'description': description,
-                'tags': tags,
-                'categoryId': category
-            },
+            'snippet': snippet,
             'status': {
                 'privacyStatus': privacy_status,
                 'selfDeclaredMadeForKids': False, 

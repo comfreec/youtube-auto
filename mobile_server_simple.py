@@ -203,7 +203,9 @@ def run_video_generation(task_id: str, params: VideoParams, auto_upload: bool = 
                     category="22",
                     keywords=keywords,
                     privacy_status="private",
-                    progress_callback=upload_progress_callback
+                    progress_callback=upload_progress_callback,
+                    default_language="ko",
+                    default_audio_language="ko-KR"
                 )
                 
                 if vid_id:
@@ -609,7 +611,9 @@ def run_video_generation(task_id: str, params: VideoParams, auto_upload: bool = 
                                 category="22",
                                 keywords=eng_keywords,
                                 privacy_status="private",
-                                progress_callback=eng_upload_progress_callback
+                                progress_callback=eng_upload_progress_callback,
+                                default_language="en",
+                                default_audio_language="en-GB"
                             )
                             
                             if eng_vid_id:
