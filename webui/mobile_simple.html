@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -230,8 +230,10 @@
                 const btn = document.getElementById('generateBtn');
                 
                 // 진행률 업데이트
-                progressBar.style.width = data.progress + '%';
-                statusText.textContent = `${data.message} (${data.progress}%)`;
+                const progress = (data.progress !== undefined && data.progress !== null) ? data.progress : 0;
+                const message = data.message || '처리 중...';
+                progressBar.style.width = progress + '%';
+                statusText.textContent = `${message} (${progress}%)`;
                 
                 // 완료 체크
                 if (data.status === 'complete') {
