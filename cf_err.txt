@@ -1,0 +1,1 @@
+error parsing YAML in config file at C:\Users\dev\youtube-auto\config.yml: yaml: invalid leading UTF-8 octet
