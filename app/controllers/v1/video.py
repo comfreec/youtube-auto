@@ -36,6 +36,29 @@ from app.utils import utils
 # router = new_router(dependencies=[Depends(base.verify_token)])
 router = new_router()
 
+
+def _safe_path(base_dir: str, untrusted_path: str) -> pathlib.Path:
+    """Resolve a user supplied path while keeping it inside base_dir."""
+    base = pathlib.Path(base_dir).resolve()
+    candidate = (base / untrusted_path).resolve()
+    try:
+        candidate.relative_to(base)
+    except ValueError as exc:
+        raise HttpException("", status_code=400, message="Invalid file path") from exc
+    return candidate
+
+
+def _safe_upload_name(filename: str | None, allowed_suffixes: tuple[str, ...]) -> str:
+    """Validate upload names before joining them to a server-side directory."""
+    if not filename or filename != pathlib.Path(filename).name:
+        raise HttpException("", status_code=400, message="Invalid file name")
+
+    suffix = pathlib.Path(filename).suffix.lower().lstrip(".")
+    if suffix not in allowed_suffixes:
+        allowed = ", ".join(f"*.{item}" for item in allowed_suffixes)
+        raise HttpException("", status_code=400, message=f"Allowed file types: {allowed}")
+    return filename
+
 _enable_redis = config.app.get("enable_redis", False)
 _redis_host = config.app.get("redis_host", "localhost")
 _redis_port = config.app.get("redis_port", 6379)
@@ -133,7 +156,7 @@ def get_task(
 
         def file_to_uri(file):
             if not file.startswith(endpoint):
-                _uri_path = v.replace(task_dir, "tasks").replace("\\", "/")
+                _uri_path = file.replace(task_dir, "tasks").replace("\\", "/")
                 _uri_path = f"{endpoint}/{_uri_path}"
             else:
                 _uri_path = file
@@ -168,7 +191,7 @@ def delete_video(request: Request, task_id: str = Path(..., description="Task ID
     task = sm.state.get_task(task_id)
     if task:
         tasks_dir = utils.task_dir()
-        current_task_dir = os.path.join(tasks_dir, task_id)
+        current_task_dir = _safe_path(tasks_dir, task_id)
         if os.path.exists(current_task_dir):
             shutil.rmtree(current_task_dir)
 
@@ -207,22 +230,12 @@ def get_bgm_list(request: Request):
     summary="Upload the BGM file to the songs directory",
 )
 def upload_bgm_file(request: Request, file: UploadFile = File(...)):
-    request_id = base.get_task_id(request)
-    # check file ext
-    if file.filename.endswith("mp3"):
-        song_dir = utils.song_dir()
-        save_path = os.path.join(song_dir, file.filename)
-        # save file
-        with open(save_path, "wb+") as buffer:
-            # If the file already exists, it will be overwritten
-            file.file.seek(0)
-            buffer.write(file.file.read())
-        response = {"file": save_path}
-        return utils.get_response(200, response)
-
-    raise HttpException(
-        "", status_code=400, message=f"{request_id}: Only *.mp3 files can be uploaded"
-    )
+    filename = _safe_upload_name(file.filename, ("mp3",))
+    save_path = _safe_path(utils.song_dir(), filename)
+    with open(save_path, "wb+") as buffer:
+        file.file.seek(0)
+        shutil.copyfileobj(file.file, buffer)
+    return utils.get_response(200, {"file": str(save_path)})
 
 @router.get(
     "/video_materials", response_model=VideoMaterialRetrieveResponse, summary="Retrieve local video materials"
@@ -252,28 +265,21 @@ def get_video_materials_list(request: Request):
     summary="Upload the video material file to the local videos directory",
 )
 def upload_video_material_file(request: Request, file: UploadFile = File(...)):
-    request_id = base.get_task_id(request)
-    # check file ext
     allowed_suffixes = ("mp4", "mov", "avi", "flv", "mkv", "jpg", "jpeg", "png")
-    if file.filename.endswith(allowed_suffixes):
-        local_videos_dir = utils.storage_dir("local_videos", create=True)
-        save_path = os.path.join(local_videos_dir, file.filename)
-        # save file
-        with open(save_path, "wb+") as buffer:
-            # If the file already exists, it will be overwritten
-            file.file.seek(0)
-            buffer.write(file.file.read())
-        response = {"file": save_path}
-        return utils.get_response(200, response)
-
-    raise HttpException(
-        "", status_code=400, message=f"{request_id}: Only files with extensions {', '.join(allowed_suffixes)} can be uploaded"
-    )
+    filename = _safe_upload_name(file.filename, allowed_suffixes)
+    local_videos_dir = utils.storage_dir("local_videos", create=True)
+    save_path = _safe_path(local_videos_dir, filename)
+    with open(save_path, "wb+") as buffer:
+        file.file.seek(0)
+        shutil.copyfileobj(file.file, buffer)
+    return utils.get_response(200, {"file": str(save_path)})
 
 @router.get("/stream/{file_path:path}")
 async def stream_video(request: Request, file_path: str):
     tasks_dir = utils.task_dir()
-    video_path = os.path.join(tasks_dir, file_path)
+    video_path = _safe_path(tasks_dir, file_path)
+    if not video_path.is_file():
+        raise HttpException("", status_code=404, message="File not found")
     range_header = request.headers.get("Range")
     video_size = os.path.getsize(video_path)
     start, end = 0, video_size - 1
@@ -321,7 +327,9 @@ async def download_video(_: Request, file_path: str):
     :return: video file
     """
     tasks_dir = utils.task_dir()
-    video_path = os.path.join(tasks_dir, file_path)
+    video_path = _safe_path(tasks_dir, file_path)
+    if not video_path.is_file():
+        raise HttpException("", status_code=404, message="File not found")
     file_path = pathlib.Path(video_path)
     filename = file_path.stem
     extension = file_path.suffix

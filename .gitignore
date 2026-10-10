@@ -38,6 +38,8 @@ CLAUDE.md
 debug/
 debug_*.py
 test_*.py
+!/test/test_*.py
+!/test/services/test_*.py
 streamlit.log
 
 # Secrets
@@ -52,6 +54,23 @@ dist/
 # License files
 license.dat
 license_database.json
+license_server_database.json
+license_server_private.pem
+.seller_admin_password.txt
+.cloudflare_admin_token.txt
+.backup_tools/
+temporary_secure_download.py
+secure_mobile_backup_*.zip
+secure_download_*.log
+.mobile_backup_password.txt
+.mobile_backup_token.txt
+.mobile_backup_url.txt
+.settings_backup_password.txt
+.settings_backup_token.txt
+settings_backup_*.zip
+create_settings_backup.py
+license_tunnel_*.log
+AI쇼츠생성기_배포판_v*/
 
 # Google Drive upload
 drive_token.pickle

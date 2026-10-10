@@ -228,7 +228,14 @@ def _generate_response(prompt: str) -> str:
                     try:
                         logger.info(f"Using Gemini model: {m} with API key #{key_num}")
                         model = genai.GenerativeModel(m)
-                        response = model.generate_content(prompt)
+                        import concurrent.futures
+                        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                            future = executor.submit(model.generate_content, prompt)
+                            try:
+                                response = future.result(timeout=60)  # 60초 타임아웃
+                            except concurrent.futures.TimeoutError:
+                                logger.warning(f"Gemini model {m} timed out after 60s with key #{key_num}")
+                                raise Exception("Timeout")
                         if response and getattr(response, "text", None):
                             logger.success(f"✅ Success with API key #{key_num} and model {m}")
                             return response.text

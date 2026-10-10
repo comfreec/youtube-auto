@@ -6,11 +6,11 @@ echo ============================================
 echo.
 
 REM 새 터미널 창에서 Streamlit 실행
-start "Streamlit 웹 UI" cmd /k "streamlit run webui/Main.py --server.port 8501"
+start "Streamlit 웹 UI" cmd /k "set PYTHONDONTWRITEBYTECODE=1 && set PYTHONPYCACHEPREFIX=%TEMP%\pycache && streamlit run webui/Main.py --server.port 8501"
 timeout /t 2 /nobreak > nul
 
 REM 새 터미널 창에서 모바일 서버 실행
-start "모바일 서버" cmd /k "python mobile_server_simple.py"
+start "모바일 서버" cmd /k "set PYTHONDONTWRITEBYTECODE=1 && set PYTHONPYCACHEPREFIX=%TEMP%\pycache && python mobile_server_simple.py"
 timeout /t 2 /nobreak > nul
 
 REM 새 터미널 창에서 ngrok 실행

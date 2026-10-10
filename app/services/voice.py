@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import asyncio
+import math
 import os
 import re
 from datetime import datetime
@@ -8,8 +9,7 @@ from xml.sax.saxutils import unescape
 
 import edge_tts
 import requests
-from edge_tts import SubMaker, submaker
-from edge_tts.submaker import mktimestamp
+from edge_tts import submaker
 from loguru import logger
 from moviepy.video.tools import subtitles
 from moviepy.audio.io.AudioFileClip import AudioFileClip
@@ -19,6 +19,27 @@ import time
 
 from app.config import config
 from app.utils import utils
+
+
+class SubMaker(submaker.SubMaker):
+    """Compatibility adapter for the legacy subtitle data used by this project."""
+
+    def __init__(self):
+        super().__init__()
+        self.offset = []
+        self.subs = []
+
+    def create_sub(self, timestamp, text):
+        self.offset.append((timestamp[0], timestamp[0] + timestamp[1]))
+        self.subs.append(text)
+
+
+def mktimestamp(time_unit: float) -> str:
+    """Format a 100-nanosecond Edge timestamp for an SRT/VTT cue."""
+    hour = math.floor(time_unit / 10**7 / 3600)
+    minute = math.floor((time_unit / 10**7 / 60) % 60)
+    seconds = (time_unit / 10**7) % 60
+    return f"{hour:02d}:{minute:02d}:{seconds:06.3f}"
 
 
 def get_siliconflow_voices() -> list[str]:
@@ -1382,8 +1403,13 @@ def azure_tts_v1(
 
             async def _do() -> SubMaker:
                 logger.debug(f"Creating Communicate object for {voice_name}")
-                communicate = edge_tts.Communicate(text, voice_name, rate=rate_str)
-                sub_maker = edge_tts.SubMaker()
+                communicate = edge_tts.Communicate(
+                    text,
+                    voice_name,
+                    rate=rate_str,
+                    boundary="WordBoundary",
+                )
+                sub_maker = SubMaker()
                 logger.debug(f"Opening file {voice_file} for writing")
                 with open(voice_file, "wb") as file:
                     logger.debug("Starting communicate.stream()")
@@ -1402,6 +1428,8 @@ def azure_tts_v1(
                  return await asyncio.wait_for(_do(), timeout=60)
             
             sub_maker = asyncio.run(_do_with_timeout())
+            if sub_maker is not None:
+                sub_maker.source_text = text
             logger.info("asyncio.run(_do()) finished")
             
             if not sub_maker or not sub_maker.subs:
@@ -1913,6 +1941,87 @@ def _seconds_to_srt_time(seconds: float) -> str:
     secs = int(seconds % 60)
     millisecs = int((seconds % 1) * 1000)
     return f"{hours:02d}:{minutes:02d}:{secs:02d},{millisecs:03d}"
+
+
+def create_boundary_subtitle(
+    sub_maker: submaker.SubMaker,
+    text: str,
+    subtitle_file: str,
+    max_duration: float = 3.0,
+    target_chars: int = 20,
+) -> bool:
+    """Create readable SRT cues from Edge's exact speech boundaries.
+
+    Korean Edge voices often return morphemes rather than complete words.  The
+    boundary text is therefore mapped back to the original script before cues
+    are grouped.  Cue timing always comes from the synthesized speech stream.
+    """
+    if not getattr(sub_maker, "offset", None) or not getattr(sub_maker, "subs", None):
+        return False
+
+    text = getattr(sub_maker, "source_text", text)
+
+    source_chars = [(char, index) for index, char in enumerate(text) if re.match(r"\w", char)]
+    normalized_source = "".join(char for char, _ in source_chars).casefold()
+    cursor = 0
+    boundaries = []
+
+    for timing, spoken_text in zip(sub_maker.offset, sub_maker.subs):
+        normalized_spoken = "".join(re.findall(r"\w", unescape(spoken_text))).casefold()
+        if not normalized_spoken:
+            continue
+        position = normalized_source.find(normalized_spoken, cursor)
+        if position < 0:
+            logger.warning("Could not map an Edge boundary back to the source text")
+            return False
+        end_position = position + len(normalized_spoken) - 1
+        boundaries.append(
+            {
+                "start": timing[0],
+                "end": timing[1],
+                "source_start": source_chars[position][1],
+                "source_end": source_chars[end_position][1] + 1,
+            }
+        )
+        cursor = end_position + 1
+
+    if not boundaries:
+        return False
+
+    cues = []
+    cue_start = 0
+    for index, boundary in enumerate(boundaries):
+        start_offset = boundaries[cue_start]["start"]
+        duration = (boundary["end"] - start_offset) / 10**7
+        source_start = boundaries[cue_start]["source_start"]
+        source_end = boundary["source_end"]
+        cue_text = text[source_start:source_end].strip(" \t\r\n,.;:!?，。！？")
+
+        following = text[source_end:source_end + 1]
+        natural_break = not following or following.isspace() or following in ",.;:!?，。！？"
+        sentence_break = source_end < len(text) and text[source_end] in ".!?。！？"
+        long_enough = len(cue_text) >= target_chars and duration >= 1.3
+        last_boundary = index == len(boundaries) - 1
+
+        if last_boundary or sentence_break or duration >= max_duration or (natural_break and long_enough):
+            if cue_text:
+                cues.append((start_offset, boundary["end"], cue_text))
+            cue_start = index + 1
+
+    if not cues:
+        return False
+
+    lines = []
+    for index, (start, end, cue_text) in enumerate(cues, start=1):
+        lines.append(
+            f"{index}\n{mktimestamp(start).replace('.', ',')} --> "
+            f"{mktimestamp(end).replace('.', ',')}\n{cue_text}\n"
+        )
+
+    with open(subtitle_file, "w", encoding="utf-8") as file:
+        file.write("\n".join(lines) + "\n")
+    logger.info(f"Boundary-synced subtitle created: {len(cues)} cues")
+    return True
 
 
 def create_subtitle(sub_maker: submaker.SubMaker, text: str, subtitle_file: str):

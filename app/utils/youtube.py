@@ -14,17 +14,36 @@ SCOPES = [
 
 def get_authenticated_service(client_secrets_file, token_file='token.pickle'):
     creds = None
-    # The file token.pickle stores the user's access and refresh tokens, and is
-    # created automatically when the authorization flow completes for the first
-    # time.
-    if os.path.exists(token_file):
-        with open(token_file, 'rb') as token:
-            creds = pickle.load(token)
+
+    # 쓰기 가능한 대체 토큰 파일 경로
+    import tempfile
+    alt_token_file = os.path.join(tempfile.gettempdir(), 'yt_token.pickle')
+
+    # 먼저 대체 파일 확인 (최신 토큰일 수 있음)
+    if os.path.exists(alt_token_file):
+        try:
+            with open(alt_token_file, 'rb') as token:
+                creds = pickle.load(token)
+            logger.info("✅ 대체 토큰 파일 로드 성공")
+        except:
+            creds = None
+
+    # 대체 파일에 유효한 토큰이 없으면 원본 파일에서 로드
+    if not creds or not creds.valid:
+        if os.path.exists(token_file):
+            try:
+                with open(token_file, 'rb') as token:
+                    creds = pickle.load(token)
+            except Exception as e:
+                logger.warning(f"토큰 파일 로드 실패: {e}")
+                creds = None
     
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
+            logger.info("🔄 YouTube 토큰 만료 - 자동 갱신 중...")
             creds.refresh(Request())
+            logger.info("✅ 토큰 갱신 성공")
         else:
             if not os.path.exists(client_secrets_file):
                 raise FileNotFoundError(f"Client secrets file not found: {client_secrets_file}")
@@ -33,9 +52,13 @@ def get_authenticated_service(client_secrets_file, token_file='token.pickle'):
                 client_secrets_file, SCOPES)
             creds = flow.run_local_server(port=0)
         
-        # Save the credentials for the next run
-        with open(token_file, 'wb') as token:
-            pickle.dump(creds, token)
+        # 대체 파일에 저장 (쓰기 권한 있는 temp 폴더)
+        try:
+            with open(alt_token_file, 'wb') as token:
+                pickle.dump(creds, token)
+            logger.info(f"✅ 토큰 대체 파일에 저장: {alt_token_file}")
+        except Exception as e:
+            logger.warning(f"⚠️ 토큰 저장 실패: {e} - 이번 세션에서만 사용")
 
     return build('youtube', 'v3', credentials=creds)
 

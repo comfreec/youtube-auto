@@ -1,0 +1,8 @@
+name = "ai-shorts-license"
+main = "worker.js"
+compatibility_date = "2026-10-10"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ai-shorts-license"
+database_id = "91fcdbc3-9d37-4198-8e65-0cf9a658f14f"

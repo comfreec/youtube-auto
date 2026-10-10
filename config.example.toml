@@ -152,8 +152,8 @@ subtitle_provider = "edge"
 # For example, https://xxxx.com/tasks/6357f542-a4e1-46a1-b4c9-bf3bd0df5285/final-1.mp4
 # endpoint="https://xxxx.com"
 # 라이선스 서버 URL (본인 서버 주소 - ngrok 주소 또는 고정 도메인)
-# 예: license_server_url = "https://xxxx.ngrok-free.app"
-license_server_url = ""
+# Cloudflare Workers에 배포된 판매자 전용 라이선스 서버 주소
+license_server_url = "https://ai-shorts-license.comfreec1.workers.dev"
 
 
 # Video material storage location
@@ -223,3 +223,6 @@ api_key = ""
 # 是否隐藏日志信息
 # Whether to hide logs in the UI
 hide_log = false
+tts_server = "azure-tts-v1"
+voice_name = "ko-KR-SunHiNeural-Female"
+setup_completed = false

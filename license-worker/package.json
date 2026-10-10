@@ -1,0 +1,12 @@
+{
+  "name": "ai-shorts-license-worker",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "db:init": "wrangler d1 execute ai-shorts-license --remote --file=schema.sql"
+  },
+  "devDependencies": {
+    "wrangler": "^4.45.0"
+  }
+}

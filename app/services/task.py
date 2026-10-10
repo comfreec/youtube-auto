@@ -258,10 +258,10 @@ def generate_subtitle(task_id, params, video_script, sub_maker, audio_file):
         # Edge TTS 사용 시 기존 로직
         if subtitle_provider == "edge":
             from app.services import voice
-            voice.create_subtitle(
+            created = voice.create_boundary_subtitle(
                 text=video_script, sub_maker=sub_maker, subtitle_file=subtitle_path
             )
-            if not os.path.exists(subtitle_path) or os.path.getsize(subtitle_path) == 0:
+            if not created or not os.path.exists(subtitle_path) or os.path.getsize(subtitle_path) == 0:
                 subtitle_fallback = True
                 logger.warning("subtitle file not found or empty, fallback to whisper")
             else:

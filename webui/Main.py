@@ -26,6 +26,7 @@ from app.services import task
 from app.services import state as sm
 from app.models import const
 from app.services.license import license_manager
+from webui.setup_wizard import setup_required, show_setup_wizard
 
 # Import mobile optimization
 try:
@@ -1663,7 +1664,14 @@ def init_log():
         format=format_record,
         colorize=True,
     )
-    logger.add("debug_session.log", level="DEBUG", format=format_record, rotation="10 MB")
+    # 로그 파일을 temp 폴더에 저장 (권한 문제 방지)
+    import tempfile, os
+    log_path = os.path.join(tempfile.gettempdir(), "debug_session.log")
+    try:
+        logger.add(log_path, level="DEBUG", format=format_record, rotation="10 MB")
+    except Exception:
+        # 로그 파일 저장 실패해도 계속 진행
+        pass
 
 
 init_log()
@@ -1678,6 +1686,10 @@ def tr(key):
 
 # Legacy settings removed - migrated to Tabs
 
+
+if setup_required():
+    show_setup_wizard()
+    st.stop()
 
 llm_provider = config.app.get("llm_provider", "").lower()
 
@@ -3481,13 +3493,13 @@ def generate_single_video(title: str, video_type: str, language: str, duration: 
         
         # 2. VideoParams 설정
         # 언어별 음성 속도 설정
-        voice_rate = 1.3 if language == "ko-KR" else 1.0  # 한국어 1.3배속, 영어 1.0배속
+        voice_rate = 1.12 if language == "ko-KR" else 1.0
         
         params_dict = {
             'video_subject': title,
             'video_script': script,
             'video_language': language,
-            'voice_name': 'casual' if video_type == 'shorts' else 'professional',
+            'voice_name': 'ko-KR-SunHiNeural' if language == 'ko-KR' else 'en-US-JennyNeural',
             'voice_rate': voice_rate,  # 언어별 속도 적용
             'bgm_type': 'random',
             'bgm_volume': 0.2,
@@ -4059,6 +4071,13 @@ with tab_animation:
 # --- TAB 3: SETTINGS (Enhanced) ---
 with tab_settings:
     st.markdown("### ⚙️ **고급 설정 및 커스터마이징**")
+    with st.expander("🧭 처음 사용 설정 다시 열기"):
+        st.caption("API 키나 YouTube 설정을 처음부터 다시 안내받을 수 있습니다. 기존 키는 사용자가 바꾸기 전까지 유지됩니다.")
+        if st.button("설정 마법사 열기", key="restart_setup_wizard"):
+            config.ui["setup_completed"] = False
+            config.save_config()
+            st.session_state.setup_wizard_step = 1
+            st.rerun()
     st.markdown("*전문가급 영상을 위한 세밀한 설정을 조정하세요*")
     
     # Settings organized in expandable sections
@@ -4302,7 +4321,7 @@ with tab_settings:
             
             # 언어별 음성 속도 자동 설정
             if params.video_language == "ko-KR":
-                params.voice_rate = 1.3  # 한국어 1.3배속
+                params.voice_rate = 1.12
             else:
                 params.voice_rate = 1.0  # 영어 1.0배속
             
@@ -4311,7 +4330,7 @@ with tab_settings:
             st.info("""
             **🎯 최적화된 음성 설정 (자동 적용)**
             
-            - 🇰🇷 한국어: 1.3배속 (gTTS 최적화)
+            - 🇰🇷 한국어: 선희 음성 1.12배속
             - 🇺🇸 영어: 1.0배속 (자연스러운 속도)
             - 🔊 음성 볼륨: 1.0 (기본값)
             """)
@@ -5185,8 +5204,8 @@ if not st.session_state.get("generation_in_progress", False) and 'start_button' 
     korean_params.coupang_overlay_data = coupang_overlay_data  # 쿠팡 오버레이 데이터 추가
     
     # 한국어 버전 음성 설정 (모바일과 동일하게)
-    korean_params.voice_name = "gtts:ko-한국어"  # gTTS 한국어
-    korean_params.voice_rate = 1.3  # 1.3배속
+    korean_params.voice_name = "ko-KR-SunHiNeural"
+    korean_params.voice_rate = 1.12
     korean_params.voice_volume = 1.5  # 음성 볼륨 1.5배
     
     # 디버그 로그

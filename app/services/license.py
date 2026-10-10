@@ -1,276 +1,221 @@
 # -*- coding: utf-8 -*-
-"""라이선스 인증 시스템"""
+"""Customer-side license validation.
 
-import os
-import json
-import hmac
-import hashlib
+License creation and private signing keys intentionally live outside this module.
+"""
+
 import base64
+import hashlib
+import json
 import platform
 import subprocess
-from datetime import datetime, timedelta
+import urllib.error
+import urllib.request
+from datetime import datetime, timezone
 from pathlib import Path
+
 from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from loguru import logger
 
-# 판매자 전용 비밀 서명 키 (절대 변경/공개 금지)
-_SECRET_KEY = b"AI-SHORTS-GENERATOR-SECRET-2024-JADONG-PROD"
+
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+PUBLIC_KEY_FILE = ROOT_DIR / "resource" / "license_public_key.pem"
+ONLINE_CHECK_INTERVAL_HOURS = 24
+OFFLINE_GRACE_HOURS = 72
 
 
-def _sign_license(expiry_date: str) -> str:
-    """만료일로 HMAC 서명 생성"""
-    sig = hmac.new(_SECRET_KEY, expiry_date.encode(), hashlib.sha256).hexdigest()
-    return sig
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
-def generate_license_key(days: int, customer_name: str = "") -> str:
-    """라이선스 키 생성 (판매자용)
-    
-    키 구조: 만료일(YYYYMMDD) + HMAC서명앞8자 = 16자 → XXXX-XXXX-XXXX-XXXX
-    오프라인 검증 가능, 위조 불가
-    """
-    expiry_date = (datetime.now() + timedelta(days=days)).strftime("%Y-%m-%d")
-    sig = _sign_license(expiry_date)
-
-    date_compact = expiry_date.replace("-", "")  # 20251231
-    key_raw = (date_compact + sig[:8]).upper()   # 16자
-    license_key = f"{key_raw[0:4]}-{key_raw[4:8]}-{key_raw[8:12]}-{key_raw[12:16]}"
-
-    logger.info(f"라이선스 키 생성: {license_key} (만료일: {expiry_date}, 고객: {customer_name})")
-    return license_key
-
-
-def decode_license_key(license_key: str):
-    """라이선스 키에서 만료일 추출 및 서명 검증
-    
-    Returns:
-        (유효여부, 만료일 or 오류메시지)
-    """
-    # 개발자 라이선스
-    if license_key.upper() == "DEV-PERM-ANENT-LICN":
-        return True, "2099-12-31"
-
-    key_raw = license_key.replace("-", "").upper()
-    if len(key_raw) != 16:
-        return False, "키 형식 오류"
-
-    date_part = key_raw[:8]   # YYYYMMDD
-    sig_part = key_raw[8:16]  # 서명 앞 8자
-
-    # 날짜 파싱
-    try:
-        expiry_date = f"{date_part[:4]}-{date_part[4:6]}-{date_part[6:8]}"
-        datetime.strptime(expiry_date, "%Y-%m-%d")
-    except ValueError:
-        return False, "날짜 형식 오류"
-
-    # 서명 검증: 가능한 days 범위(1~3650)로 브루트포스 방지 → 날짜만으로 검증
-    # 날짜 기반 서명: days 없이 날짜만으로 서명
-    expected_sig = hmac.new(_SECRET_KEY, expiry_date.encode(), hashlib.sha256).hexdigest()[:8].upper()
-    if sig_part != expected_sig:
-        return False, "유효하지 않은 라이선스 키입니다"
-
-    return True, expiry_date
+def _parse_time(value: str) -> datetime:
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
 
 
 class LicenseManager:
-    """라이선스 관리 클래스"""
+    """Activates and verifies server-issued, machine-bound licenses."""
 
     def __init__(self):
-        self.license_file = Path("license.dat")
-        self.cipher_key = b'6oQwhnTvOZcbsVPf2jFTkaq6LI1ndz_mwZMmJcsZ-aY='
-        self.cipher = Fernet(self.cipher_key)
+        self.license_file = ROOT_DIR / "license.dat"
+        self.cipher = Fernet(b"6oQwhnTvOZcbsVPf2jFTkaq6LI1ndz_mwZMmJcsZ-aY=")
 
     def get_hardware_id(self) -> str:
-        """하드웨어 ID 생성 (컴퓨터 고유 식별자)"""
         try:
             system = platform.system()
             if system == "Windows":
                 try:
-                    cpu_info = subprocess.check_output("wmic cpu get processorid", shell=True).decode()
-                    cpu_id = cpu_info.split('\n')[1].strip()
-                except:
+                    cpu_info = subprocess.check_output(
+                        "wmic cpu get processorid", shell=True, stderr=subprocess.DEVNULL
+                    ).decode(errors="ignore")
+                    cpu_id = cpu_info.splitlines()[1].strip()
+                except Exception:
                     cpu_id = "unknown"
                 try:
-                    mb_info = subprocess.check_output("wmic baseboard get serialnumber", shell=True).decode()
-                    mb_serial = mb_info.split('\n')[1].strip()
-                except:
-                    mb_serial = "unknown"
-                hardware_string = f"{cpu_id}-{mb_serial}-{platform.node()}"
+                    board_info = subprocess.check_output(
+                        "wmic baseboard get serialnumber", shell=True, stderr=subprocess.DEVNULL
+                    ).decode(errors="ignore")
+                    board_id = board_info.splitlines()[1].strip()
+                except Exception:
+                    board_id = "unknown"
+                raw = f"{cpu_id}-{board_id}-{platform.node()}"
             elif system == "Darwin":
-                try:
-                    hw_uuid = subprocess.check_output("system_profiler SPHardwareDataType | grep 'Hardware UUID'", shell=True).decode()
-                    hardware_string = hw_uuid.split(':')[1].strip()
-                except:
-                    hardware_string = platform.node()
+                raw = platform.node()
             else:
-                try:
-                    with open('/etc/machine-id', 'r') as f:
-                        hardware_string = f.read().strip()
-                except:
-                    hardware_string = platform.node()
-
-            return hashlib.sha256(hardware_string.encode()).hexdigest()
-        except Exception as e:
-            logger.error(f"하드웨어 ID 생성 실패: {e}")
+                machine_id = Path("/etc/machine-id")
+                raw = machine_id.read_text(encoding="utf-8").strip() if machine_id.exists() else platform.node()
+            return hashlib.sha256(raw.encode()).hexdigest()
+        except Exception as exc:
+            logger.warning(f"하드웨어 ID 생성 실패: {exc}")
             return hashlib.sha256(platform.node().encode()).hexdigest()
 
-    def activate_license(self, license_key: str) -> tuple[bool, str]:
-        """라이선스 활성화"""
-        try:
-            license_key = license_key.strip().upper()
-
-            # 키 자체 검증 (서명 확인 + 만료일 추출)
-            valid, result = decode_license_key(license_key)
-            if not valid:
-                return False, result
-
-            expiry_date = result
-
-            # 이미 만료된 키인지 확인
-            if datetime.strptime(expiry_date, "%Y-%m-%d") < datetime.now():
-                return False, f"이미 만료된 라이선스 키입니다. (만료일: {expiry_date})"
-
-            # 하드웨어 ID
-            hardware_id = self.get_hardware_id()
-
-            # 서버에 하드웨어 ID 등록/검증 (개발자 키 제외)
-            if license_key != "DEV-PERM-ANENT-LICN":
-                server_result = self._verify_with_server(license_key, hardware_id)
-                if not server_result[0]:
-                    return False, server_result[1]
-
-            # 로컬 license.dat 저장
-            license_data = {
-                "license_key": license_key,
-                "hardware_id": hardware_id,
-                "activated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "expiry_date": expiry_date,
-            }
-
-            encrypted_data = self._encrypt_data(license_data)
-            with open(self.license_file, 'wb') as f:
-                f.write(encrypted_data)
-
-            days_left = (datetime.strptime(expiry_date, "%Y-%m-%d") - datetime.now()).days
-            logger.info(f"라이선스 활성화 성공: {license_key} (만료일: {expiry_date}, {days_left}일 남음)")
-            return True, f"라이선스가 성공적으로 활성화되었습니다! (만료일: {expiry_date}, {days_left}일 남음)"
-
-        except Exception as e:
-            logger.error(f"라이선스 활성화 실패: {e}")
-            return False, f"활성화 실패: {str(e)}"
-
-    def _verify_with_server(self, license_key: str, hardware_id: str) -> tuple[bool, str]:
-        """서버에 하드웨어 ID 등록/검증"""
-        import urllib.request
-        import json as _json
-
-        # 서버 주소 설정 파일에서 읽기
-        server_url = self._get_license_server_url()
-        if not server_url:
-            logger.warning("라이선스 서버 주소 미설정 - 로컬 검증만 수행")
-            return True, "ok"
-
-        try:
-            payload = _json.dumps({
-                "license_key": license_key,
-                "hardware_id": hardware_id
-            }).encode()
-            req = urllib.request.Request(
-                f"{server_url}/api/license/activate",
-                data=payload,
-                headers={"Content-Type": "application/json"},
-                method="POST"
-            )
-            res = urllib.request.urlopen(req, timeout=10)
-            data = _json.loads(res.read().decode())
-            return True, data.get("message", "ok")
-        except urllib.error.HTTPError as e:
-            body = e.read().decode()
-            try:
-                msg = _json.loads(body).get("detail", "서버 오류")
-            except:
-                msg = body
-            return False, msg
-        except Exception as e:
-            logger.warning(f"서버 연결 실패: {e} - 로컬 검증만 수행")
-            return True, "ok"  # 서버 연결 실패 시 로컬 검증으로 폴백
-
-    def _get_license_server_url(self) -> str:
-        """라이선스 서버 URL 읽기 (config.toml의 license_server_url)"""
+    def _server_url(self) -> str:
         try:
             import toml
-            cfg = toml.load("config.toml")
+
+            cfg = toml.load(ROOT_DIR / "config.toml")
             return cfg.get("app", {}).get("license_server_url", "").rstrip("/")
-        except:
+        except Exception:
             return ""
 
-    def verify_license(self) -> tuple[bool, str]:
-        """라이선스 검증"""
+    def _request(self, path: str, payload: dict) -> dict:
+        server_url = self._server_url()
+        if not server_url:
+            raise RuntimeError("라이선스 서버 주소가 설정되지 않았습니다.")
+        request = urllib.request.Request(
+            f"{server_url}{path}",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
         try:
-            if not self.license_file.exists():
-                return False, "라이선스가 활성화되지 않았습니다."
+            with urllib.request.urlopen(request, timeout=10) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            body = exc.read().decode("utf-8", errors="replace")
+            try:
+                message = json.loads(body).get("detail", "라이선스 서버 오류")
+            except Exception:
+                message = "라이선스 서버 오류"
+            raise RuntimeError(message) from exc
 
-            with open(self.license_file, 'rb') as f:
-                encrypted_data = f.read()
+    def _verify_certificate(self, certificate: dict, hardware_id: str) -> dict:
+        if not PUBLIC_KEY_FILE.exists():
+            raise RuntimeError("라이선스 공개키 파일이 없습니다.")
+        payload_b64 = certificate.get("payload", "")
+        signature_b64 = certificate.get("signature", "")
+        try:
+            payload_bytes = base64.urlsafe_b64decode(payload_b64.encode("ascii"))
+            signature = base64.urlsafe_b64decode(signature_b64.encode("ascii"))
+            public_key = serialization.load_pem_public_key(PUBLIC_KEY_FILE.read_bytes())
+            if not isinstance(public_key, Ed25519PublicKey):
+                raise ValueError("잘못된 공개키 형식")
+            public_key.verify(signature, payload_bytes)
+            payload = json.loads(payload_bytes.decode("utf-8"))
+        except Exception as exc:
+            raise RuntimeError("라이선스 인증서가 올바르지 않습니다.") from exc
 
-            license_data = self._decrypt_data(encrypted_data)
+        if payload.get("hardware_id") != hardware_id:
+            raise RuntimeError("다른 컴퓨터에서 활성화된 라이선스입니다.")
+        if payload.get("status") != "active":
+            raise RuntimeError("사용이 중지된 라이선스입니다.")
+        if _utc_now() > _parse_time(payload["expires_at"]):
+            raise RuntimeError(f"라이선스가 만료되었습니다. (만료일: {payload['expires_at'][:10]})")
+        return payload
 
-            # 하드웨어 ID 확인
-            current_hardware_id = self.get_hardware_id()
-            if license_data.get("hardware_id") != current_hardware_id:
-                return False, "다른 컴퓨터에서 활성화된 라이선스입니다."
+    def activate_license(self, license_key: str) -> tuple[bool, str]:
+        license_key = license_key.strip().upper()
+        if not license_key:
+            return False, "라이선스 키를 입력해주세요."
+        hardware_id = self.get_hardware_id()
+        try:
+            response = self._request(
+                "/api/v1/licenses/activate",
+                {"license_key": license_key, "hardware_id": hardware_id},
+            )
+            certificate = response["certificate"]
+            payload = self._verify_certificate(certificate, hardware_id)
+            data = {
+                "license_key": license_key,
+                "hardware_id": hardware_id,
+                "certificate": certificate,
+                "last_verified_at": _utc_now().isoformat(),
+                "activated_at": _utc_now().isoformat(),
+            }
+            self.license_file.write_bytes(self._encrypt_data(data))
+            return True, f"라이선스가 활성화되었습니다. (만료일: {payload['expires_at'][:10]})"
+        except Exception as exc:
+            logger.warning(f"라이선스 활성화 실패: {exc}")
+            return False, str(exc)
 
-            # 키 서명 재검증 (license.dat 위변조 방지)
-            license_key = license_data.get("license_key", "")
-            valid, result = decode_license_key(license_key)
-            if not valid:
-                return False, "라이선스 파일이 손상되었습니다."
+    def verify_license(self) -> tuple[bool, str]:
+        if not self.license_file.exists():
+            return False, "라이선스가 활성화되지 않았습니다."
+        try:
+            data = self._decrypt_data(self.license_file.read_bytes())
+            hardware_id = self.get_hardware_id()
+            # One-time migration for licenses issued by versions before v1.5.
+            if "certificate" not in data and data.get("license_key"):
+                response = self._request(
+                    "/api/v1/licenses/activate",
+                    {"license_key": data["license_key"], "hardware_id": hardware_id},
+                )
+                data = {
+                    "license_key": data["license_key"],
+                    "hardware_id": hardware_id,
+                    "certificate": response["certificate"],
+                    "last_verified_at": _utc_now().isoformat(),
+                    "activated_at": data.get("activated_at", _utc_now().isoformat()),
+                }
+                self.license_file.write_bytes(self._encrypt_data(data))
+            payload = self._verify_certificate(data["certificate"], hardware_id)
+            last_verified = _parse_time(data["last_verified_at"])
+            elapsed_hours = (_utc_now() - last_verified).total_seconds() / 3600
 
-            # 만료일 확인
-            expiry_date = datetime.strptime(license_data.get("expiry_date"), "%Y-%m-%d")
-            if datetime.now() > expiry_date:
-                return False, f"라이선스가 만료되었습니다. (만료일: {license_data.get('expiry_date')})"
+            if elapsed_hours >= ONLINE_CHECK_INTERVAL_HOURS:
+                try:
+                    response = self._request(
+                        "/api/v1/licenses/verify",
+                        {"license_key": data["license_key"], "hardware_id": hardware_id},
+                    )
+                    certificate = response["certificate"]
+                    payload = self._verify_certificate(certificate, hardware_id)
+                    data["certificate"] = certificate
+                    data["last_verified_at"] = _utc_now().isoformat()
+                    self.license_file.write_bytes(self._encrypt_data(data))
+                except Exception as exc:
+                    if elapsed_hours > OFFLINE_GRACE_HOURS:
+                        return False, f"라이선스 서버 확인이 필요합니다. 인터넷 연결 후 다시 실행해주세요. ({exc})"
+                    logger.warning(f"라이선스 서버 일시 연결 실패, 오프라인 유예 적용: {exc}")
 
-            days_left = (expiry_date - datetime.now()).days
+            days_left = max(0, (_parse_time(payload["expires_at"]) - _utc_now()).days)
             return True, f"라이선스 유효 (남은 기간: {days_left}일)"
-
-        except Exception as e:
-            logger.error(f"라이선스 검증 실패: {e}")
-            return False, "라이선스 파일이 손상되었습니다."
+        except Exception as exc:
+            logger.warning(f"라이선스 검증 실패: {exc}")
+            return False, str(exc)
 
     def get_license_info(self) -> dict:
-        """라이선스 정보 조회"""
         try:
-            if not self.license_file.exists():
-                return {}
-
-            with open(self.license_file, 'rb') as f:
-                encrypted_data = f.read()
-
-            license_data = self._decrypt_data(encrypted_data)
-            expiry_date = datetime.strptime(license_data.get("expiry_date"), "%Y-%m-%d")
-            days_left = (expiry_date - datetime.now()).days
-
+            data = self._decrypt_data(self.license_file.read_bytes())
+            payload = self._verify_certificate(data["certificate"], self.get_hardware_id())
+            expiry = _parse_time(payload["expires_at"])
             return {
-                "license_key": license_data.get("license_key", ""),
-                "activated_at": license_data.get("activated_at", ""),
-                "expiry_date": license_data.get("expiry_date", ""),
-                "days_left": days_left,
-                "hardware_id": license_data.get("hardware_id", "")[:16] + "..."
+                "license_key": data.get("license_key", ""),
+                "activated_at": data.get("activated_at", ""),
+                "expiry_date": payload["expires_at"][:10],
+                "days_left": max(0, (expiry - _utc_now()).days),
+                "hardware_id": data.get("hardware_id", "")[:16] + "...",
             }
-        except Exception as e:
-            logger.error(f"라이선스 정보 조회 실패: {e}")
+        except Exception:
             return {}
 
     def _encrypt_data(self, data: dict) -> bytes:
-        json_data = json.dumps(data).encode()
-        return self.cipher.encrypt(json_data)
+        return self.cipher.encrypt(json.dumps(data).encode("utf-8"))
 
     def _decrypt_data(self, encrypted_data: bytes) -> dict:
-        json_data = self.cipher.decrypt(encrypted_data)
-        return json.loads(json_data.decode())
+        return json.loads(self.cipher.decrypt(encrypted_data).decode("utf-8"))
 
 
-# 전역 인스턴스
 license_manager = LicenseManager()
