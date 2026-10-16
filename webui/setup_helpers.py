@@ -146,7 +146,8 @@ def get_setup_progress() -> Dict[str, bool]:
         ),
         'video_source_configured': bool(
             config.app.get('pexels_api_keys') or 
-            config.app.get('pixabay_api_keys')
+            config.app.get('pixabay_api_keys') or
+            config.app.get('video_source') in ('animation', 'ai_image')
         ),
         'tts_configured': True,  # Edge TTS는 기본 제공
         'youtube_configured': os.path.exists('client_secrets.json')

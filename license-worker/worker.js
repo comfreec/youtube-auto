@@ -104,22 +104,23 @@ async function createLicense(request, env) {
   requireAdmin(request, env);
   const data = await body(request);
   const customerName = String(data.customer_name || "").trim();
+  const permanent = data.permanent === true;
   const days = Number(data.days || 365);
   const memo = String(data.memo || "").slice(0, 500);
-  if (!customerName || !Number.isInteger(days) || days < 1 || days > 3650) {
+  if (!customerName || (!permanent && (!Number.isInteger(days) || days < 1 || days > 3650))) {
     return json({ detail: "고객명 또는 기간이 올바르지 않습니다." }, 400);
   }
   const random = () => [...crypto.getRandomValues(new Uint8Array(3))]
     .map((byte) => byte.toString(16).padStart(2, "0")).join("").toUpperCase();
   const licenseKey = `ASG-${random()}-${random()}-${random()}-${random()}`;
   const now = new Date();
-  const expiry = new Date(now.getTime() + days * 86400000);
-  expiry.setUTCHours(23, 59, 59, 999);
+  const expiry = permanent ? new Date("9999-12-31T23:59:59.999Z") : new Date(now.getTime() + days * 86400000);
+  if (!permanent) expiry.setUTCHours(23, 59, 59, 999);
   const id = crypto.randomUUID().replace(/-/g, "").slice(0, 24);
   await env.DB.prepare(
     "INSERT INTO licenses (id,key_hash,customer_name,memo,created_at,expires_at) VALUES (?,?,?,?,?,?)",
   ).bind(id, await sha256(licenseKey), customerName, memo, now.toISOString(), expiry.toISOString()).run();
-  return json({ license_key: licenseKey, expires_at: expiry.toISOString() }, 201);
+  return json({ license_key: licenseKey, expires_at: expiry.toISOString(), permanent }, 201);
 }
 
 async function route(request, env) {

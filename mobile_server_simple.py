@@ -6,6 +6,7 @@
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.responses import HTMLResponse, FileResponse
 from pydantic import BaseModel
+from typing import Literal
 import uvicorn
 import os
 import sys
@@ -48,6 +49,7 @@ class VideoRequest(BaseModel):
     subject: str
     auto_upload: bool = True  # 기본값: 자동 업로드
     create_global: bool = True  # 기본값: 글로벌 버전 생성
+    video_source: Literal["pexels", "pixabay", "ai_image", "animation"] = "pexels"
 
 # 전역 작업 저장소
 tasks = {}
@@ -503,7 +505,7 @@ def run_video_generation(task_id: str, params: VideoParams, auto_upload: bool = 
                     stroke_width=1.5,
                     n_threads=2,
                     paragraph_number=3,  # 60초 분량으로 증가 (1 → 3)
-                    video_source="pexels",
+                    video_source=params.video_source,
                     use_segment_matching=True  # 대본과 어울리는 배경영상 매칭 활성화
                 )
                 
@@ -702,7 +704,7 @@ async def generate_video(request: VideoRequest, background_tasks: BackgroundTask
             stroke_width=1.5,
             n_threads=2,
             paragraph_number=3,  # 60초 분량으로 증가 (1 → 3)
-            video_source="pexels",
+            video_source=request.video_source,
             use_segment_matching=True
         )
         

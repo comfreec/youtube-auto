@@ -45,7 +45,7 @@
             font-weight: 600;
         }
         
-        input[type="text"] {
+        input[type="text"], select {
             width: 100%;
             padding: 15px;
             border: 2px solid #e0e0e0;
@@ -54,7 +54,7 @@
             transition: border-color 0.3s;
         }
         
-        input[type="text"]:focus {
+        input[type="text"]:focus, select:focus {
             outline: none;
             border-color: #667eea;
         }
@@ -131,6 +131,19 @@
             <label for="title">영상 제목</label>
             <input type="text" id="title" placeholder="예: 건강한 식습관의 중요성" />
         </div>
+
+        <div class="input-group">
+            <label for="videoSource">배경 화면 방식</label>
+            <select id="videoSource">
+                <option value="pexels">🌟 Pexels 무료 영상</option>
+                <option value="pixabay">🎨 Pixabay 무료 영상</option>
+                <option value="ai_image">🖼️ 내용맞춤 AI 이미지 (무료 한도)</option>
+                <option value="animation">✨ 간단 애니메이션 (오프라인)</option>
+            </select>
+            <div style="font-size: 13px; color: #666; margin-top: 7px; line-height: 1.4;">
+                AI 이미지가 실패하거나 무료 한도를 모두 사용하면 기존 무료 영상으로 자동 전환됩니다.
+            </div>
+        </div>
         
         <div class="input-group">
             <label style="display: flex; align-items: center; cursor: pointer;">
@@ -166,6 +179,7 @@
             const title = document.getElementById('title').value.trim();
             const autoUpload = document.getElementById('autoUpload').checked;
             const createGlobal = document.getElementById('createGlobal').checked;
+            const videoSource = document.getElementById('videoSource').value;
             
             if (!title) {
                 alert('제목을 입력해주세요!');
@@ -194,7 +208,8 @@
                     body: JSON.stringify({
                         subject: title,
                         auto_upload: autoUpload,
-                        create_global: createGlobal
+                        create_global: createGlobal,
+                        video_source: videoSource
                     })
                 });
                 

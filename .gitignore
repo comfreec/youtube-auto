@@ -57,7 +57,9 @@ license_database.json
 license_server_database.json
 license_server_private.pem
 .seller_admin_password.txt
+.seller_admin_username.txt
 .cloudflare_admin_token.txt
+.wrangler/
 .backup_tools/
 temporary_secure_download.py
 secure_mobile_backup_*.zip
@@ -70,7 +72,10 @@ secure_download_*.log
 settings_backup_*.zip
 create_settings_backup.py
 license_tunnel_*.log
+license_admin_tunnel_*.log
+.license_admin_url.txt
 AI쇼츠생성기_배포판_v*/
+.tools/
 
 # Google Drive upload
 drive_token.pickle

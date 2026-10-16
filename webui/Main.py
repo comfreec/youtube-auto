@@ -1532,7 +1532,11 @@ if "ui_language" not in st.session_state:
 # 쇼츠 최적화 기본 설정 적용 (페이지 첫 로드 시)
 if "shorts_optimization_applied" not in st.session_state:
     # 쇼츠 최적화 설정 자동 적용
-    if config.app.get("pexels_api_keys"):
+    if config.app.get("video_source") == "ai_image":
+        st.session_state["settings_video_source"] = 4
+    elif config.app.get("video_source") == "animation":
+        st.session_state["settings_video_source"] = 3
+    elif config.app.get("pexels_api_keys"):
         st.session_state["settings_video_source"] = 0
     elif config.app.get("pixabay_api_keys"):
         st.session_state["settings_video_source"] = 1
@@ -1942,7 +1946,11 @@ with tab_main:
             
             if st.button("✨ 쇼츠 최적화 적용", use_container_width=True, type="primary"):
                 # Apply optimal settings for YouTube Shorts
-                if config.app.get("pexels_api_keys"):
+                if config.app.get("video_source") == "ai_image":
+                    st.session_state["settings_video_source"] = 4
+                elif config.app.get("video_source") == "animation":
+                    st.session_state["settings_video_source"] = 3
+                elif config.app.get("pexels_api_keys"):
                     st.session_state["settings_video_source"] = 0
                 elif config.app.get("pixabay_api_keys"):
                     st.session_state["settings_video_source"] = 1
@@ -4090,6 +4098,8 @@ with tab_settings:
                 ("🌟 Pexels (추천)", "pexels"),
                 ("🎨 Pixabay", "pixabay"),
                 ("📁 로컬 파일", "local"),
+                ("✨ 간단 애니메이션 (무료·API 불필요)", "animation"),
+                ("🖼️ 내용맞춤 AI 이미지 (무료 한도)", "ai_image"),
                 ("🎵 TikTok", "douyin"),
                 ("📺 Bilibili", "bilibili"),
                 ("📱 Xiaohongshu", "xiaohongshu"),
@@ -4132,6 +4142,12 @@ with tab_settings:
                     st.success(f"✅ Pixabay API 키 {len(config.app['pixabay_api_keys'])}개 설정됨")
                 else:
                     st.warning("⚠️ Pixabay API 키가 필요합니다")
+            elif params.video_source == "animation":
+                st.success("✅ 대본 내용에 맞춘 간단한 모션 그래픽을 PC에서 직접 생성합니다")
+                st.caption("외부 영상 API나 추가 비용이 없으며, 생성 시간은 PC 성능과 영상 길이에 따라 달라집니다.")
+            elif params.video_source == "ai_image":
+                st.success("✅ 대본 장면별 AI 이미지를 만들고 확대·이동 효과를 적용합니다")
+                st.caption("Cloudflare의 일일 무료 한도를 사용하며, 실패하거나 한도가 끝나면 기존 무료 영상으로 자동 전환합니다.")
         
         with col_aspect_mode:
             st.markdown("#### 📐 영상 비율 및 모드")

@@ -19,24 +19,35 @@ def get_authenticated_service(client_secrets_file, token_file='token.pickle'):
     import tempfile
     alt_token_file = os.path.join(tempfile.gettempdir(), 'yt_token.pickle')
 
-    # 먼저 대체 파일 확인 (최신 토큰일 수 있음)
-    if os.path.exists(alt_token_file):
+    # 프로그램 폴더의 채널 토큰을 먼저 확인합니다.
+    if os.path.exists(token_file):
         try:
-            with open(alt_token_file, 'rb') as token:
+            with open(token_file, 'rb') as token:
                 creds = pickle.load(token)
-            logger.info("✅ 대체 토큰 파일 로드 성공")
-        except:
+            logger.info("✅ YouTube 토큰 파일 로드 성공")
+        except Exception:
             creds = None
 
-    # 대체 파일에 유효한 토큰이 없으면 원본 파일에서 로드
+    # 프로그램 폴더에 쓸 수 없었던 이전 버전의 임시 토큰도 호환합니다.
     if not creds or not creds.valid:
-        if os.path.exists(token_file):
+        if os.path.exists(alt_token_file):
             try:
-                with open(token_file, 'rb') as token:
+                with open(alt_token_file, 'rb') as token:
                     creds = pickle.load(token)
-            except Exception as e:
-                logger.warning(f"토큰 파일 로드 실패: {e}")
+                logger.info("✅ 임시 YouTube 토큰 파일 로드 성공")
+            except Exception:
                 creds = None
+
+    # 이전 버전에서 임시 폴더에만 저장된 유효한 토큰을 정상 위치로 복구합니다.
+    if creds and creds.valid and not os.path.exists(token_file):
+        try:
+            token_parent = os.path.dirname(os.path.abspath(token_file))
+            os.makedirs(token_parent, exist_ok=True)
+            with open(token_file, 'wb') as token:
+                pickle.dump(creds, token)
+            logger.info(f"✅ 임시 YouTube 토큰 복구: {token_file}")
+        except Exception as e:
+            logger.warning(f"⚠️ YouTube 토큰 복구 실패: {e}")
     
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
@@ -52,7 +63,17 @@ def get_authenticated_service(client_secrets_file, token_file='token.pickle'):
                 client_secrets_file, SCOPES)
             creds = flow.run_local_server(port=0)
         
-        # 대체 파일에 저장 (쓰기 권한 있는 temp 폴더)
+        # 다음 실행에도 자동 업로드할 수 있도록 프로그램 폴더에 저장합니다.
+        try:
+            token_parent = os.path.dirname(os.path.abspath(token_file))
+            os.makedirs(token_parent, exist_ok=True)
+            with open(token_file, 'wb') as token:
+                pickle.dump(creds, token)
+            logger.info(f"✅ YouTube 토큰 저장: {token_file}")
+        except Exception as e:
+            logger.warning(f"⚠️ 기본 토큰 저장 실패: {e}")
+
+        # 설치 폴더 권한 문제에 대비해 임시 폴더에도 보조 저장합니다.
         try:
             with open(alt_token_file, 'wb') as token:
                 pickle.dump(creds, token)

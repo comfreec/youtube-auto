@@ -9,8 +9,7 @@ import hashlib
 import json
 import platform
 import subprocess
-import urllib.error
-import urllib.request
+import requests
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -84,22 +83,22 @@ class LicenseManager:
         server_url = self._server_url()
         if not server_url:
             raise RuntimeError("라이선스 서버 주소가 설정되지 않았습니다.")
-        request = urllib.request.Request(
-            f"{server_url}{path}",
-            data=json.dumps(payload).encode("utf-8"),
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
         try:
-            with urllib.request.urlopen(request, timeout=10) as response:
-                return json.loads(response.read().decode("utf-8"))
-        except urllib.error.HTTPError as exc:
-            body = exc.read().decode("utf-8", errors="replace")
+            response = requests.post(
+                f"{server_url}{path}",
+                json=payload,
+                headers={"User-Agent": "AI-Shorts-Generator/1.0"},
+                timeout=10,
+            )
+            if response.ok:
+                return response.json()
             try:
-                message = json.loads(body).get("detail", "라이선스 서버 오류")
+                message = response.json().get("detail", "라이선스 서버 오류")
             except Exception:
                 message = "라이선스 서버 오류"
-            raise RuntimeError(message) from exc
+            raise RuntimeError(message)
+        except requests.RequestException as exc:
+            raise RuntimeError(f"라이선스 서버 연결 실패: {exc}") from exc
 
     def _verify_certificate(self, certificate: dict, hardware_id: str) -> dict:
         if not PUBLIC_KEY_FILE.exists():
@@ -145,6 +144,8 @@ class LicenseManager:
                 "activated_at": _utc_now().isoformat(),
             }
             self.license_file.write_bytes(self._encrypt_data(data))
+            if payload["expires_at"].startswith("9999-12-31"):
+                return True, "영구 라이선스가 활성화되었습니다."
             return True, f"라이선스가 활성화되었습니다. (만료일: {payload['expires_at'][:10]})"
         except Exception as exc:
             logger.warning(f"라이선스 활성화 실패: {exc}")
@@ -190,6 +191,8 @@ class LicenseManager:
                         return False, f"라이선스 서버 확인이 필요합니다. 인터넷 연결 후 다시 실행해주세요. ({exc})"
                     logger.warning(f"라이선스 서버 일시 연결 실패, 오프라인 유예 적용: {exc}")
 
+            if payload["expires_at"].startswith("9999-12-31"):
+                return True, "영구 라이선스 유효"
             days_left = max(0, (_parse_time(payload["expires_at"]) - _utc_now()).days)
             return True, f"라이선스 유효 (남은 기간: {days_left}일)"
         except Exception as exc:
@@ -204,9 +207,21 @@ class LicenseManager:
             return {
                 "license_key": data.get("license_key", ""),
                 "activated_at": data.get("activated_at", ""),
-                "expiry_date": payload["expires_at"][:10],
-                "days_left": max(0, (expiry - _utc_now()).days),
+                "expiry_date": "영구" if payload["expires_at"].startswith("9999-12-31") else payload["expires_at"][:10],
+                "days_left": None if payload["expires_at"].startswith("9999-12-31") else max(0, (expiry - _utc_now()).days),
                 "hardware_id": data.get("hardware_id", "")[:16] + "...",
+            }
+        except Exception:
+            return {}
+
+    def get_service_credentials(self) -> dict:
+        """Return full credentials only for authenticated first-party services."""
+        try:
+            data = self._decrypt_data(self.license_file.read_bytes())
+            self._verify_certificate(data["certificate"], self.get_hardware_id())
+            return {
+                "license_key": data.get("license_key", ""),
+                "hardware_id": self.get_hardware_id(),
             }
         except Exception:
             return {}

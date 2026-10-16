@@ -1,0 +1,10 @@
+name = "ai-shorts-images"
+main = "worker.js"
+compatibility_date = "2026-10-16"
+
+[ai]
+binding = "AI"
+
+[[services]]
+binding = "LICENSE"
+service = "ai-shorts-license"

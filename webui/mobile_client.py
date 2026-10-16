@@ -232,6 +232,18 @@ def show_single_video_generation():
                 duration = st.slider("영상 길이 (초)", 30, 90, 60)
             
             auto_upload = st.checkbox("📤 자동 업로드", value=False)
+
+        video_source = st.selectbox(
+            "배경 화면 방식",
+            ["pexels", "pixabay", "ai_image", "animation"],
+            format_func=lambda value: {
+                "pexels": "🌟 Pexels 무료 영상",
+                "pixabay": "🎨 Pixabay 무료 영상",
+                "ai_image": "🖼️ 내용맞춤 AI 이미지 (무료 한도)",
+                "animation": "✨ 간단 애니메이션 (오프라인)",
+            }[value],
+            help="AI 이미지는 무료 한도 소진 또는 오류 시 설정된 무료 영상으로 자동 전환됩니다.",
+        )
         
         submitted = st.form_submit_button("🚀 영상 생성 시작", use_container_width=True, type="primary")
         
@@ -246,7 +258,8 @@ def show_single_video_generation():
                 video_type=video_type,
                 language=language,
                 duration=duration,
-                auto_upload=auto_upload
+                auto_upload=auto_upload,
+                video_source=video_source,
             )
             
             if task_id:
@@ -304,6 +317,18 @@ def show_batch_video_generation():
                 duration = st.slider("영상 길이 (초)", 30, 90, 60, key="batch_duration")
             
             auto_upload = st.checkbox("📤 자동 업로드", value=False, key="batch_auto_upload")
+
+        video_source = st.selectbox(
+            "배경 화면 방식",
+            ["pexels", "pixabay", "ai_image", "animation"],
+            format_func=lambda value: {
+                "pexels": "🌟 Pexels 무료 영상",
+                "pixabay": "🎨 Pixabay 무료 영상",
+                "ai_image": "🖼️ 내용맞춤 AI 이미지 (무료 한도)",
+                "animation": "✨ 간단 애니메이션 (오프라인)",
+            }[value],
+            key="batch_video_source",
+        )
         
         submitted = st.form_submit_button("🚀 배치 생성 시작", use_container_width=True, type="primary")
         
@@ -339,7 +364,8 @@ def show_batch_video_generation():
                 video_type=video_type,
                 language=language,
                 duration=duration,
-                auto_upload=auto_upload
+                auto_upload=auto_upload,
+                video_source=video_source,
             )
             
             if task_id:

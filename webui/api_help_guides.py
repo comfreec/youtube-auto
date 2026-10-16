@@ -19,9 +19,9 @@ def show_gemini_api_guide():
 
 **5단계:** 위의 입력란에 붙여넣기
 
-💡 **무료 할당량:** Gemini 2.5 Flash 분당 15회, 일일 1,500회
+💡 무료 사용 가능 여부와 할당량은 Google AI Studio의 현재 정책을 확인하세요.
 
-💡 **여러 키 사용:** 할당량 초과 시 자동으로 다른 키로 전환 (최대 10개)
+🔒 발급한 키는 다른 사람에게 전달하거나 공개 저장소에 올리지 마세요.
     """)
     st.markdown("[🔗 Google AI Studio 바로가기](https://aistudio.google.com/app/apikey)")
 
@@ -42,9 +42,7 @@ def show_pexels_api_guide():
 
 **5단계:** 위의 입력란에 붙여넣기 → "➕ Pexels 키 추가" 클릭
 
-💡 **무료 플랜:** 시간당 200회, 월간 제한 없음, 상업적 이용 가능
-
-💡 **콘텐츠:** 고품질 4K 비디오, 크레딧 표시 불필요
+💡 요청 한도와 콘텐츠 사용 조건은 Pexels API 페이지의 현재 정책을 확인하세요.
     """)
     st.markdown("[🔗 Pexels API 바로가기](https://www.pexels.com/api/)")
 
@@ -65,9 +63,7 @@ def show_pixabay_api_guide():
 
 **5단계:** 위의 입력란에 붙여넣기 → "➕ Pixabay 키 추가" 클릭
 
-💡 **무료 플랜:** 분당 100회, 시간당 5,000회, 상업적 이용 가능
-
-💡 **콘텐츠:** 280만+ 이미지/비디오, HD/4K 지원, 크레딧 표시 불필요
+💡 요청 한도와 콘텐츠 사용 조건은 Pixabay API 페이지의 현재 정책을 확인하세요.
     """)
     st.markdown("[🔗 Pixabay API 바로가기](https://pixabay.com/api/docs/)")
 
@@ -97,7 +93,7 @@ def show_youtube_oauth_guide():
 
 **7단계:** "🔐 YouTube 인증 시작" 버튼 클릭 → 브라우저에서 권한 승인
 
-💡 **할당량:** 일일 10,000 유닛 (하루 약 6개 영상 업로드 가능)
+💡 YouTube API 할당량과 업로드 가능 횟수는 Google Cloud Console에서 확인하세요.
 
 ⚠️ **주의:** client_secrets.json은 절대 공개하지 마세요!
     """)

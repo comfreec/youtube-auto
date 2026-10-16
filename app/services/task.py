@@ -451,6 +451,79 @@ def get_video_materials(task_id, params, video_terms, audio_duration, video_scri
         except Exception as e:
             logger.error(f"❌ Failed to reuse Korean materials: {e}, falling back to new material search")
     
+    # 내용 맞춤 AI 이미지 배경. 실패하거나 무료 한도가 끝나면 기존 무료
+    # 영상 공급자로 내려가므로 기존 검색 경로는 그대로 보존된다.
+    if params.video_source == "ai_image":
+        logger.info("\n\n## generating script-related AI image backgrounds")
+        from app.services.ai_image_background import AIImageServiceError, generate_videos_by_segments
+        from app.services.script_segment_matcher import get_matcher
+
+        matcher = get_matcher()
+        image_segment_count = getattr(params, "target_segment_count", None)
+        if image_segment_count is None:
+            image_segment_count = max(3, min(6, int(audio_duration / 6)))
+        segment_infos = matcher.match_segments_to_videos(
+            script=video_script or params.video_subject,
+            video_duration=audio_duration,
+            target_segment_count=image_segment_count,
+        )
+        try:
+            image_results = generate_videos_by_segments(
+                task_id=task_id,
+                segment_infos=segment_infos,
+                video_aspect=params.video_aspect,
+                minimum_clip_duration=params.video_clip_duration,
+            )
+            image_paths = [clip for result in image_results for clip in result["video_paths"]]
+            if image_paths:
+                return image_paths
+            raise AIImageServiceError("생성된 AI 이미지 영상이 없습니다.")
+        except Exception as exc:
+            fallback = str(config.app.get("ai_image_fallback_source", "pexels")).lower()
+            if fallback not in ("pexels", "pixabay"):
+                fallback = "pexels"
+            if fallback == "pexels" and not config.app.get("pexels_api_keys"):
+                fallback = "pixabay" if config.app.get("pixabay_api_keys") else ""
+            if fallback == "pixabay" and not config.app.get("pixabay_api_keys"):
+                fallback = "pexels" if config.app.get("pexels_api_keys") else ""
+            if not fallback:
+                sm.state.update_task(task_id, state=const.TASK_STATE_FAILED, message=f"AI 이미지 생성 실패: {exc}")
+                logger.error(f"AI image generation failed and no stock fallback is configured: {exc}")
+                return None
+            logger.warning(f"AI image generation unavailable ({exc}); falling back to {fallback}")
+            sm.state.update_task(task_id, message=f"AI 이미지 생성이 어려워 {fallback.title()} 무료 영상으로 자동 전환합니다...")
+            params.video_source = fallback
+
+    # 독립형 오프라인 애니메이션 배경. 기존 무료영상 검색 로직과 분리되어
+    # 있으므로 animation을 선택하지 않으면 아래 기존 경로가 그대로 실행된다.
+    if params.video_source == "animation":
+        logger.info("\n\n## generating offline animation backgrounds")
+        from app.services.animated_background import generate_videos_by_segments
+        from app.services.script_segment_matcher import get_matcher
+
+        matcher = get_matcher()
+        segment_infos = matcher.match_segments_to_videos(
+            script=video_script or params.video_subject,
+            video_duration=audio_duration,
+            target_segment_count=getattr(params, "target_segment_count", None),
+        )
+        animation_results = generate_videos_by_segments(
+            task_id=task_id,
+            segment_infos=segment_infos,
+            video_aspect=params.video_aspect,
+            minimum_clip_duration=params.video_clip_duration,
+        )
+        animation_paths = [
+            clip_path
+            for result in animation_results
+            for clip_path in result["video_paths"]
+        ]
+        if not animation_paths:
+            sm.state.update_task(task_id, state=const.TASK_STATE_FAILED)
+            logger.error("failed to generate animation backgrounds")
+            return None
+        return animation_paths
+
     # 기본 배경영상 검색 로직
     
     if params.video_source == "local":

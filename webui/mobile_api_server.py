@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Literal
 import uvicorn
 import asyncio
 import threading
@@ -58,6 +58,7 @@ class VideoGenerationRequest(BaseModel):
     duration: Optional[int] = None
     style: Optional[str] = None
     auto_upload: bool = False
+    video_source: Literal["pexels", "pixabay", "ai_image", "animation"] = "pexels"
 
 class BatchVideoRequest(BaseModel):
     titles: List[str]
@@ -67,6 +68,7 @@ class BatchVideoRequest(BaseModel):
     style: Optional[str] = None
     auto_upload: bool = False
     create_global: bool = False
+    video_source: Literal["pexels", "pixabay", "ai_image", "animation"] = "pexels"
 
 # 응답 모델들
 class TaskResponse(BaseModel):
@@ -255,8 +257,8 @@ async def process_single_video(task_id: str, request: VideoGenerationRequest):
         # VideoParams 객체 생성
         params = VideoParams(
             video_subject=request.subject,
-            video_type=request.video_type,
-            video_language=request.language
+            video_language=request.language,
+            video_source=request.video_source,
         )
         
         # 추가 매개변수 설정
@@ -312,8 +314,8 @@ async def process_batch_videos(task_id: str, request: BatchVideoRequest):
                 
                 params = VideoParams(
                     video_subject=title,
-                    video_type=request.video_type,
-                    video_language=request.language
+                    video_language=request.language,
+                    video_source=request.video_source,
                 )
                 
                 # 추가 매개변수 설정

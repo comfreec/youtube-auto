@@ -1,5 +1,7 @@
 [app]
-video_source = "pexels" # "pexels" or "pixabay"
+video_source = "pexels" # "pexels", "pixabay", "ai_image", "animation", or "local"
+ai_image_worker_url = "https://ai-shorts-images.comfreec1.workers.dev"
+ai_image_fallback_source = "pexels"
 
 # 是否隐藏配置面板
 hide_config = false
