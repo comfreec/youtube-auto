@@ -78,6 +78,7 @@ def run_video_generation(task_id: str, params: VideoParams, auto_upload: bool = 
     from app.config import config
     
     try:
+        requested_video_source = str(params.video_source)
         # 원래 subtitle_provider 설정 유지
         original_subtitle_provider = config.app.get("subtitle_provider", "edge")
         logger.info(f"🎯 Using subtitle_provider: {original_subtitle_provider}")
@@ -96,6 +97,12 @@ def run_video_generation(task_id: str, params: VideoParams, auto_upload: bool = 
             
             # 기존 task.start() 함수 그대로 사용 (한국어 버전)
             tm.start(task_id, params, stop_at="video")
+            if requested_video_source == "ai_image" and str(params.video_source) in {"pexels", "pixabay"}:
+                tasks[task_id]["background_fallback"] = {
+                    "from": "ai_image",
+                    "to": str(params.video_source),
+                    "reason": "AI 이미지 무료 한도 소진 또는 이미지 서버 오류",
+                }
             
             # 한국어 영상 생성 후 대본 및 키워드 검증
             logger.info("🔍 Validating Korean video generation...")
@@ -751,6 +758,10 @@ def preflight_video(request: VideoRequest):
 async def generate_video(request: VideoRequest, background_tasks: BackgroundTasks):
     """영상 생성 (기존 로직 그대로 사용)"""
     try:
+        logger.info(
+            f"모바일 생성 선택값: background={request.video_source}, "
+            f"voice={request.voice_name}, upload={request.auto_upload}"
+        )
         readiness = run_readiness_checks(root_dir, request.video_source, request.auto_upload)
         if not readiness["ready"]:
             details = " ".join(item["message"] for item in readiness["blocking"])
@@ -871,6 +882,7 @@ async def get_task_status(task_id: str):
         english_status = None
         english_error = None
         english_upload_error = None
+        background_fallback = tasks.get(task_id, {}).get("background_fallback")
         
         if status == "complete":
             task_dir = tasks.get(task_id, {}).get("task_dir", "")
@@ -909,6 +921,7 @@ async def get_task_status(task_id: str):
             "english_status": english_status,
             "english_error": english_error,
             "english_upload_error": english_upload_error,
+            "background_fallback": background_fallback,
             "error": task_info.get("error")
         }
         

@@ -154,15 +154,19 @@ def generate_audio(task_id, params, video_script):
         audio_file = path.join(utils.task_dir(task_id), "audio.mp3")
         selected_voice = voice.parse_voice_name(params.voice_name)
         if str(params.video_language or "").lower().startswith("ko"):
-            # Korean customer videos always use the configured female narrator.
-            # Enforce this at the final audio-generation boundary so that older
-            # saved sessions and every UI/API path cannot restore a male voice.
-            if selected_voice != "ko-KR-SunHiNeural":
+            allowed_korean_voices = {
+                "ko-KR-SunHiNeural",
+                "ko-KR-InJoonNeural",
+                "ko-KR-HyunsuMultilingualNeural",
+            }
+            if selected_voice not in allowed_korean_voices:
                 logger.warning(
-                    "한국어 음성을 선희 여성 성우로 교정: %s -> ko-KR-SunHiNeural",
+                    "지원하지 않는 한국어 성우를 선희로 교정: %s -> ko-KR-SunHiNeural",
                     selected_voice or "(비어 있음)",
                 )
-            selected_voice = "ko-KR-SunHiNeural"
+                selected_voice = "ko-KR-SunHiNeural"
+            else:
+                logger.info(f"선택한 한국어 성우 유지: {selected_voice}")
 
         sub_maker = voice.tts(
             text=video_script,

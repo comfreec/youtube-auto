@@ -400,6 +400,11 @@
                         statusText.textContent = data.message || '✅ 영상 생성 완료!';
                         resultMessage = data.message || '영상 생성 완료!';
                     }
+                    if (data.background_fallback) {
+                        const fallbackMessage = '⚠️ AI 이미지 무료 한도 소진 또는 서버 오류로 무료 배경 영상으로 자동 전환되었습니다.';
+                        statusText.innerHTML += `<br>${fallbackMessage}`;
+                        resultMessage += `\n${fallbackMessage}`;
+                    }
                     
                     progressBar.style.width = '100%';
                     btn.disabled = false;
