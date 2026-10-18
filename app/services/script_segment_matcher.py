@@ -4,6 +4,7 @@
 대본을 의미 있는 구간(세그먼트)으로 나누고, 각 구간에 맞는 배경영상을 정확하게 매칭합니다.
 """
 
+import os
 import re
 from typing import List, Dict, Tuple
 from loguru import logger
@@ -307,6 +308,137 @@ class ScriptSegmentMatcher:
             
             logger.info(f"Segment {i+1}/{len(segments)}: keywords={keywords}, duration={segment_duration:.1f}s")
         
+        return segment_infos
+
+    @staticmethod
+    def _srt_time_to_seconds(value: str) -> float:
+        hours, minutes, rest = value.replace(".", ",").split(":")
+        seconds, milliseconds = rest.split(",")
+        return int(hours) * 3600 + int(minutes) * 60 + int(seconds) + int(milliseconds) / 1000
+
+    def _read_subtitle_cues(self, subtitle_path: str) -> List[Dict]:
+        if not subtitle_path or not os.path.isfile(subtitle_path):
+            return []
+        with open(subtitle_path, "r", encoding="utf-8-sig") as file:
+            content = file.read().replace("\r\n", "\n")
+        pattern = re.compile(
+            r"(?:^|\n)(?:\d+\n)?"
+            r"(\d{1,2}:\d{2}:\d{2}[,.]\d{3})\s*-->\s*"
+            r"(\d{1,2}:\d{2}:\d{2}[,.]\d{3})[^\n]*\n"
+            r"(.*?)(?=\n\n|\Z)",
+            re.DOTALL,
+        )
+        cues = []
+        for match in pattern.finditer(content):
+            text = re.sub(r"<[^>]+>", "", match.group(3))
+            text = " ".join(line.strip() for line in text.splitlines() if line.strip())
+            if not text:
+                continue
+            start = self._srt_time_to_seconds(match.group(1))
+            end = self._srt_time_to_seconds(match.group(2))
+            if end > start:
+                cues.append({"text": text, "start": start, "end": end})
+        return cues
+
+    def match_segments_to_subtitle_timing(
+        self,
+        script: str,
+        subtitle_path: str,
+        video_duration: float,
+        target_segment_count: int | None = None,
+        minimum_duration: float = 3.0,
+    ) -> List[Dict]:
+        """Match meaningful script chunks to real narration/subtitle boundaries."""
+        cues = self._read_subtitle_cues(subtitle_path)
+        if not cues:
+            return self.match_segments_to_videos(script, video_duration, target_segment_count)
+
+        if target_segment_count is None:
+            target_segment_count = max(3, min(10, round(video_duration / 6)))
+        target_segment_count = max(1, min(target_segment_count, len(cues)))
+        semantic_segments = self.split_script_into_segments(script, target_segment_count)
+        target_segment_count = min(len(semantic_segments), len(cues))
+        semantic_segments = semantic_segments[:target_segment_count]
+
+        semantic_lengths = [max(1, len(re.sub(r"\s+", "", text))) for text in semantic_segments]
+        total_semantic_length = sum(semantic_lengths)
+        cue_lengths = [max(1, len(re.sub(r"\s+", "", cue["text"]))) for cue in cues]
+        total_cue_length = sum(cue_lengths)
+
+        groups = []
+        cue_start = 0
+        cumulative_semantic = 0
+        cumulative_cues = 0
+        for segment_index in range(target_segment_count):
+            cumulative_semantic += semantic_lengths[segment_index]
+            if segment_index == target_segment_count - 1:
+                cue_end = len(cues)
+            else:
+                desired = total_cue_length * cumulative_semantic / total_semantic_length
+                cue_end = cue_start + 1
+                running = cumulative_cues
+                while cue_end < len(cues) - (target_segment_count - segment_index - 1):
+                    running += cue_lengths[cue_end - 1]
+                    if running >= desired:
+                        break
+                    cue_end += 1
+            selected = cues[cue_start:cue_end]
+            if not selected:
+                continue
+            cumulative_cues += sum(cue_lengths[cue_start:cue_end])
+            groups.append({
+                "segment": " ".join(cue["text"] for cue in selected),
+                "start_time": selected[0]["start"],
+                "cue_end_time": selected[-1]["end"],
+            })
+            cue_start = cue_end
+
+        # The clips are concatenated, so scene boundaries use the next spoken
+        # section's actual start. This includes natural pauses and preserves the
+        # exact total narration duration.
+        if groups:
+            groups[0]["start_time"] = 0.0
+            for index, group in enumerate(groups):
+                group["end_time"] = (
+                    groups[index + 1]["start_time"]
+                    if index + 1 < len(groups)
+                    else float(video_duration)
+                )
+
+        # Avoid rapid flashes: merge any section shorter than the requested
+        # minimum with its nearest neighbour while retaining its text context.
+        index = 0
+        while len(groups) > 1 and index < len(groups):
+            duration = groups[index]["end_time"] - groups[index]["start_time"]
+            if duration >= minimum_duration:
+                index += 1
+                continue
+            if index == 0:
+                groups[1]["segment"] = f"{groups[0]['segment']} {groups[1]['segment']}".strip()
+                groups[1]["start_time"] = groups[0]["start_time"]
+                groups.pop(0)
+            else:
+                groups[index - 1]["segment"] = f"{groups[index - 1]['segment']} {groups[index]['segment']}".strip()
+                groups[index - 1]["end_time"] = groups[index]["end_time"]
+                groups.pop(index)
+                index = max(0, index - 1)
+
+        segment_infos = []
+        for index, group in enumerate(groups):
+            duration = max(0.1, group["end_time"] - group["start_time"])
+            text = group["segment"]
+            segment_infos.append({
+                "index": index,
+                "segment": text,
+                "keywords": self.generate_segment_keywords(text, amount=3),
+                "duration": duration,
+                "start_time": group["start_time"],
+                "end_time": group["end_time"],
+            })
+            logger.info(
+                f"Subtitle-timed scene {index + 1}/{len(groups)}: "
+                f"{group['start_time']:.2f}s-{group['end_time']:.2f}s ({duration:.2f}s)"
+            )
         return segment_infos
 
 

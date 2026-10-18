@@ -424,7 +424,7 @@ Each line should correspond to one English subtitle segment."""
 
 
 
-def get_video_materials(task_id, params, video_terms, audio_duration, video_script=None):
+def get_video_materials(task_id, params, video_terms, audio_duration, video_script=None, subtitle_path=None):
     # 영어 버전에서 한국어 배경영상 재사용 확인 (korean_task_id가 있으면 재사용)
     if getattr(params, 'korean_task_id', None):
         korean_task_id = params.korean_task_id
@@ -477,17 +477,19 @@ def get_video_materials(task_id, params, video_terms, audio_duration, video_scri
             # beats. Around six seconds per image keeps attention without the
             # eye strain of rapid zooms or jittery camera movement.
             image_segment_count = max(5, min(10, math.ceil(audio_duration / 6)))
-        segment_infos = matcher.match_segments_to_videos(
+        segment_infos = matcher.match_segments_to_subtitle_timing(
             script=video_script or params.video_subject,
+            subtitle_path=subtitle_path,
             video_duration=audio_duration,
             target_segment_count=image_segment_count,
+            minimum_duration=3.0,
         )
         try:
             image_results = generate_videos_by_segments(
                 task_id=task_id,
                 segment_infos=segment_infos,
                 video_aspect=params.video_aspect,
-                minimum_clip_duration=params.video_clip_duration,
+                minimum_clip_duration=1.0,
             )
             image_paths = [clip for result in image_results for clip in result["video_paths"]]
             if image_paths:
@@ -827,7 +829,7 @@ def start(task_id, params: VideoParams, stop_at: str = "video"):
 
     # 5. Get video materials
     downloaded_videos = get_video_materials(
-        task_id, params, video_terms, audio_duration, video_script
+        task_id, params, video_terms, audio_duration, video_script, subtitle_path
     )
     if not downloaded_videos:
         sm.state.update_task(task_id, state=const.TASK_STATE_FAILED, message="자료 준비 실패")
@@ -983,7 +985,9 @@ def generate_single_segment(task_id, params, script):
         
         # 3. 배경 영상 다운로드
         video_terms = getattr(params, 'video_terms', [])
-        downloaded_videos = get_video_materials(task_id, params, video_terms, audio_duration, script)
+        downloaded_videos = get_video_materials(
+            task_id, params, video_terms, audio_duration, script, subtitle_path
+        )
         if not downloaded_videos:
             return None
         
