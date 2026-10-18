@@ -93,6 +93,12 @@ def render_simple_settings(root_dir: str):
             format_func=lambda value: voice_options[value],
             key="simple_default_korean_voice",
         )
+        voice_descriptions = {
+            "ko-KR-SunHiNeural": "**선희:** 밝고 친근함 — 건강·생활정보 추천",
+            "ko-KR-InJoonNeural": "**인준:** 차분하고 묵직함 — 인생 조언 추천",
+            "ko-KR-HyunsuMultilingualNeural": "**현수:** 자연스럽고 중립적 — 일반 정보·설명 추천",
+        }
+        st.info(voice_descriptions[selected_voice])
         st.caption("영상 생성 화면에서 영상마다 다른 성우를 선택할 수도 있습니다. 영어 성우는 바뀌지 않습니다.")
         if st.button("기본 성우 저장", use_container_width=True, key="save_default_korean_voice"):
             config.app["korean_voice_name"] = selected_voice
