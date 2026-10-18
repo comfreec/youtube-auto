@@ -695,6 +695,9 @@ def get_image_worker_settings():
 
 @app.get("/api/settings/video-source")
 def get_video_source_settings():
+    # The PC settings UI runs in a separate process. Reload the shared config
+    # file on every request so mobile immediately reflects newly saved defaults.
+    config.reload()
     source = str(config.app.get("video_source", "pexels")).strip()
     if source in {"pexels", "pixabay"}:
         source = "stock_auto"
