@@ -1,0 +1,21 @@
+{
+  "name": "ai-shorts-customer-image-worker",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.45.0"
+  },
+  "cloudflare": {
+    "bindings": {
+      "AI": {
+        "description": "쇼츠용 이미지를 생성하는 고객 본인의 무료 Workers AI 연결입니다."
+      },
+      "LICENSE_SERVER_URL": {
+        "description": "프로그램 라이선스 확인 주소입니다. 기본값을 변경하지 마세요."
+      }
+    }
+  }
+}

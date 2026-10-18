@@ -5,6 +5,5 @@ compatibility_date = "2026-10-16"
 [ai]
 binding = "AI"
 
-[[services]]
-binding = "LICENSE"
-service = "ai-shorts-license"
+[vars]
+LICENSE_SERVER_URL = "https://ai-shorts-license.comfreec1.workers.dev"
