@@ -2,6 +2,7 @@
 video_source = "stock_auto" # 무료영상 자동선택, AI 이미지, 애니메이션 중 화면에서 선택
 ai_image_worker_url = "https://ai-shorts-images.comfreec1.workers.dev"
 ai_image_fallback_source = "pexels"
+korean_voice_name = "ko-KR-SunHiNeural"
 
 # 是否隐藏配置面板
 hide_config = false

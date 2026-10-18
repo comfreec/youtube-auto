@@ -161,6 +161,18 @@
         </div>
 
         <div class="input-group">
+            <label for="voiceName">한국어 성우</label>
+            <select id="voiceName">
+                <option value="ko-KR-SunHiNeural">👩 선희 · 밝고 친근한 건강·생활정보</option>
+                <option value="ko-KR-InJoonNeural">👨 인준 · 차분하고 묵직한 인생 조언</option>
+                <option value="ko-KR-HyunsuMultilingualNeural">👨 현수 · 자연스럽고 중립적인 설명</option>
+            </select>
+            <div style="font-size:13px;color:#666;margin-top:7px;line-height:1.4;">
+                영어 버전 성우는 기존 설정을 그대로 사용합니다.
+            </div>
+        </div>
+
+        <div class="input-group">
             <label style="display: flex; align-items: center; cursor: pointer;">
                 <input type="checkbox" id="autoUpload" checked style="width: auto; margin-right: 10px;" />
                 <span>유튜브 자동 업로드</span>
@@ -197,6 +209,10 @@
                 const selector = document.getElementById('videoSource');
                 if (response.ok && selector.querySelector(`option[value="${data.video_source}"]`)) {
                     selector.value = data.video_source;
+                }
+                const voiceSelector = document.getElementById('voiceName');
+                if (response.ok && voiceSelector.querySelector(`option[value="${data.voice_name}"]`)) {
+                    voiceSelector.value = data.voice_name;
                 }
             } catch (_) {}
         }
@@ -247,6 +263,7 @@
             const autoUpload = document.getElementById('autoUpload').checked;
             const createGlobal = document.getElementById('createGlobal').checked;
             const videoSource = document.getElementById('videoSource').value;
+            const voiceName = document.getElementById('voiceName').value;
             
             if (!title) {
                 alert('제목을 입력해주세요!');
@@ -272,7 +289,8 @@
                     terms: JSON.parse(document.getElementById('preparedTerms').value || '[]'),
                     auto_upload: autoUpload,
                     create_global: createGlobal,
-                    video_source: videoSource
+                    video_source: videoSource,
+                    voice_name: voiceName
                 };
 
                 const preflightResponse = await fetch('/api/preflight', {

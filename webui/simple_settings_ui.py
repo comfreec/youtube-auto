@@ -76,6 +76,29 @@ def render_simple_settings(root_dir: str):
             config.save_config()
             st.success("기본 배경 방식을 저장했습니다.")
 
+    voice_options = {
+        "ko-KR-SunHiNeural": "👩 선희 · 밝고 친근한 건강·생활정보",
+        "ko-KR-InJoonNeural": "👨 인준 · 차분하고 묵직한 인생 조언",
+        "ko-KR-HyunsuMultilingualNeural": "👨 현수 · 자연스럽고 중립적인 설명",
+    }
+    saved_voice = str(config.app.get("korean_voice_name", "ko-KR-SunHiNeural"))
+    if saved_voice not in voice_options:
+        saved_voice = "ko-KR-SunHiNeural"
+    with st.container(border=True):
+        st.markdown("### 🎙️ 기본 한국어 성우")
+        selected_voice = st.selectbox(
+            "새 영상에서 처음 선택될 성우",
+            options=list(voice_options),
+            index=list(voice_options).index(saved_voice),
+            format_func=lambda value: voice_options[value],
+            key="simple_default_korean_voice",
+        )
+        st.caption("영상 생성 화면에서 영상마다 다른 성우를 선택할 수도 있습니다. 영어 성우는 바뀌지 않습니다.")
+        if st.button("기본 성우 저장", use_container_width=True, key="save_default_korean_voice"):
+            config.app["korean_voice_name"] = selected_voice
+            config.save_config()
+            st.success("기본 한국어 성우를 저장했습니다.")
+
     with st.expander("🖼️ 내 무료 AI 이미지 서버 연결", expanded=False):
         st.caption("고객마다 자신의 Cloudflare 무료 한도를 사용하므로 다른 고객과 사용량을 나누지 않습니다.")
         st.markdown(

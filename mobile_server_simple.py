@@ -56,6 +56,11 @@ class VideoRequest(BaseModel):
     auto_upload: bool = True  # 기본값: 자동 업로드
     create_global: bool = True  # 기본값: 글로벌 버전 생성
     video_source: Literal["stock_auto", "pexels", "pixabay", "ai_image", "animation"] = "stock_auto"
+    voice_name: Literal[
+        "ko-KR-SunHiNeural",
+        "ko-KR-InJoonNeural",
+        "ko-KR-HyunsuMultilingualNeural",
+    ] = "ko-KR-SunHiNeural"
 
 class ReinterpretRequest(BaseModel):
     youtube_url: str = ""
@@ -694,7 +699,18 @@ def get_video_source_settings():
     if source in {"pexels", "pixabay"}:
         source = "stock_auto"
     allowed = {"stock_auto", "ai_image", "animation"}
-    return {"video_source": source if source in allowed else "stock_auto"}
+    saved_voice = str(config.app.get("korean_voice_name", "ko-KR-SunHiNeural"))
+    allowed_voices = {
+        "ko-KR-SunHiNeural",
+        "ko-KR-InJoonNeural",
+        "ko-KR-HyunsuMultilingualNeural",
+    }
+    if saved_voice not in allowed_voices:
+        saved_voice = "ko-KR-SunHiNeural"
+    return {
+        "video_source": source if source in allowed else "stock_auto",
+        "voice_name": saved_voice,
+    }
 
 @app.post("/api/settings/image-worker")
 def save_image_worker_settings(request: ImageWorkerSettingsRequest):
@@ -740,6 +756,11 @@ async def generate_video(request: VideoRequest, background_tasks: BackgroundTask
         task_id = str(uuid4())
         
         # VideoParams 생성 (기본 설정)
+        voice_rates = {
+            "ko-KR-SunHiNeural": 1.12,
+            "ko-KR-InJoonNeural": 1.03,
+            "ko-KR-HyunsuMultilingualNeural": 1.05,
+        }
         params = VideoParams(
             video_subject=request.subject,
             video_aspect=VideoAspect.portrait,  # 세로 (쇼츠)
@@ -750,8 +771,8 @@ async def generate_video(request: VideoRequest, background_tasks: BackgroundTask
             video_script=request.script.strip(),
             video_terms=request.terms,
             video_language="ko-KR",  # 한국어 명시
-            voice_name="ko-KR-SunHiNeural",
-            voice_rate=1.12,
+            voice_name=request.voice_name,
+            voice_rate=voice_rates[request.voice_name],
             voice_volume=1.0,
             bgm_type="random",
             bgm_file="",

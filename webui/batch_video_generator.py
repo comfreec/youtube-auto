@@ -65,9 +65,17 @@ def generate_single_video(
         else:
             raise TypeError("ui_params must be VideoParams, dict, or None")
 
-        configured_source = str(config.app.get("video_source", "pexels")).lower()
-        if configured_source not in {"pexels", "pixabay", "animation", "ai_image"}:
-            configured_source = "pexels"
+        configured_source = str(config.app.get("video_source", "stock_auto")).lower()
+        if configured_source not in {"stock_auto", "pexels", "pixabay", "animation", "ai_image"}:
+            configured_source = "stock_auto"
+        korean_voice = str(config.app.get("korean_voice_name", "ko-KR-SunHiNeural"))
+        korean_voice_rates = {
+            "ko-KR-SunHiNeural": 1.12,
+            "ko-KR-InJoonNeural": 1.03,
+            "ko-KR-HyunsuMultilingualNeural": 1.05,
+        }
+        if korean_voice not in korean_voice_rates:
+            korean_voice = "ko-KR-SunHiNeural"
 
         # Values that belong to the current batch item must override the copied
         # UI settings. Korean/English voices intentionally remain independent.
@@ -79,8 +87,8 @@ def generate_single_video(
             'video_source': configured_source,
             'custom_audio_file': None,
             'video_language': language,
-            'voice_name': 'ko-KR-SunHiNeural' if language == 'ko-KR' else 'en-US-JennyNeural',
-            'voice_rate': 1.12 if language == 'ko-KR' else 1.0,
+            'voice_name': korean_voice if language == 'ko-KR' else 'en-US-JennyNeural',
+            'voice_rate': korean_voice_rates[korean_voice] if language == 'ko-KR' else 1.0,
             'paragraph_number': paragraph_num
         })
 
