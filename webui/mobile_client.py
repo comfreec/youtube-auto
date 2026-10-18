@@ -209,11 +209,10 @@ def show_single_video_generation():
         with col1:
             video_type = st.selectbox(
                 "영상 타입",
-                ["shorts", "longform", "timer"],
+                ["shorts", "longform"],
                 format_func=lambda x: {
                     "shorts": "🎬 쇼츠 (60초)",
-                    "longform": "📺 롱폼 (5-15분)",
-                    "timer": "⏱️ 타이머"
+                    "longform": "📺 롱폼 (5-15분)"
                 }[x]
             )
             
@@ -224,9 +223,7 @@ def show_single_video_generation():
             )
         
         with col2:
-            if video_type == "timer":
-                duration = st.slider("타이머 길이 (분)", 5, 60, 20)
-            elif video_type == "longform":
+            if video_type == "longform":
                 duration = st.slider("영상 길이 (분)", 5, 15, 10)
             else:
                 duration = st.slider("영상 길이 (초)", 30, 90, 60)
@@ -292,11 +289,10 @@ def show_batch_video_generation():
         with col1:
             video_type = st.selectbox(
                 "영상 타입",
-                ["shorts", "longform", "timer"],
+                ["shorts", "longform"],
                 format_func=lambda x: {
                     "shorts": "🎬 쇼츠 (60초)",
-                    "longform": "📺 롱폼 (5-15분)",
-                    "timer": "⏱️ 타이머"
+                    "longform": "📺 롱폼 (5-15분)"
                 }[x],
                 key="batch_video_type"
             )
@@ -309,9 +305,7 @@ def show_batch_video_generation():
             )
         
         with col2:
-            if video_type == "timer":
-                duration = st.slider("타이머 길이 (분)", 5, 60, 20, key="batch_duration")
-            elif video_type == "longform":
+            if video_type == "longform":
                 duration = st.slider("영상 길이 (분)", 5, 15, 10, key="batch_duration")
             else:
                 duration = st.slider("영상 길이 (초)", 30, 90, 60, key="batch_duration")

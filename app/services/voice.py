@@ -1375,6 +1375,14 @@ def tts(
     result = try_primary_tts()
     if result is not None:
         return result
+
+    # SunHi is the product's explicitly selected Korean female narrator.
+    # Never silently replace her with gTTS, whose delivered voice cannot be
+    # gender-selected and may change. A visible generation failure is safer
+    # than producing a completed video with the wrong narrator.
+    if parse_voice_name(voice_name) == "ko-KR-SunHiNeural":
+        logger.error("선희 여성 성우 연결 실패: 대체 성우로 변경하지 않습니다.")
+        return None
     
     # 기존 TTS 실패 시 gTTS로 폴백
     logger.warning(f"Primary TTS failed for voice '{voice_name}', trying gTTS fallback...")

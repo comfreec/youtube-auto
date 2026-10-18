@@ -17,7 +17,18 @@ from app.utils import utils
 from app.config import config
 
 
-def generate_single_video(title: str, video_type: str, language: str, duration: int, style: str, auto_upload: bool = False, task_id: str = None, script: str = None, terms: list = None) -> dict:
+def generate_single_video(
+    title: str,
+    video_type: str,
+    language: str,
+    duration: int,
+    style: str,
+    auto_upload: bool = False,
+    task_id: str = None,
+    script: str = None,
+    terms: list = None,
+    ui_params: VideoParams = None,
+) -> dict:
     """?⑥씪 ?곸긽 ?앹꽦 (?쇰컲 ?곸긽 ?앹꽦 濡쒖쭅 洹몃?濡??ъ슜)"""
 
     # Task ID ?앹꽦 (?몃??먯꽌 ?쒓났?섏? ?딆? 寃쎌슦?먮쭔)
@@ -41,40 +52,41 @@ def generate_single_video(title: str, video_type: str, language: str, duration: 
 
         logger.info(f"?뱷 Duration: {duration}珥? Video type: {video_type}, Paragraph number: {paragraph_num}")
 
-        # ?쇰컲 ?곸긽 ?앹꽦怨??꾩쟾???숈씪???뚮씪誘명꽣 ?ㅼ젙
-        params_dict = {
+        # Start with the normal-video settings so batch generation uses the
+        # same background, subtitle, BGM and rendering options.
+        if ui_params is None:
+            params_dict = {}
+        elif hasattr(ui_params, "model_dump"):
+            params_dict = ui_params.model_dump()
+        elif hasattr(ui_params, "dict"):
+            params_dict = ui_params.dict()
+        elif isinstance(ui_params, dict):
+            params_dict = dict(ui_params)
+        else:
+            raise TypeError("ui_params must be VideoParams, dict, or None")
+
+        configured_source = str(config.app.get("video_source", "pexels")).lower()
+        if configured_source not in {"pexels", "pixabay", "animation", "ai_image"}:
+            configured_source = "pexels"
+
+        # Values that belong to the current batch item must override the copied
+        # UI settings. Korean/English voices intentionally remain independent.
+        params_dict.update({
             'video_subject': title,  # ?꾩닔 ?꾨뱶
             'video_script': script or "",
             'video_terms': terms,
             'video_aspect': '9:16' if video_type == 'shorts' else '16:9',
-            'video_concat_mode': 'random',
-            'video_transition_mode': 'None',  # 臾몄옄?대줈 ?ㅼ젙
-            'video_clip_duration': 3 if video_type == 'shorts' else 5,
-            'video_count': 1,  # ?쇰컲 ?곸긽怨??숈씪?섍쾶 1媛쒕쭔 ?앹꽦
-            'video_source': 'pexels',  # ?쎌?利??ъ슜
-            'video_materials': None,
-            'use_segment_matching': True,
-            'target_segment_count': None,
+            'video_source': configured_source,
             'custom_audio_file': None,
             'video_language': language,
             'voice_name': 'ko-KR-SunHiNeural' if language == 'ko-KR' else 'en-US-JennyNeural',
-            'voice_volume': 1.0,
             'voice_rate': 1.12 if language == 'ko-KR' else 1.0,
-            'bgm_type': 'random',
-            'bgm_file': '',
-            'bgm_volume': 0.05,  # 모든 영상 동일하게 0.05로 설정
-            'subtitle_enabled': True,
-            'subtitle_position': 'bottom',
-            'custom_position': 75.0,
-            'font_name': 'STHeitiMedium.ttc',
-            'text_fore_color': '#FFFFFF',
-            'text_background_color': True,
-            'font_size': 45,  # ?깃났???곸긽怨??숈씪?섍쾶 ?ㅼ젙
-            'stroke_color': '#000000',
-            'stroke_width': 1.5,
-            'n_threads': 2,
             'paragraph_number': paragraph_num
-        }
+        })
+
+        # Local uploads only live in the current normal-video form and cannot
+        # safely be reused for a multi-item batch after a Streamlit rerun.
+        params_dict['video_materials'] = None
 
         params = VideoParams(**params_dict)
 
@@ -85,6 +97,11 @@ def generate_single_video(title: str, video_type: str, language: str, duration: 
                     params.video_source = "pixabay"
                 else:
                     raise RuntimeError("A Pexels or Pixabay API key is required")
+        elif params.video_source == "pixabay" and not config.app.get("pixabay_api_keys"):
+            if config.app.get("pexels_api_keys"):
+                params.video_source = "pexels"
+            else:
+                raise RuntimeError("A Pixabay or Pexels API key is required")
 
         # 3. ?쇰컲 ?곸긽 ?앹꽦怨??꾩쟾???숈씪??諛⑹떇?쇰줈 ?곸긽 ?앹꽦
         logger.info(f"Starting task execution for: {task_id}")

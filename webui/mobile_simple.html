@@ -126,17 +126,32 @@
 <body>
     <div class="container">
         <h1>🎬 유튜브 영상 생성기</h1>
+
+        <a id="pcSettingsLink" href="#" target="_blank" rel="noopener noreferrer"
+           style="display:none;text-align:center;padding:13px;background:#334155;color:white;text-decoration:none;border-radius:10px;font-weight:700;margin:-12px 0 22px;">
+            ⚙️ PC 설정 열기
+        </a>
+
+        <details class="input-group">
+            <summary style="font-weight:700; cursor:pointer;">🎯 YouTube 영상 참고해 새 영상 만들기</summary>
+            <p style="font-size:13px;color:#666;line-height:1.5;">핵심 정보만 참고해 새 제목·새 구성·새 문장으로 작성합니다. 원본 영상과 배경은 복사하지 않습니다.</p>
+            <input type="url" id="referenceUrl" placeholder="YouTube 영상 링크" />
+            <textarea id="referenceText" rows="4" placeholder="자막을 못 가져올 때 원본 내용을 붙여 넣으세요" style="width:100%;margin-top:8px;box-sizing:border-box;"></textarea>
+            <button id="reinterpretBtn" type="button" onclick="reinterpretVideo()" style="margin-top:8px;">🎬 분석하고 새 영상 만들기</button>
+            <div id="reinterpretStatus" style="font-size:13px;margin-top:8px;"></div>
+        </details>
         
         <div class="input-group">
             <label for="title">영상 제목</label>
             <input type="text" id="title" placeholder="예: 건강한 식습관의 중요성" />
         </div>
+        <input type="hidden" id="preparedScript" />
+        <input type="hidden" id="preparedTerms" />
 
         <div class="input-group">
             <label for="videoSource">배경 화면 방식</label>
             <select id="videoSource">
-                <option value="pexels">🌟 Pexels 무료 영상</option>
-                <option value="pixabay">🎨 Pixabay 무료 영상</option>
+                <option value="stock_auto">🎬 무료 배경 영상 자동 선택</option>
                 <option value="ai_image">🖼️ 내용맞춤 AI 이미지 (무료 한도)</option>
                 <option value="animation">✨ 간단 애니메이션 (오프라인)</option>
             </select>
@@ -144,7 +159,7 @@
                 AI 이미지가 실패하거나 무료 한도를 모두 사용하면 기존 무료 영상으로 자동 전환됩니다.
             </div>
         </div>
-        
+
         <div class="input-group">
             <label style="display: flex; align-items: center; cursor: pointer;">
                 <input type="checkbox" id="autoUpload" checked style="width: auto; margin-right: 10px;" />
@@ -174,6 +189,58 @@
     <script>
         let currentTaskId = null;
         let checkInterval = null;
+
+        async function loadDefaultVideoSource() {
+            try {
+                const response = await fetch('/api/settings/video-source', {cache: 'no-store'});
+                const data = await response.json();
+                const selector = document.getElementById('videoSource');
+                if (response.ok && selector.querySelector(`option[value="${data.video_source}"]`)) {
+                    selector.value = data.video_source;
+                }
+            } catch (_) {}
+        }
+
+        async function loadPcSettingsLink() {
+            try {
+                const response = await fetch('/api/settings/mobile-access');
+                const data = await response.json();
+                if (data.settings_enabled && data.settings_url) {
+                    const link = document.getElementById('pcSettingsLink');
+                    link.href = data.settings_url;
+                    link.style.display = 'block';
+                }
+            } catch (_) {}
+        }
+
+        loadPcSettingsLink();
+        loadDefaultVideoSource();
+        async function reinterpretVideo() {
+            const btn = document.getElementById('reinterpretBtn');
+            const status = document.getElementById('reinterpretStatus');
+            btn.disabled = true;
+            status.textContent = '공개 자막을 분석하고 새 대본을 만드는 중...';
+            try {
+                const response = await fetch('/api/reinterpret', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        youtube_url: document.getElementById('referenceUrl').value.trim(),
+                        manual_transcript: document.getElementById('referenceText').value.trim()
+                    })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || '분석 실패');
+                document.getElementById('title').value = data.title;
+                document.getElementById('preparedScript').value = data.script;
+                document.getElementById('preparedTerms').value = JSON.stringify(data.terms || []);
+                status.textContent = '✅ 새 대본이 준비되었습니다. 영상 생성을 시작합니다.';
+                await generateVideo();
+            } catch (error) {
+                status.textContent = '❌ ' + error.message;
+            } finally {
+                btn.disabled = false;
+            }
+        }
         
         async function generateVideo() {
             const title = document.getElementById('title').value.trim();
@@ -199,18 +266,41 @@
             progressBar.style.width = '0%';
             
             try {
+                const requestBody = {
+                    subject: title,
+                    script: document.getElementById('preparedScript').value,
+                    terms: JSON.parse(document.getElementById('preparedTerms').value || '[]'),
+                    auto_upload: autoUpload,
+                    create_global: createGlobal,
+                    video_source: videoSource
+                };
+
+                const preflightResponse = await fetch('/api/preflight', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(requestBody)
+                });
+                const preflight = await preflightResponse.json();
+                if (!preflightResponse.ok || !preflight.ready) {
+                    const problems = (preflight.blocking || []).map(item => item.message).join('\n');
+                    throw new Error(problems || preflight.detail || '필수 설정을 확인해주세요.');
+                }
+                if (preflight.warnings && preflight.warnings.length) {
+                    const warnings = preflight.warnings.map(item => item.message).join('\n');
+                    if (!confirm(`확인할 항목이 있습니다.\n\n${warnings}\n\n그래도 영상 생성을 계속할까요?`)) {
+                        btn.disabled = false;
+                        btn.textContent = '영상 생성하기';
+                        status.className = 'status';
+                        return;
+                    }
+                }
                 // API 호출
                 const response = await fetch('/api/generate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        subject: title,
-                        auto_upload: autoUpload,
-                        create_global: createGlobal,
-                        video_source: videoSource
-                    })
+                    body: JSON.stringify(requestBody)
                 });
                 
                 const data = await response.json();

@@ -53,7 +53,7 @@ active_tasks: Dict[str, Dict[str, Any]] = {}
 # 요청 모델들
 class VideoGenerationRequest(BaseModel):
     subject: str
-    video_type: str = "shorts"  # shorts, longform, timer
+    video_type: Literal["shorts", "longform"] = "shorts"
     language: str = "ko-KR"
     duration: Optional[int] = None
     style: Optional[str] = None
@@ -62,7 +62,7 @@ class VideoGenerationRequest(BaseModel):
 
 class BatchVideoRequest(BaseModel):
     titles: List[str]
-    video_type: str = "shorts"
+    video_type: Literal["shorts", "longform"] = "shorts"
     language: str = "ko-KR"
     duration: Optional[int] = None
     style: Optional[str] = None
@@ -263,10 +263,7 @@ async def process_single_video(task_id: str, request: VideoGenerationRequest):
         
         # 추가 매개변수 설정
         if request.duration:
-            if request.video_type == "timer":
-                params.timer_duration = request.duration
-            else:
-                params.video_duration = request.duration
+            params.video_duration = request.duration
         
         if request.style:
             params.video_style = request.style
@@ -320,10 +317,7 @@ async def process_batch_videos(task_id: str, request: BatchVideoRequest):
                 
                 # 추가 매개변수 설정
                 if request.duration:
-                    if request.video_type == "timer":
-                        params.timer_duration = request.duration
-                    else:
-                        params.video_duration = request.duration
+                    params.video_duration = request.duration
                 
                 if request.style:
                     params.video_style = request.style

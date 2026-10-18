@@ -175,9 +175,6 @@ class BatchVideoProcessor:
         elif video_type == 'longform':
             ko_result = await self._process_longform_video(title, video_params, youtube_service)
             results.append(ko_result)
-        elif video_type == 'timer':
-            ko_result = await self._process_timer_video(title, video_params, youtube_service)
-            results.append(ko_result)
         else:
             raise ValueError(f"Unsupported video type: {video_type}")
         
@@ -415,44 +412,6 @@ class BatchVideoProcessor:
             # english_title은 _process_single_video에서 설정됨
         }
     
-    async def _process_timer_video(self, title: str, video_params: Dict, youtube_service=None) -> Dict:
-        """타이머 영상 생성"""
-        
-        # 타이머 영상 생성 (task.py의 실제 함수 사용)
-        result_file = await self._generate_timer_with_task(
-            duration_minutes=video_params.get('duration_minutes', 20),
-            timer_style=video_params.get('timer_style', 'modern'),
-            background_music=video_params.get('background_music', True),
-            title=title
-        )
-        
-        if not result_file or not os.path.exists(result_file):
-            raise Exception("타이머 영상 생성 실패")
-        
-        # 자동 업로드
-        video_id = None
-        if youtube_service:
-            try:
-                video_id = upload_video(
-                    youtube=youtube_service,
-                    file_path=result_file,
-                    title=title,
-                    description=f"{video_params.get('duration_minutes', 20)}분 타이머 영상",
-                    keywords="타이머,집중,공부,명상,휴식",
-                    privacy_status="private"
-                )
-                
-                logger.info(f"Timer video uploaded to YouTube: {video_id}")
-                
-            except Exception as e:
-                logger.warning(f"YouTube upload failed: {e}")
-        
-        return {
-            'file_path': result_file,
-            'video_id': video_id,
-            'type': 'timer'
-        }
-    
     async def _generate_video_with_task(self, script: str, video_params: Dict, video_type: str) -> str:
         """기존 웹UI의 영상 생성 로직을 사용하여 실제 영상 생성"""
         
@@ -613,14 +572,5 @@ class BatchVideoProcessor:
             logger.error(f"Longform video generation failed for task {task_id}: {e}")
             raise e
     
-    async def _generate_timer_with_task(self, duration_minutes: int, timer_style: str, background_music: bool, title: str) -> str:
-        """타이머 영상 생성 (기존 웹UI 로직 사용)"""
-        
-        # 타이머 영상 생성은 복잡하므로 일단 예외 발생
-        # 실제로는 웹UI의 타이머 생성 로직을 완전히 복사해야 합니다
-        logger.warning("Timer video batch generation is not implemented yet")
-        raise Exception("타이머 영상 배치 생성은 아직 구현되지 않았습니다. 개별 생성을 사용해주세요.")
-
-
 # 전역 배치 프로세서 인스턴스
 batch_processor = BatchVideoProcessor()

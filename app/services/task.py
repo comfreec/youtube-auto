@@ -152,9 +152,21 @@ def generate_audio(task_id, params, video_script):
         else:
             logger.info("no custom audio file provided, using TTS to generate audio.")
         audio_file = path.join(utils.task_dir(task_id), "audio.mp3")
+        selected_voice = voice.parse_voice_name(params.voice_name)
+        if str(params.video_language or "").lower().startswith("ko"):
+            # Korean customer videos always use the configured female narrator.
+            # Enforce this at the final audio-generation boundary so that older
+            # saved sessions and every UI/API path cannot restore a male voice.
+            if selected_voice != "ko-KR-SunHiNeural":
+                logger.warning(
+                    "한국어 음성을 선희 여성 성우로 교정: %s -> ko-KR-SunHiNeural",
+                    selected_voice or "(비어 있음)",
+                )
+            selected_voice = "ko-KR-SunHiNeural"
+
         sub_maker = voice.tts(
             text=video_script,
-            voice_name=voice.parse_voice_name(params.voice_name),
+            voice_name=selected_voice,
             voice_rate=params.voice_rate,
             voice_file=audio_file,
         )
@@ -461,7 +473,10 @@ def get_video_materials(task_id, params, video_terms, audio_duration, video_scri
         matcher = get_matcher()
         image_segment_count = getattr(params, "target_segment_count", None)
         if image_segment_count is None:
-            image_segment_count = max(3, min(6, int(audio_duration / 6)))
+            # Current Shorts benefit from frequent, clearly distinct visual
+            # beats. Around six seconds per image keeps attention without the
+            # eye strain of rapid zooms or jittery camera movement.
+            image_segment_count = max(5, min(10, math.ceil(audio_duration / 6)))
         segment_infos = matcher.match_segments_to_videos(
             script=video_script or params.video_subject,
             video_duration=audio_duration,
@@ -490,8 +505,15 @@ def get_video_materials(task_id, params, video_terms, audio_duration, video_scri
                 sm.state.update_task(task_id, state=const.TASK_STATE_FAILED, message=f"AI 이미지 생성 실패: {exc}")
                 logger.error(f"AI image generation failed and no stock fallback is configured: {exc}")
                 return None
-            logger.warning(f"AI image generation unavailable ({exc}); falling back to {fallback}")
-            sm.state.update_task(task_id, message=f"AI 이미지 생성이 어려워 {fallback.title()} 무료 영상으로 자동 전환합니다...")
+            failure_reason = str(exc).strip() or "알 수 없는 이미지 생성 오류"
+            logger.warning(f"AI image generation unavailable ({failure_reason}); falling back to {fallback}")
+            sm.state.update_task(
+                task_id,
+                message=(
+                    f"AI 이미지 생성 실패: {failure_reason} "
+                    f"→ {fallback.title()} 무료 영상으로 자동 전환합니다..."
+                ),
+            )
             params.video_source = fallback
 
     # 독립형 오프라인 애니메이션 배경. 기존 무료영상 검색 로직과 분리되어
@@ -523,6 +545,30 @@ def get_video_materials(task_id, params, video_terms, audio_duration, video_scri
             logger.error("failed to generate animation backgrounds")
             return None
         return animation_paths
+
+    # Pexels와 Pixabay를 사용자에게 하나의 무료영상 소스로 제공한다.
+    # 키 보유 여부에 따라 우선 공급자를 정하고, 자료가 없으면 다른 공급자로
+    # 한 번 더 검색한다. 기존 개별 source 값은 이전 설정 호환용으로 유지한다.
+    stock_fallback_source = None
+    if params.video_source == "stock_auto":
+        has_pexels = bool(config.app.get("pexels_api_keys"))
+        has_pixabay = bool(config.app.get("pixabay_api_keys"))
+        if has_pexels:
+            params.video_source = "pexels"
+            stock_fallback_source = "pixabay" if has_pixabay else None
+        elif has_pixabay:
+            params.video_source = "pixabay"
+        else:
+            sm.state.update_task(
+                task_id,
+                state=const.TASK_STATE_FAILED,
+                message="무료 영상 API 키가 없습니다. 설정에서 Pexels 또는 Pixabay 키를 입력해주세요.",
+            )
+            logger.error("stock_auto selected but neither Pexels nor Pixabay API keys are configured")
+            return None
+        logger.info(
+            f"free stock auto mode: primary={params.video_source}, fallback={stock_fallback_source or 'none'}"
+        )
 
     # 기본 배경영상 검색 로직
     
@@ -591,6 +637,23 @@ def get_video_materials(task_id, params, video_terms, audio_duration, video_scri
                 audio_duration=audio_duration * params.video_count,
                 max_clip_duration=params.video_clip_duration,
             )
+            if not downloaded_videos and stock_fallback_source:
+                logger.warning(
+                    f"{params.video_source} returned no usable videos; retrying with {stock_fallback_source}"
+                )
+                sm.state.update_task(
+                    task_id,
+                    message=f"첫 번째 무료 영상 검색 결과가 부족해 {stock_fallback_source.title()}에서 다시 찾는 중...",
+                )
+                downloaded_videos = material.download_videos(
+                    task_id=task_id,
+                    search_terms=video_terms,
+                    source=stock_fallback_source,
+                    video_aspect=params.video_aspect,
+                    video_contact_mode=params.video_concat_mode,
+                    audio_duration=audio_duration * params.video_count,
+                    max_clip_duration=params.video_clip_duration,
+                )
             if not downloaded_videos:
                 sm.state.update_task(task_id, state=const.TASK_STATE_FAILED)
                 logger.error(

@@ -11,9 +11,11 @@ import uvicorn
 import os
 import sys
 import re
+from urllib.parse import urlparse
 from pathlib import Path
 from uuid import uuid4
 from loguru import logger
+import requests
 
 # 프로젝트 루트 추가
 root_dir = Path(__file__).parent
@@ -26,6 +28,8 @@ from app.config import config
 from app.utils import utils
 from app.utils.youtube import get_authenticated_service, upload_video
 from app.services.license import license_manager
+from app.services.mobile_access import enable_mobile_access, get_mobile_access_status
+from app.services.customer_readiness import friendly_error, run_readiness_checks
 
 app = FastAPI(title="AI 영상 생성 모바일 서버")
 
@@ -47,9 +51,18 @@ else:
 # 요청 모델
 class VideoRequest(BaseModel):
     subject: str
+    script: str = ""
+    terms: list[str] = []
     auto_upload: bool = True  # 기본값: 자동 업로드
     create_global: bool = True  # 기본값: 글로벌 버전 생성
-    video_source: Literal["pexels", "pixabay", "ai_image", "animation"] = "pexels"
+    video_source: Literal["stock_auto", "pexels", "pixabay", "ai_image", "animation"] = "stock_auto"
+
+class ReinterpretRequest(BaseModel):
+    youtube_url: str = ""
+    manual_transcript: str = ""
+
+class ImageWorkerSettingsRequest(BaseModel):
+    worker_url: str
 
 # 전역 작업 저장소
 tasks = {}
@@ -659,8 +672,9 @@ def run_video_generation(task_id: str, params: VideoParams, auto_upload: bool = 
         
         # 에러 상태 업데이트
         tasks[task_id]["status"] = "failed"
-        tasks[task_id]["error"] = str(e)
-        tasks[task_id]["message"] = f"생성 실패: {str(e)}"
+        customer_message = friendly_error(e)
+        tasks[task_id]["error"] = customer_message
+        tasks[task_id]["message"] = f"생성 실패: {customer_message}"
 
 @app.get("/", response_class=HTMLResponse)
 async def home():
@@ -669,10 +683,59 @@ async def home():
     with open(html_path, "r", encoding="utf-8") as f:
         return f.read()
 
+@app.get("/api/settings/image-worker")
+def get_image_worker_settings():
+    worker_url = str(config.app.get("ai_image_worker_url", "")).strip()
+    return {"worker_url": worker_url}
+
+@app.get("/api/settings/video-source")
+def get_video_source_settings():
+    source = str(config.app.get("video_source", "pexels")).strip()
+    if source in {"pexels", "pixabay"}:
+        source = "stock_auto"
+    allowed = {"stock_auto", "ai_image", "animation"}
+    return {"video_source": source if source in allowed else "stock_auto"}
+
+@app.post("/api/settings/image-worker")
+def save_image_worker_settings(request: ImageWorkerSettingsRequest):
+    worker_url = request.worker_url.strip().rstrip("/")
+    parsed = urlparse(worker_url)
+    if parsed.scheme != "https" or not parsed.netloc:
+        raise HTTPException(status_code=400, detail="https://로 시작하는 이미지 서버 주소를 입력해주세요.")
+    try:
+        response = requests.get(f"{worker_url}/health", timeout=15)
+        payload = response.json() if response.ok else {}
+        if not response.ok or not payload.get("ok"):
+            raise RuntimeError("이미지 서버 응답이 올바르지 않습니다.")
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"이미지 서버에 연결할 수 없습니다: {exc}") from exc
+    config.app["ai_image_worker_url"] = worker_url
+    config.save_config()
+    return {"ok": True, "worker_url": worker_url}
+
+@app.get("/api/settings/mobile-access")
+def mobile_access_status():
+    return get_mobile_access_status()
+
+@app.post("/api/settings/mobile-access/enable")
+def create_mobile_access():
+    try:
+        return enable_mobile_access()
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+@app.post("/api/preflight")
+def preflight_video(request: VideoRequest):
+    return run_readiness_checks(root_dir, request.video_source, request.auto_upload)
+
 @app.post("/api/generate")
 async def generate_video(request: VideoRequest, background_tasks: BackgroundTasks):
     """영상 생성 (기존 로직 그대로 사용)"""
     try:
+        readiness = run_readiness_checks(root_dir, request.video_source, request.auto_upload)
+        if not readiness["ready"]:
+            details = " ".join(item["message"] for item in readiness["blocking"])
+            raise HTTPException(status_code=400, detail=details)
         # Task ID 생성
         task_id = str(uuid4())
         
@@ -684,8 +747,8 @@ async def generate_video(request: VideoRequest, background_tasks: BackgroundTask
             video_transition_mode=VideoTransitionMode.none,
             video_count=1,
             video_clip_duration=5,
-            video_script="",  # LLM이 자동 생성
-            video_terms="",  # LLM이 자동 생성
+            video_script=request.script.strip(),
+            video_terms=request.terms,
             video_language="ko-KR",  # 한국어 명시
             voice_name="ko-KR-SunHiNeural",
             voice_rate=1.12,
@@ -718,11 +781,37 @@ async def generate_video(request: VideoRequest, background_tasks: BackgroundTask
             "message": "영상 생성이 시작되었습니다"
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
         import traceback
         error_detail = traceback.format_exc()
         print(f"ERROR: {error_detail}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=friendly_error(e))
+
+@app.post("/api/reinterpret")
+def reinterpret_youtube(request: ReinterpretRequest):
+    """공개 자막의 핵심 정보로 독립적인 새 대본 생성"""
+    from app.services.youtube_analyzer import (
+        analyze_and_reinterpret_content, extract_key_topics, extract_video_id,
+        get_video_info, get_video_transcript,
+    )
+    from webui.youtube_reinterpret_ui import _new_title
+
+    video_id = extract_video_id(request.youtube_url) if request.youtube_url.strip() else None
+    if not video_id and not request.manual_transcript.strip():
+        raise HTTPException(status_code=400, detail="올바른 링크나 원본 내용을 입력해주세요.")
+    info = get_video_info(video_id) if video_id else {"title": "사용자 입력 내용", "author": ""}
+    transcript = get_video_transcript(video_id) if video_id else None
+    transcript = transcript or request.manual_transcript.strip()
+    if not transcript or len(transcript) < 80:
+        raise HTTPException(status_code=400, detail="공개 자막을 가져오지 못했습니다. 원본 내용을 직접 붙여 넣어주세요.")
+    script = analyze_and_reinterpret_content(transcript, info)
+    if not script or "실패했습니다" in script:
+        raise HTTPException(status_code=500, detail="새 대본을 만들지 못했습니다.")
+    title = _new_title(info.get("title", ""), script)
+    terms = llm.generate_terms(title, script, amount=5) or extract_key_topics(script)
+    return {"title": title, "script": script, "terms": terms, "source_title": info.get("title", "")}
 
 @app.get("/api/task/{task_id}")
 async def get_task_status(task_id: str):
@@ -739,6 +828,8 @@ async def get_task_status(task_id: str):
         status = task_info.get("state", "processing")
         progress = task_info.get("progress", 0)
         message = task_info.get("message", "처리 중...")
+        if status == "failed":
+            message = friendly_error(message)
         
         # 상태 변환
         if status == "complete":

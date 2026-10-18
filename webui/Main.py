@@ -19,7 +19,6 @@ root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 if root_dir not in sys.path:
     sys.path.append(root_dir)
 
-# Import VideoAspect for timer video generation
 from app.models.schema import VideoAspect
 from app.config import config
 from app.services import task
@@ -46,14 +45,6 @@ try:
 except ImportError:
     show_api_help_button = None
     API_HELP_AVAILABLE = False
-
-# Import animation shorts UI
-try:
-    from webui.animation_shorts_ui import show_animation_shorts_ui
-    ANIMATION_SHORTS_AVAILABLE = True
-except ImportError:
-    ANIMATION_SHORTS_AVAILABLE = False
-
 
 st.set_page_config(
     page_title="AI 영상 생성 스튜디오 | MoneyPrinterTurbo",
@@ -252,14 +243,57 @@ def check_license():
     # 라이선스 정보 표시 (사이드바에)
     license_info = license_manager.get_license_info()
     if license_info:
-        days_left = license_info.get("days_left", 0)
-        if days_left <= 30:
+        days_left = license_info.get("days_left")
+        if days_left is None:
+            st.sidebar.success("✅ 영구 라이선스 유효")
+        elif days_left <= 30:
             st.sidebar.warning(f"⚠️ 라이선스 만료 {days_left}일 전")
         else:
             st.sidebar.success(f"✅ 라이선스 유효 ({days_left}일 남음)")
 
 # 라이선스 검증 실행
 check_license()
+
+# 기본 PC 화면은 모바일 서버와 동일한 간편 화면을 사용합니다.
+# 기존 고급 UI 코드는 보존하되 기본 화면에서는 실행하지 않습니다.
+PC_SIMPLE_UI = True
+pc_view = st.query_params.get("view", "simple")
+if PC_SIMPLE_UI and pc_view != "settings":
+    import streamlit.components.v1 as components
+
+    st.markdown(
+        """
+        <style>
+        [data-testid="stAppViewContainer"] > .main .block-container {
+            max-width: 760px;
+            padding-top: 0.6rem;
+            padding-bottom: 1rem;
+        }
+        [data-testid="stSidebar"], [data-testid="stHeader"], footer, #MainMenu {
+            display: none !important;
+        }
+        iframe { border-radius: 18px; }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    if st.button("⚙️ 설정", use_container_width=True, type="secondary"):
+        st.query_params["view"] = "settings"
+        st.rerun()
+    components.iframe(
+        "http://127.0.0.1:8000/",
+        height=940,
+        scrolling=True,
+    )
+    st.stop()
+elif PC_SIMPLE_UI:
+    if st.button("← 간편 화면으로 돌아가기", use_container_width=True):
+        st.query_params.clear()
+        st.rerun()
+    from webui.simple_settings_ui import render_simple_settings
+
+    render_simple_settings(root_dir)
+    st.stop()
 
 # 메뉴 완전히 제거 - 최소한의 코드로 처리
 hide_menu_style = """
@@ -1526,6 +1560,23 @@ if "video_script" not in st.session_state:
     st.session_state["video_script"] = ""
 if "video_terms" not in st.session_state:
     st.session_state["video_terms"] = ""
+if "video_subject_input" not in st.session_state:
+    st.session_state["video_subject_input"] = st.session_state["video_subject"]
+if "video_script_input" not in st.session_state:
+    st.session_state["video_script_input"] = st.session_state["video_script"]
+if "video_terms_input" not in st.session_state:
+    st.session_state["video_terms_input"] = st.session_state["video_terms"]
+pending_reinterpret = st.session_state.pop("reinterpret_pending_video", None)
+if pending_reinterpret:
+    pending_title = pending_reinterpret.get("title", "")
+    pending_script = pending_reinterpret.get("script", "")
+    pending_terms = ", ".join(pending_reinterpret.get("terms", []))
+    st.session_state["video_subject"] = pending_title
+    st.session_state["video_subject_input"] = pending_title
+    st.session_state["video_script"] = pending_script
+    st.session_state["video_script_input"] = pending_script
+    st.session_state["video_terms"] = pending_terms
+    st.session_state["video_terms_input"] = pending_terms
 if "ui_language" not in st.session_state:
     st.session_state["ui_language"] = config.ui.get("language", system_locale)
 
@@ -1725,18 +1776,7 @@ if MOBILE_OPTIMIZATION_AVAILABLE and st.session_state.get("generation_in_progres
                 # 진행률 바
                 st.progress(progress / 100.0)
                 
-                # 제어 버튼들 (통합)
-                col1, col2 = st.columns(2)
-                with col1:
-                    if st.button("🔄 진행률 확인", use_container_width=True, key="refresh_progress"):
-                        # 페이지 중복 방지: st.rerun() 제거하고 자연스러운 업데이트 대기
-                        pass
-                with col2:
-                    if st.button("⏹️ 작업 중단", use_container_width=True, key="stop_task"):
-                        st.session_state["generation_in_progress"] = False
-                        st.session_state["auto_restored"] = False
-                        st.warning("작업이 중단되었습니다.")
-                        # 페이지 중복 방지: st.rerun() 제거
+                st.caption("진행 상황은 자동으로 갱신됩니다.")
                 
             elif task_status and task_status.get("video_file"):
                 st.success("✅ 영상 생성이 완료되었습니다!")
@@ -1753,12 +1793,18 @@ if MOBILE_OPTIMIZATION_AVAILABLE and st.session_state.get("generation_in_progres
             st.warning("⚠️ 진행 상황을 확인할 수 없습니다. 새로고침해보세요.")
 
 # Premium Tab Design
-tab_main, tab_animation, tab_settings, tab_analytics = st.tabs([
-    "🎬 영상 생성", 
-    "🎨 애니메이션 쇼츠",
-    "⚙️ 고급 설정", 
-    "📊 분석 & 관리"
-])
+if PC_SIMPLE_UI and pc_view == "settings":
+    tab_settings, tab_main, tab_analytics = st.tabs([
+        "⚙️ 설정",
+        "🎬 영상 생성",
+        "📁 영상 관리",
+    ])
+else:
+    tab_main, tab_settings, tab_analytics = st.tabs([
+        "🎬 영상 생성",
+        "⚙️ 고급 설정",
+        "📁 영상 관리",
+    ])
 
 # --- TAB 1: MAIN (Generate) ---
 with tab_main:
@@ -1783,7 +1829,6 @@ with tab_main:
         params.video_subject = st.text_input(
             "영상 주제",
             placeholder="예: 성공하는 사람들의 7가지 습관",
-            value=st.session_state["video_subject"],
             key="video_subject_input",
             label_visibility="collapsed",
             help="구체적이고 흥미로운 주제를 입력하세요. AI가 더 좋은 콘텐츠를 생성합니다."
@@ -1871,6 +1916,8 @@ with tab_main:
                     
                     st.session_state["video_script"] = script
                     st.session_state["video_terms"] = ", ".join(terms) if terms else ""
+                    st.session_state["video_script_input"] = script
+                    st.session_state["video_terms_input"] = st.session_state["video_terms"]
                     
                     progress_container.empty()
                     st.success("🎉 AI가 완벽한 대본과 키워드를 생성했습니다!")
@@ -1892,8 +1939,8 @@ with tab_main:
             st.markdown("**📝 영상 대본**")
             params.video_script = st.text_area(
                 "영상 대본", 
-                value=st.session_state["video_script"], 
                 height=250,
+                key="video_script_input",
                 placeholder="AI가 생성한 대본이 여기에 표시됩니다.\n직접 수정하거나 완전히 새로 작성할 수도 있습니다.\n\n팁: 감정적이고 구체적인 표현을 사용하면 더 매력적인 영상이 됩니다.",
                 label_visibility="collapsed",
                 help="대본을 직접 수정할 수 있습니다. 문단별로 나누어 작성하면 더 자연스러운 영상이 생성됩니다."
@@ -1915,8 +1962,8 @@ with tab_main:
             st.markdown("**🏷️ 검색 키워드**")
             params.video_terms = st.text_area(
                 "영상 키워드", 
-                value=st.session_state["video_terms"],
                 height=250,
+                key="video_terms_input",
                 placeholder="success, motivation, lifestyle, tips, guide\n\n영어 키워드를 쉼표로 구분하여 입력하세요.\n좋은 키워드는 더 관련성 높은 영상 소재를 찾는데 도움이 됩니다.",
                 label_visibility="collapsed",
                 help="영상 소재 검색에 사용될 키워드입니다. 영어로 입력하면 더 다양한 소재를 찾을 수 있습니다."
@@ -1968,24 +2015,10 @@ with tab_main:
                 config.ui["text_fore_color"] = "#FFFFFF"
                 
                 st.success("✅ 쇼츠 최적화 설정 완료!")
-                st.info("📱 9:16 세로 비율, 최적화된 템포(1.2배속), 큰 자막, 자막-영상 매칭으로 설정되었습니다 (한국어 1.3배속, 영어 1.1배속)")
+                st.info("📱 9:16 세로 비율, 큰 자막, 자막-영상 매칭 설정이 적용되었습니다.")
                 time.sleep(1)
                 st.rerun()
             
-            if st.button("🎬 시네마틱 모드", use_container_width=True):
-                # Apply cinematic settings
-                st.session_state["settings_video_aspect"] = 1  # Landscape
-                st.session_state["settings_video_transition"] = 2  # Fade In
-                st.session_state["settings_clip_duration"] = 6
-                st.session_state["settings_voice_rate"] = 0.9
-                st.session_state["settings_bgm_volume"] = 0.08
-                st.session_state["settings_font_size"] = 45
-                
-                st.success("🎭 시네마틱 모드 적용!")
-                st.info("🎥 16:9 가로 비율, 느린 템포, 페이드 전환으로 설정되었습니다")
-                time.sleep(1)
-                st.rerun()
-    
     with col_generation:
         with st.container(border=True):
             st.markdown("### 🚀 **영상 생성**")
@@ -2358,17 +2391,11 @@ with tab_main:
                         status_text.error(f"❌ 생성 실패: {str(e)}")
                         progress_bar.empty()
 
-    # YouTube 영상 분석 & 재해석 - 완전히 새로운 독립적 구현
-    with st.expander("🎯 **YouTube 영상 분석 & 재해석** - 기존 영상을 새롭게 재창조", expanded=False):
-        try:
-            from webui.youtube_reinterpret_ui import render_youtube_reinterpret_section
-            render_youtube_reinterpret_section()
-        except ImportError as e:
-            st.error(f"❌ YouTube 재해석 모듈 로드 실패: {e}")
-            st.info("💡 youtube_reinterpret_ui.py 파일이 필요합니다.")
-        except Exception as e:
-            st.error(f"❌ YouTube 재해석 기능 오류: {e}")
-            logger.error(f"YouTube reinterpret UI error: {e}")
+    with st.expander("🎯 **YouTube 영상 참고해 새 영상 만들기**", expanded=False):
+        from webui.youtube_reinterpret_ui import render_youtube_reinterpret_section
+        render_youtube_reinterpret_section()
+        if st.session_state.pop("reinterpret_start_generation", False):
+            start_button = True
 
     # Premium Batch Video Generation Section
     with st.expander("🔄 **배치 영상 생성** - 여러 영상을 한 번에 자동 생성", expanded=False):
@@ -2408,22 +2435,16 @@ with tab_main:
             st.markdown("#### ⚙️ **배치 설정**")
             batch_video_type = st.selectbox(
                 "영상 타입",
-                ["shorts", "longform", "timer"],
+                ["shorts", "longform"],
                 format_func=lambda x: {
                     "shorts": "🎬 쇼츠 (60초)",
-                    "longform": "📺 롱폼 (5-15분)",
-                    "timer": "⏱️ 타이머"
+                    "longform": "📺 롱폼 (5-15분)"
                 }[x],
                 key="batch_video_type",
-                help="배치로 생성할 영상의 타입을 선택하세요"
+                help="배치로 생성할 영상의 타입을 선택하세요."
             )
             
-            batch_language = st.selectbox(
-                "언어",
-                ["ko-KR", "en-US"],
-                format_func=lambda x: "🇰🇷 한국어" if x == "ko-KR" else "🇺🇸 English",
-                key="batch_language"
-            )
+            st.info("🇰🇷 한국어는 선희 성우로 생성되며, 글로벌 버전을 켜면 영어 영상이 이어서 생성됩니다.")
         
         with col_batch_settings:
             st.markdown("#### 🎯 **추가 옵션**")
@@ -2452,7 +2473,7 @@ with tab_main:
                     }[x],
                     key="batch_style"
                 )
-            elif batch_video_type == "longform":
+            else:  # longform
                 batch_duration = st.slider("영상 길이 (분)", 5, 15, 10, key="batch_longform_duration")
                 batch_style = st.selectbox(
                     "영상 스타일",
@@ -2465,20 +2486,6 @@ with tab_main:
                     }[x],
                     key="batch_longform_style"
                 )
-            else:  # timer
-                batch_duration = st.slider("타이머 길이 (분)", 5, 60, 20, key="batch_timer_duration")
-                batch_style = st.selectbox(
-                    "타이머 스타일",
-                    ["modern", "minimal", "nature", "focus"],
-                    format_func=lambda x: {
-                        "modern": "🎨 모던",
-                        "minimal": "⚪ 미니멀",
-                        "nature": "🌿 자연",
-                        "focus": "🎯 집중"
-                    }[x],
-                    key="batch_timer_style"
-                )
-            
             batch_auto_upload = st.checkbox(
                 "📤 자동 업로드",
                 value=True,
@@ -3139,20 +3146,8 @@ with tab_main:
                                         with col_controls:
                                             st.markdown("#### 🎬 **영상 작업**")
                                             
-                                            # 채널 선택
-                                            channels = [("🏠 메인 채널", "default"), ("⏱️ 타이머 채널", "timer")]
-                                            selected_channel_index = st.selectbox(
-                                                "업로드 채널 선택",
-                                                options=range(len(channels)),
-                                                format_func=lambda x: channels[x][0],
-                                                index=0,
-                                                key=f"batch_ko_channel_{i}"
-                                            )
-                                            
-                                            # 액션 버튼들
-                                            col_btn1, col_btn2 = st.columns(2)
-                                            
-                                            with col_btn1:
+                                            # 액션 버튼
+                                            with st.container():
                                                 # 다운로드 버튼
                                                 try:
                                                     with open(video_path, "rb") as video_file:
@@ -3168,18 +3163,6 @@ with tab_main:
                                                 except Exception:
                                                     st.button("📥 다운로드", disabled=True, use_container_width=True)
                                             
-                                            with col_btn2:
-                                                # 재생 버튼
-                                                if st.button("▶️ 재생", key=f"batch_ko_play_{i}", use_container_width=True):
-                                                    try:
-                                                        if os.name == 'nt':
-                                                            os.startfile(video_path)
-                                                        else:
-                                                            import subprocess
-                                                            subprocess.call(('xdg-open', video_path))
-                                                    except Exception:
-                                                        st.error("재생할 수 없습니다.")
-                                            
                                             # 수동 업로드 버튼
                                             upload_progress_container = st.empty()
                                             
@@ -3190,10 +3173,8 @@ with tab_main:
                                             if st.session_state.get(f"batch_ko_upload_requested_{i}"):
                                                 with upload_progress_container.container():
                                                     # 토큰 파일 선택
-                                                    timer_token_file = "token_timer.pickle"
                                                     default_token_file = "token.pickle"
-                                                    ch_idx = st.session_state.get(f"batch_ko_channel_{i}", 0)
-                                                    token_file = timer_token_file if ch_idx == 1 else default_token_file
+                                                    token_file = default_token_file
                                                     
                                                     # client_secrets.json 찾기
                                                     client_secrets_file = "client_secrets.json"
@@ -3314,20 +3295,8 @@ with tab_main:
                                         with col_controls:
                                             st.markdown("#### 🎬 **영상 작업**")
                                             
-                                            # 채널 선택
-                                            channels = [("🏠 메인 채널", "default"), ("⏱️ 타이머 채널", "timer")]
-                                            selected_channel_index = st.selectbox(
-                                                "업로드 채널 선택",
-                                                options=range(len(channels)),
-                                                format_func=lambda x: channels[x][0],
-                                                index=0,
-                                                key=f"batch_en_channel_{i}"
-                                            )
-                                            
-                                            # 액션 버튼들
-                                            col_btn1, col_btn2 = st.columns(2)
-                                            
-                                            with col_btn1:
+                                            # 액션 버튼
+                                            with st.container():
                                                 # 다운로드 버튼
                                                 try:
                                                     with open(video_path, "rb") as video_file:
@@ -3343,18 +3312,6 @@ with tab_main:
                                                 except Exception:
                                                     st.button("📥 다운로드", disabled=True, use_container_width=True)
                                             
-                                            with col_btn2:
-                                                # 재생 버튼
-                                                if st.button("▶️ 재생", key=f"batch_en_play_{i}", use_container_width=True):
-                                                    try:
-                                                        if os.name == 'nt':
-                                                            os.startfile(video_path)
-                                                        else:
-                                                            import subprocess
-                                                            subprocess.call(('xdg-open', video_path))
-                                                    except Exception:
-                                                        st.error("재생할 수 없습니다.")
-                                            
                                             # 수동 업로드 버튼
                                             upload_progress_container = st.empty()
                                             
@@ -3365,10 +3322,8 @@ with tab_main:
                                             if st.session_state.get(f"batch_en_upload_requested_{i}"):
                                                 with upload_progress_container.container():
                                                     # 토큰 파일 선택
-                                                    timer_token_file = "token_timer.pickle"
                                                     default_token_file = "token.pickle"
-                                                    ch_idx = st.session_state.get(f"batch_en_channel_{i}", 0)
-                                                    token_file = timer_token_file if ch_idx == 1 else default_token_file
+                                                    token_file = default_token_file
                                                     
                                                     # client_secrets.json 찾기
                                                     client_secrets_file = "client_secrets.json"
@@ -3734,10 +3689,7 @@ def generate_single_video(title: str, video_type: str, language: str, duration: 
                     
                     with col_meta:
                         # Video type detection
-                        if "timer_video_" in file_name:
-                            st.markdown("🏷️ **타이머 영상**")
-                        else:
-                            st.markdown("🏷️ **AI 생성 영상**")
+                        st.markdown("🏷️ **AI 생성 영상**")
                     
                     # Video player and controls
                     col_video, col_controls = st.columns([0.6, 0.4])
@@ -3748,22 +3700,8 @@ def generate_single_video(title: str, video_type: str, language: str, duration: 
                     with col_controls:
                         st.markdown("#### 🎬 **영상 작업**")
                         
-                        # Channel selector
-                        channels = [("🏠 메인 채널", "default"), ("⏱️ 타이머 채널", "timer")]
-                        default_ch_idx = 1 if "timer_video_" in file_name else 0
-                        
-                        selected_channel_index = st.selectbox(
-                            "업로드 채널 선택",
-                            options=range(len(channels)),
-                            format_func=lambda x: channels[x][0],
-                            index=default_ch_idx,
-                            key=f"upload_channel_sel_{i}"
-                        )
-                        
-                        # Action buttons
-                        col_btn1, col_btn2 = st.columns(2)
-                        
-                        with col_btn1:
+                        # Action button
+                        with st.container():
                             # Download button
                             try:
                                 with open(video_path, "rb") as video_file:
@@ -3779,18 +3717,6 @@ def generate_single_video(title: str, video_type: str, language: str, duration: 
                             except Exception:
                                 st.button("📥 다운로드", disabled=True, use_container_width=True)
                         
-                        with col_btn2:
-                            # Play button
-                            if st.button("▶️ 재생", key=f"play_btn_{i}", use_container_width=True):
-                                try:
-                                    if os.name == 'nt':
-                                        os.startfile(video_path)
-                                    else:
-                                        import subprocess
-                                        subprocess.call(('xdg-open', video_path))
-                                except Exception:
-                                    st.error("재생할 수 없습니다.")
-                        
                         # Upload button
                         upload_progress_container = st.empty()
                         
@@ -3800,11 +3726,9 @@ def generate_single_video(title: str, video_type: str, language: str, duration: 
                         # Handle upload logic
                         if st.session_state.get(f"upload_requested_{i}"):
                             with upload_progress_container.container():
-                                # Choose token file based on selected channel
-                                timer_token_file = os.path.join(root_dir, "token_timer.pickle")
+                                # Main YouTube channel token
                                 default_token_file = os.path.join(root_dir, "token.pickle")
-                                ch_idx = st.session_state.get(f"upload_channel_sel_{i}", 0)
-                                token_file = timer_token_file if ch_idx == 1 else default_token_file
+                                token_file = default_token_file
                                 
                                 # Find client_secrets.json
                                 client_secrets_file = os.path.join(root_dir, "client_secrets.json")
@@ -3875,24 +3799,20 @@ def generate_single_video(title: str, video_type: str, language: str, duration: 
                                     st.error("❌ 인증 필요 (설정에서 YouTube 인증을 완료해주세요)")
                                     st.session_state[f"upload_requested_{i}"] = False
 
-# --- TAB 3: ANALYTICS & MANAGEMENT ---
+# --- TAB 3: VIDEO MANAGEMENT ---
 with tab_analytics:
-    st.markdown("### 📊 **영상 분석 & 관리**")
+    st.markdown("### 📁 **영상 관리**")
     
     col_stats, col_recent = st.columns([0.4, 0.6])
     
     with col_stats:
         with st.container(border=True):
-            st.markdown("#### 📈 생성 통계")
+            st.markdown("#### 📈 생성 현황")
             
             # Calculate stats from generated videos
             total_videos = len(st.session_state.get("generated_video_files", []))
             
-            # Display metrics in single column to prevent truncation
             st.metric("영상", total_videos, delta=None)
-            st.metric("성공률", "98.5%", delta="2.1%")
-            st.metric("시간", "2.3분", delta="-0.5분")
-            st.metric("용량", "1.2GB", delta="156MB")
     
     with col_recent:
         with st.container(border=True):
@@ -3901,7 +3821,7 @@ with tab_analytics:
             if "generated_video_files" in st.session_state and st.session_state["generated_video_files"]:
                 for i, video_path in enumerate(st.session_state["generated_video_files"][:3]):  # Show only recent 3
                     if os.path.exists(video_path):
-                        col_thumb, col_info, col_actions = st.columns([0.2, 0.5, 0.3])
+                        col_thumb, col_info = st.columns([0.2, 0.8])
                         
                         with col_thumb:
                             st.markdown("🎬")  # Video thumbnail placeholder
@@ -3912,16 +3832,6 @@ with tab_analytics:
                             st.markdown(f"**{file_name[:20]}...**")
                             st.caption(f"크기: {file_size:.1f}MB")
                         
-                        with col_actions:
-                            if st.button("▶️", key=f"play_recent_{i}", help="재생"):
-                                try:
-                                    if os.name == 'nt':
-                                        os.startfile(video_path)
-                                    else:
-                                        import subprocess
-                                        subprocess.call(('xdg-open', video_path))
-                                except Exception:
-                                    pass
             else:
                 st.info("아직 생성된 영상이 없습니다.")
     
@@ -3945,17 +3855,6 @@ with tab_analytics:
                 except Exception as e:
                     st.error(f"정리 중 오류: {e}")
             
-            if st.button("📁 작업 폴더 열기", use_container_width=True):
-                try:
-                    tasks_dir = os.path.join(root_dir, "storage", "tasks")
-                    if os.name == 'nt':
-                        os.startfile(tasks_dir)
-                    else:
-                        import subprocess
-                        subprocess.call(('xdg-open', tasks_dir))
-                except Exception:
-                    st.error("폴더를 열 수 없습니다.")
-    
     with col_export:
         with st.container(border=True):
             st.markdown("#### 📤 내보내기 & 백업")
@@ -4010,8 +3909,6 @@ with tab_analytics:
                         backup_info.append("✅ YouTube 인증 파일 (client_secrets.json)")
                     if "token" in youtube_files:
                         backup_info.append("✅ YouTube 메인 채널 토큰")
-                    if "token_timer" in youtube_files:
-                        backup_info.append("✅ YouTube 타이머 채널 토큰")
                     
                     st.success("백업 생성 완료!\n\n" + "\n".join(backup_info))
                     
@@ -4068,15 +3965,7 @@ with tab_analytics:
                 except Exception as e:
                     st.error(f"복원 실패: {e}")
 
-# --- TAB 2: ANIMATION SHORTS ---
-with tab_animation:
-    if ANIMATION_SHORTS_AVAILABLE:
-        show_animation_shorts_ui()
-    else:
-        st.error("❌ 애니메이션 쇼츠 모듈을 불러올 수 없습니다.")
-        st.info("💡 webui/animation_shorts_ui.py 파일을 확인해주세요.")
-
-# --- TAB 3: SETTINGS (Enhanced) ---
+# --- TAB 2: SETTINGS (Enhanced) ---
 with tab_settings:
     st.markdown("### ⚙️ **고급 설정 및 커스터마이징**")
     with st.expander("🧭 처음 사용 설정 다시 열기"):
@@ -4371,7 +4260,7 @@ with tab_settings:
             )
             params.bgm_type = bgm_options[selected_index][1]
             
-            st.info("**🎵 BGM 볼륨: 0.03 (자동 최적화)**")
+            st.info("**🎵 BGM 볼륨: 0.05 (자동 최적화)**")
 
     # Premium BGM Manager (Separate expander to avoid nesting)
     with st.expander("🎵 **배경음악 라이브러리 관리**", expanded=False):

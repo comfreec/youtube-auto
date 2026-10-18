@@ -103,12 +103,23 @@ def get_video_transcript(video_id: str) -> Optional[str]:
         # youtube-transcript-api 사용 시도
         try:
             from youtube_transcript_api import YouTubeTranscriptApi
+            transcript_api = YouTubeTranscriptApi()
+
+            def transcript_to_text(items) -> str:
+                parts = []
+                for item in items:
+                    text = getattr(item, 'text', None)
+                    if text is None and isinstance(item, dict):
+                        text = item.get('text')
+                    if text:
+                        parts.append(str(text).strip())
+                return " ".join(parts).strip()
             
             # 직접 자막 가져오기 시도
             try:
                 # 한국어 자막 우선 시도
-                transcript_data = YouTubeTranscriptApi.fetch(video_id, languages=['ko', 'ko-KR'])
-                full_text = " ".join([item['text'] for item in transcript_data])
+                transcript_data = transcript_api.fetch(video_id, languages=['ko', 'ko-KR'])
+                full_text = transcript_to_text(transcript_data)
                 logger.info(f"Successfully extracted Korean transcript: {len(full_text)} characters")
                 return full_text
                 
@@ -117,8 +128,8 @@ def get_video_transcript(video_id: str) -> Optional[str]:
                 
                 try:
                     # 영어 자막 시도
-                    transcript_data = YouTubeTranscriptApi.fetch(video_id, languages=['en', 'en-US'])
-                    full_text = " ".join([item['text'] for item in transcript_data])
+                    transcript_data = transcript_api.fetch(video_id, languages=['en', 'en-US'])
+                    full_text = transcript_to_text(transcript_data)
                     logger.info(f"Successfully extracted English transcript: {len(full_text)} characters")
                     return full_text
                     
@@ -127,8 +138,8 @@ def get_video_transcript(video_id: str) -> Optional[str]:
                     
                     try:
                         # 기본 언어로 시도 (언어 지정 없이)
-                        transcript_data = YouTubeTranscriptApi.fetch(video_id)
-                        full_text = " ".join([item['text'] for item in transcript_data])
+                        transcript_data = transcript_api.fetch(video_id)
+                        full_text = transcript_to_text(transcript_data)
                         logger.info(f"Successfully extracted default transcript: {len(full_text)} characters")
                         return full_text
                         
@@ -173,7 +184,7 @@ def _extract_transcript_alternative(video_id: str) -> Optional[str]:
                 if matches:
                     logger.info("Found caption data in page source")
                     # 실제 자막 추출은 복잡하므로 여기서는 기본 메시지 반환
-                    return "자막을 추출할 수 없습니다. 수동으로 대본을 입력해주세요."
+                    return None
         
         logger.warning("Could not extract transcript using alternative method")
         return None
@@ -225,13 +236,13 @@ def analyze_and_reinterpret_content(original_transcript: str, video_info: Dict) 
     - 원본 내용: {original_transcript[:2000]}
 
     재해석 요구사항:
-    1. 원본의 핵심 메시지와 정보는 유지
-    2. 완전히 다른 표현 방식과 구조 사용
-    3. 새로운 예시와 비유 활용
-    4. 다른 순서와 논리 전개
-    5. 독창적인 시작과 마무리
-    6. 원본과 다른 톤앤매너 적용
-    7. 60-90초 분량의 쇼츠용 대본으로 작성
+    1. 검증 가능한 핵심 사실과 일반적인 주제만 참고
+    2. 원문의 고유 문장, 표현, 비유, 사례를 복사하지 않음
+    3. 도입, 정보 순서, 예시, 결론을 새롭게 구성
+    4. 새로운 예시와 비유만 사용
+    5. 원본 채널명이나 제작자의 정체성을 흉내 내지 않음
+    6. 독립적인 정보 콘텐츠로 이해될 정도로 충분히 다르게 작성
+    7. 약 60초 분량의 쇼츠용 대본으로 작성
     8. 인사말 없이 바로 본론으로 시작
     9. 마크다운 형식 사용 금지
     10. 순수한 텍스트만 작성
