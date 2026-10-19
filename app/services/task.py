@@ -312,9 +312,11 @@ def generate_subtitle(task_id, params, video_script, sub_maker, audio_file):
         try:
             subtitle.create(audio_file=audio_file, subtitle_file=subtitle_path)
             logger.info(f"✅ Whisper subtitle created for {version_info}")
-            logger.info("\n\n## correcting subtitle")
-            subtitle.correct(subtitle_file=subtitle_path, video_script=video_script)
-            logger.info(f"✅ Subtitle correction completed for {version_info}")
+            # Whisper cues already carry timings measured from the generated
+            # audio. Replacing them one-for-one with differently segmented
+            # script sentences can shift every later cue and used to append
+            # unmatched text at 00:00:00. Preserve the audio-derived cues.
+            logger.info(f"✅ Preserved Whisper audio timing for {version_info}")
             
             # 임시로 "-" 문자 제거 비활성화 (테스트용)
             # if not getattr(params, 'is_english_version', False):

@@ -1976,6 +1976,7 @@ def create_boundary_subtitle(
     normalized_source = "".join(char for char, _ in source_chars).casefold()
     cursor = 0
     boundaries = []
+    skipped_boundaries = 0
 
     for timing, spoken_text in zip(sub_maker.offset, sub_maker.subs):
         normalized_spoken = "".join(re.findall(r"\w", unescape(spoken_text))).casefold()
@@ -1983,14 +1984,20 @@ def create_boundary_subtitle(
             continue
         position = normalized_source.find(normalized_spoken, cursor)
         if position < 0:
-            logger.warning("Could not map an Edge boundary back to the source text")
-            return False
+            # Edge can pronounce the same source differently (notably digits,
+            # abbreviations and counters). A single transformed word must not
+            # discard all otherwise exact speech timings. Keep the source
+            # cursor in place so the next mapped boundary also includes the
+            # skipped source text.
+            skipped_boundaries += 1
+            logger.debug(f"Skipping unmappable Edge boundary: {spoken_text!r}")
+            continue
         end_position = position + len(normalized_spoken) - 1
         boundaries.append(
             {
                 "start": timing[0],
                 "end": timing[1],
-                "source_start": source_chars[position][1],
+                "source_start": source_chars[cursor][1],
                 "source_end": source_chars[end_position][1] + 1,
             }
         )
@@ -1998,6 +2005,16 @@ def create_boundary_subtitle(
 
     if not boundaries:
         return False
+    coverage = cursor / max(1, len(normalized_source))
+    if coverage < 0.85:
+        logger.warning(
+            f"Edge boundary coverage is too low ({coverage:.1%}, skipped={skipped_boundaries})"
+        )
+        return False
+    if skipped_boundaries:
+        logger.info(
+            f"Edge subtitle kept exact timing while tolerating {skipped_boundaries} transformed boundaries"
+        )
 
     cues = []
     cue_start = 0
