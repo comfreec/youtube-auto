@@ -96,10 +96,10 @@ class VideoParams(BaseModel):
     custom_audio_file: Optional[str] = None  # Custom audio file path, will ignore video_script and disable subtitle
     video_language: Optional[str] = ""  # auto detect
 
-    voice_name: Optional[str] = ""
+    voice_name: Optional[str] = "auto"
     voice_volume: Optional[float] = 1.0
     voice_rate: Optional[float] = 1.0
-    bgm_type: Optional[str] = "random"
+    bgm_type: Optional[str] = "smart"
     bgm_file: Optional[str] = ""
     bgm_volume: Optional[float] = 0.05
 
@@ -123,7 +123,7 @@ class SubtitleRequest(BaseModel):
     voice_name: Optional[str] = "zh-CN-XiaoxiaoNeural-Female"
     voice_volume: Optional[float] = 1.0
     voice_rate: Optional[float] = 1.2
-    bgm_type: Optional[str] = "random"
+    bgm_type: Optional[str] = "smart"
     bgm_file: Optional[str] = ""
     bgm_volume: Optional[float] = 0.05
     subtitle_position: Optional[str] = "custom"
@@ -143,7 +143,7 @@ class AudioRequest(BaseModel):
     voice_name: Optional[str] = "zh-CN-XiaoxiaoNeural-Female"
     voice_volume: Optional[float] = 1.0
     voice_rate: Optional[float] = 1.2
-    bgm_type: Optional[str] = "random"
+    bgm_type: Optional[str] = "smart"
     bgm_file: Optional[str] = ""
     bgm_volume: Optional[float] = 0.05
     video_source: Optional[str] = "local"

@@ -14,6 +14,26 @@ from app.services import state as sm
 from app.utils import utils
 
 
+def select_korean_voice(content_text: str) -> str:
+    """Choose one of the verified Korean voices from the script's tone."""
+    text = (content_text or "").lower()
+    reflective_keywords = (
+        "인생", "교훈", "조언", "후회", "삶", "지혜", "관계", "성공", "실패",
+        "마음", "위로", "외로", "행복", "사랑",
+    )
+    friendly_keywords = (
+        "건강", "생활", "음식", "운동", "영양", "혈압", "혈당", "당뇨",
+        "청소", "요리", "꿀팁", "방법", "추천",
+    )
+    reflective_score = sum(text.count(keyword) for keyword in reflective_keywords)
+    friendly_score = sum(text.count(keyword) for keyword in friendly_keywords)
+    if reflective_score > friendly_score and reflective_score > 0:
+        return "ko-KR-InJoonNeural"
+    if friendly_score > 0:
+        return "ko-KR-SunHiNeural"
+    return "ko-KR-HyunsuMultilingualNeural"
+
+
 def _remove_dash_from_subtitle_file(subtitle_path: str):
     """
     자막 파일에서 "-" 문자만 제거 (한국어 버전용)
@@ -153,25 +173,20 @@ def generate_audio(task_id, params, video_script):
             logger.info("no custom audio file provided, using TTS to generate audio.")
         audio_file = path.join(utils.task_dir(task_id), "audio.mp3")
         selected_voice = voice.parse_voice_name(params.voice_name)
+        selected_voice_rate = params.voice_rate
         if str(params.video_language or "").lower().startswith("ko"):
-            allowed_korean_voices = {
-                "ko-KR-SunHiNeural",
-                "ko-KR-InJoonNeural",
-                "ko-KR-HyunsuMultilingualNeural",
-            }
-            if selected_voice not in allowed_korean_voices:
-                logger.warning(
-                    "지원하지 않는 한국어 성우를 선희로 교정: %s -> ko-KR-SunHiNeural",
-                    selected_voice or "(비어 있음)",
-                )
-                selected_voice = "ko-KR-SunHiNeural"
-            else:
-                logger.info(f"선택한 한국어 성우 유지: {selected_voice}")
+            selected_voice = select_korean_voice(video_script)
+            selected_voice_rate = {
+                "ko-KR-SunHiNeural": 1.12,
+                "ko-KR-InJoonNeural": 1.03,
+                "ko-KR-HyunsuMultilingualNeural": 1.05,
+            }[selected_voice]
+            logger.info(f"대본 문맥에 맞는 한국어 성우 자동 선택: {selected_voice}")
 
         sub_maker = voice.tts(
             text=video_script,
             voice_name=selected_voice,
-            voice_rate=params.voice_rate,
+            voice_rate=selected_voice_rate,
             voice_file=audio_file,
         )
         if sub_maker is None:
@@ -477,10 +492,10 @@ def get_video_materials(task_id, params, video_terms, audio_duration, video_scri
         matcher = get_matcher()
         image_segment_count = getattr(params, "target_segment_count", None)
         if image_segment_count is None:
-            # Current Shorts benefit from frequent, clearly distinct visual
-            # beats. Around six seconds per image keeps attention without the
-            # eye strain of rapid zooms or jittery camera movement.
-            image_segment_count = max(5, min(10, math.ceil(audio_duration / 6)))
+            # AI image usage is metered per generated scene, not per video.
+            # Four to six context-matched visuals keep Shorts understandable
+            # while making the daily free allocation last much longer.
+            image_segment_count = max(4, min(6, math.ceil(audio_duration / 10)))
         segment_infos = matcher.match_segments_to_subtitle_timing(
             script=video_script or params.video_subject,
             subtitle_path=subtitle_path,
@@ -759,6 +774,10 @@ def start(task_id, params: VideoParams, stop_at: str = "video"):
         return
 
     sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=10, message="대본 생성 완료")
+
+    # Preserve the actual generated/reinterpreted script so the final renderer
+    # can choose background music that matches its mood and subject.
+    params.video_script = video_script
 
     if stop_at == "script":
         sm.state.update_task(

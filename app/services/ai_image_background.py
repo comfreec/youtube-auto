@@ -27,6 +27,10 @@ class AIImageServiceError(RuntimeError):
     pass
 
 
+class AIImageQuotaError(AIImageServiceError):
+    """Raised when the remote image service has no free allocation left."""
+
+
 _ocr_reader = None
 _ocr_lock = threading.Lock()
 
@@ -65,7 +69,7 @@ def _contains_visible_text(image: Image.Image) -> bool:
     return False
 
 
-def _download_text_free_image(prompt: str, attempts: int = 3) -> Image.Image:
+def _download_text_free_image(prompt: str, attempts: int = 2) -> Image.Image:
     image = None
     for attempt in range(1, attempts + 1):
         retry_rule = ""
@@ -133,7 +137,14 @@ def _download_image(prompt: str) -> Image.Image:
             detail = response.json().get("detail", "")
         except Exception:
             detail = ""
-        raise AIImageServiceError(detail or f"AI 이미지 생성 실패 ({response.status_code})")
+        message = detail or f"AI 이미지 생성 실패 ({response.status_code})"
+        normalized = message.lower()
+        if response.status_code == 429 or any(
+            marker in normalized
+            for marker in ("무료 이미지 한도", "daily free allocation", "quota", "3036")
+        ):
+            raise AIImageQuotaError(message)
+        raise AIImageServiceError(message)
     try:
         data = response.json()
         raw = base64.b64decode(data["image"])
@@ -204,6 +215,7 @@ def generate_videos_by_segments(task_id: str, segment_infos: List[Dict], video_a
     os.makedirs(output_dir, exist_ok=True)
     results = []
     last_successful_image = None
+    quota_exhausted = False
     for position, info in enumerate(segment_infos):
         index = int(info.get("index", position))
         text = str(info.get("segment", ""))
@@ -222,8 +234,23 @@ def generate_videos_by_segments(task_id: str, segment_infos: List[Dict], video_a
             if item.strip()
         ] or keywords
         try:
-            image = _download_text_free_image(_build_prompt(visual_text, visual_keywords))
-            last_successful_image = image.copy()
+            if quota_exhausted:
+                image = last_successful_image.copy()
+            else:
+                image = _download_text_free_image(_build_prompt(visual_text, visual_keywords))
+                last_successful_image = image.copy()
+        except AIImageQuotaError as exc:
+            # Once Cloudflare reports the daily limit, every additional request
+            # would fail and waste time. Stop requesting immediately and reuse
+            # the last successful visual for the rest of this video.
+            quota_exhausted = True
+            if last_successful_image is None:
+                raise
+            logger.warning(
+                f"AI image quota exhausted at scene {index + 1}; "
+                "reusing the previous image without further generation requests"
+            )
+            image = last_successful_image.copy()
         except Exception as exc:
             # A temporary limit or a single rejected image must not discard all
             # AI scenes that were already created and silently switch the whole

@@ -1,5 +1,5 @@
 const DOWNLOAD_URL =
-  "https://github.com/comfreec/youtube-auto/releases/download/v2.0/AI-Shorts-Generator-v2.0.zip";
+  "https://github.com/comfreec/youtube-auto/releases/download/v2.1/AI-Shorts-Generator-v2.1.zip";
 const RELEASE_URL = "https://github.com/comfreec/youtube-auto/releases/latest";
 
 export default {
@@ -7,7 +7,7 @@ export default {
     const url = new URL(request.url);
 
     if (url.pathname === "/health") {
-      return Response.json({ ok: true, version: "v2.0" }, {
+      return Response.json({ ok: true, version: "v2.1" }, {
         headers: { "cache-control": "no-store" },
       });
     }

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import glob
+import hashlib
 import itertools
 import os
 import random
@@ -190,17 +191,65 @@ def delete_files(files: List[str] | str):
         except:
             pass
 
-def get_bgm_file(bgm_type: str = "random", bgm_file: str = ""):
+_BGM_MOOD_TRACKS = {
+    "reflection": [
+        "Resolution Or Reflection", "Time", "Windy Road Back To You", "A Stroll",
+    ],
+    "comfort": ["Twinkle", "Flutter", "Special", "Windy Road Back To You"],
+    "health": ["Nebula", "A Stroll", "Flutter", "Time"],
+    "warning": ["Frame-Dragging", "Futile", "Pawn", "Nebula"],
+    "bright": ["Soaring", "Purple Desire", "Special", "On The Flip"],
+    "neutral": ["A Stroll", "Pulsar", "High Noon", "On The Flip"],
+}
+
+_BGM_MOOD_KEYWORDS = {
+    "warning": ("위험", "경고", "주의", "절대", "금지", "사망", "질병", "증상", "danger", "warning"),
+    "comfort": ("위로", "힘들", "괜찮", "마음", "행복", "사랑", "감동", "외로", "comfort", "healing"),
+    "reflection": ("인생", "교훈", "조언", "후회", "관계", "성공", "실패", "지혜", "삶", "lesson", "advice"),
+    "health": ("건강", "혈압", "당뇨", "혈당", "음식", "운동", "영양", "병원", "health", "diet"),
+    "bright": ("꿀팁", "방법", "정리", "청소", "요리", "추천", "생활", "tip", "easy"),
+}
+
+
+def classify_bgm_mood(content_text: str) -> str:
+    text = (content_text or "").lower()
+    scores = {
+        mood: sum(text.count(keyword) for keyword in keywords)
+        for mood, keywords in _BGM_MOOD_KEYWORDS.items()
+    }
+    best_mood, best_score = max(scores.items(), key=lambda item: item[1])
+    return best_mood if best_score else "neutral"
+
+
+def _select_smart_bgm(files: List[str], content_text: str) -> str:
+    mood = classify_bgm_mood(content_text)
+    preferred_names = _BGM_MOOD_TRACKS[mood]
+    candidates = [
+        file_path for file_path in files
+        if any(name.lower() in os.path.basename(file_path).lower() for name in preferred_names)
+    ] or files
+    # Choose consistently for the same script while still varying between topics.
+    digest = hashlib.sha256((content_text or mood).encode("utf-8")).digest()
+    selected = sorted(candidates)[int.from_bytes(digest[:4], "big") % len(candidates)]
+    logger.info(f"Automatically selected {mood} BGM: {os.path.basename(selected)}")
+    return selected
+
+
+def get_bgm_file(bgm_type: str = "smart", bgm_file: str = "", content_text: str = ""):
     if not bgm_type:
         return ""
 
     if bgm_file and os.path.exists(bgm_file):
         return bgm_file
 
-    if bgm_type == "random":
+    if bgm_type in ("smart", "random"):
         suffix = "*.mp3"
         song_dir = utils.song_dir()
         files = glob.glob(os.path.join(song_dir, suffix))
+        if not files:
+            return ""
+        if bgm_type == "smart":
+            return _select_smart_bgm(files, content_text)
         return random.choice(files)
 
     return ""
@@ -843,7 +892,11 @@ def generate_video(
                 _clip = _clip.with_position(("center", "center"))
         return _clip
 
-    bgm_file = get_bgm_file(bgm_type=params.bgm_type, bgm_file=params.bgm_file)
+    bgm_file = get_bgm_file(
+        bgm_type=params.bgm_type,
+        bgm_file=params.bgm_file,
+        content_text=f"{params.video_subject}\n{params.video_script}",
+    )
 
     # Separate audio and video rendering to avoid hangs and improve speed
     # OPTIMIZATION: Use pure ffmpeg for final rendering to avoid MoviePy hangs and improve speed (10x faster)

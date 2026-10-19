@@ -9,8 +9,6 @@ allowRunOnSave = true
 
 [browser]
 gatherUsageStats = false
-serverAddress = "192.168.25.14"
-serverPort = 8501
 
 [global]
 developmentMode = false

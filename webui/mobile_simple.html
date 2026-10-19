@@ -160,17 +160,8 @@
             </div>
         </div>
 
-        <div class="input-group">
-            <label for="voiceName">한국어 성우</label>
-            <select id="voiceName" onchange="updateVoiceDescription()">
-                <option value="ko-KR-SunHiNeural">👩 선희 · 밝고 친근한 건강·생활정보</option>
-                <option value="ko-KR-InJoonNeural">👨 인준 · 차분하고 묵직한 인생 조언</option>
-                <option value="ko-KR-HyunsuMultilingualNeural">👨 현수 · 자연스럽고 중립적인 설명</option>
-            </select>
-            <div id="voiceDescription" style="font-size:13px;color:#334155;background:#f1f5f9;margin-top:8px;padding:10px;border-radius:8px;line-height:1.5;">
-                <strong>선희:</strong> 밝고 친근함 — 건강·생활정보 추천
-            </div>
-            <div style="font-size:12px;color:#777;margin-top:6px;">영어 버전 성우는 기존 설정을 그대로 사용합니다.</div>
+        <div style="font-size:13px;color:#334155;background:#f1f5f9;margin:8px 0 18px;padding:10px;border-radius:8px;line-height:1.5;">
+            🎙️ 한국어 성우와 배경음악은 대본 내용에 맞게 자동 선택됩니다.
         </div>
 
         <div class="input-group">
@@ -203,16 +194,6 @@
         let currentTaskId = null;
         let checkInterval = null;
 
-        function updateVoiceDescription() {
-            const descriptions = {
-                'ko-KR-SunHiNeural': '<strong>선희:</strong> 밝고 친근함 — 건강·생활정보 추천',
-                'ko-KR-InJoonNeural': '<strong>인준:</strong> 차분하고 묵직함 — 인생 조언 추천',
-                'ko-KR-HyunsuMultilingualNeural': '<strong>현수:</strong> 자연스럽고 중립적 — 일반 정보·설명 추천'
-            };
-            const selected = document.getElementById('voiceName').value;
-            document.getElementById('voiceDescription').innerHTML = descriptions[selected];
-        }
-
         async function loadDefaultVideoSource() {
             try {
                 const response = await fetch('/api/settings/video-source', {cache: 'no-store'});
@@ -220,11 +201,6 @@
                 const selector = document.getElementById('videoSource');
                 if (response.ok && selector.querySelector(`option[value="${data.video_source}"]`)) {
                     selector.value = data.video_source;
-                }
-                const voiceSelector = document.getElementById('voiceName');
-                if (response.ok && voiceSelector.querySelector(`option[value="${data.voice_name}"]`)) {
-                    voiceSelector.value = data.voice_name;
-                    updateVoiceDescription();
                 }
             } catch (_) {}
         }
@@ -275,7 +251,6 @@
             const autoUpload = document.getElementById('autoUpload').checked;
             const createGlobal = document.getElementById('createGlobal').checked;
             const videoSource = document.getElementById('videoSource').value;
-            const voiceName = document.getElementById('voiceName').value;
             
             if (!title) {
                 alert('제목을 입력해주세요!');
@@ -302,7 +277,7 @@
                     auto_upload: autoUpload,
                     create_global: createGlobal,
                     video_source: videoSource,
-                    voice_name: voiceName
+                    voice_name: 'auto'
                 };
 
                 const preflightResponse = await fetch('/api/preflight', {

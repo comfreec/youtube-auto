@@ -2444,7 +2444,7 @@ with tab_main:
                 help="배치로 생성할 영상의 타입을 선택하세요."
             )
             
-            st.info("🇰🇷 한국어는 선희 성우로 생성되며, 글로벌 버전을 켜면 영어 영상이 이어서 생성됩니다.")
+            st.info("🇰🇷 한국어 성우는 대본 문맥에 맞게 자동 선택되며, 글로벌 버전을 켜면 영어 영상이 이어서 생성됩니다.")
         
         with col_batch_settings:
             st.markdown("#### 🎯 **추가 옵션**")
@@ -3462,9 +3462,9 @@ def generate_single_video(title: str, video_type: str, language: str, duration: 
             'video_subject': title,
             'video_script': script,
             'video_language': language,
-            'voice_name': 'ko-KR-SunHiNeural' if language == 'ko-KR' else 'en-US-JennyNeural',
+            'voice_name': 'auto' if language == 'ko-KR' else 'en-US-JennyNeural',
             'voice_rate': voice_rate,  # 언어별 속도 적용
-            'bgm_type': 'random',
+            'bgm_type': 'smart',
             'bgm_volume': 0.2,
             'subtitle_enabled': True,
             'subtitle_position': 'bottom',
@@ -4157,69 +4157,11 @@ with tab_settings:
             selected_tts_server = tts_servers[selected_tts_server_index][1]
             config.ui["tts_server"] = selected_tts_server
 
-            # Get voice list based on selected TTS server
-            filtered_voices = []
-            if selected_tts_server == "siliconflow":
-                filtered_voices = voice.get_siliconflow_voices()
-            elif selected_tts_server == "gemini-tts":
-                filtered_voices = voice.get_gemini_voices()
-            elif selected_tts_server == "gtts":
-                filtered_voices = voice.get_gtts_voices()
-            else:
-                all_voices = voice.get_all_azure_voices(filter_locals=["ko-KR"])
-                for v in all_voices:
-                    if selected_tts_server == "azure-tts-v2":
-                        if "V2" in v: filtered_voices.append(v)
-                    else:
-                        if "V2" not in v: filtered_voices.append(v)
-
-            friendly_names = {
-                v: v.replace("Female", "여성").replace("Male", "남성").replace("Neural", "").replace("ko-KR-", "")
-                for v in filtered_voices
-            }
-
-            saved_voice_name = config.ui.get("voice_name", "")
-            saved_voice_name_index = 0
-            if saved_voice_name in friendly_names:
-                saved_voice_name_index = list(friendly_names.keys()).index(saved_voice_name)
-
-            if friendly_names:
-                selected_friendly_name = st.selectbox(
-                    "목소리 선택",
-                    options=list(friendly_names.values()),
-                    index=min(saved_voice_name_index, len(friendly_names) - 1) if friendly_names else 0,
-                    key="settings_voice_name",
-                    help="자연스러운 한국어 음성을 선택하세요"
-                )
-                voice_name = list(friendly_names.keys())[list(friendly_names.values()).index(selected_friendly_name)]
-                params.voice_name = voice_name
-                config.ui["voice_name"] = voice_name
-            else:
-                st.warning("⚠️ 사용 가능한 목소리가 없습니다.")
-                params.voice_name = ""
-                config.ui["voice_name"] = ""
-            
-            # Voice preview button
-            if friendly_names and st.button("🔊 목소리 미리듣기", use_container_width=True, type="primary"):
-                play_content = params.video_subject if params.video_subject else "안녕하세요, 목소리 테스트입니다. 이 음성이 마음에 드시나요?"
-                with st.spinner("🎤 음성 생성 중..."):
-                    temp_dir = utils.storage_dir("temp", create=True)
-                    audio_file = os.path.join(temp_dir, f"tmp-voice-{str(uuid4())}.mp3")
-                    try:
-                        sub_maker = voice.tts(
-                            text=play_content, 
-                            voice_name=voice_name, 
-                            voice_rate=params.voice_rate, 
-                            voice_file=audio_file, 
-                            voice_volume=params.voice_volume
-                        )
-                        if sub_maker and os.path.exists(audio_file):
-                            st.audio(audio_file, format="audio/mp3")
-                            os.remove(audio_file)
-                        else:
-                            st.error("음성 생성에 실패했습니다.")
-                    except Exception as e:
-                        st.error(f"음성 생성 오류: {e}")
+            params.voice_name = "auto"
+            st.info(
+                "대본에 맞춰 성우를 자동 선택합니다.  "
+                "인생 조언·위로: 인준 / 건강·생활정보: 선희 / 일반 설명: 현수"
+            )
         
         with col_audio_settings:
             st.markdown("#### 🎚️ 오디오 조정")
@@ -4235,7 +4177,7 @@ with tab_settings:
             st.info("""
             **🎯 최적화된 음성 설정 (자동 적용)**
             
-            - 🇰🇷 한국어: 선희 음성 1.12배속
+            - 🇰🇷 한국어: 문맥에 맞는 성우와 속도 자동 선택
             - 🇺🇸 영어: 1.0배속 (자연스러운 속도)
             - 🔊 음성 볼륨: 1.0 (기본값)
             """)
@@ -4247,8 +4189,7 @@ with tab_settings:
             
             bgm_options = [
                 ("🚫 배경음악 없음", ""),
-                ("🎲 무작위 선택 (추천)", "random"),
-                ("📁 사용자 지정", "custom"),
+                ("✨ 내용에 맞게 자동 선택 (추천)", "smart"),
             ]
             
             selected_index = st.selectbox(
@@ -4986,7 +4927,7 @@ if not st.session_state.get("generation_in_progress", False) and 'start_button' 
         st.stop()
 
     # BGM Validation with premium styling
-    if params.bgm_type == "random":
+    if params.bgm_type in ("smart", "random"):
         song_dir = utils.song_dir()
         if not glob.glob(os.path.join(song_dir, "*.mp3")):
             st.error("❌ **배경음악 파일이 없습니다**")
@@ -5109,7 +5050,7 @@ if not st.session_state.get("generation_in_progress", False) and 'start_button' 
     korean_params.coupang_overlay_data = coupang_overlay_data  # 쿠팡 오버레이 데이터 추가
     
     # 한국어 버전 음성 설정 (모바일과 동일하게)
-    korean_params.voice_name = "ko-KR-SunHiNeural"
+    korean_params.voice_name = "auto"
     korean_params.voice_rate = 1.12
     korean_params.voice_volume = 1.5  # 음성 볼륨 1.5배
     
